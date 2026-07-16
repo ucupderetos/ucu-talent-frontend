@@ -1,4 +1,3 @@
-<!-- BEGIN:nextjs-agent-rules -->
 # CLAUDE.md — UCU Talent (Frontend)
 
 > Resume las decisiones de arquitectura tomadas por el equipo hasta ahora.
@@ -146,4 +145,70 @@ video-CV, interfaz tipo "Tinder del empleo", chat en tiempo real, motor de
 recomendación con IA/ML/ranking automático de candidatos, envío automático de
 notificaciones push o por correo (más allá del `mailto:` de RF-21),
 pagos/suscripciones, testing automatizado, CI/CD y despliegue en la nube.
-<!-- END:nextjs-agent-rules -->
+
+
+# Estructura del proyecto
+
+Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4.
+No hay `src/`: la raíz del repo **es** el src. El alias `@/*` apunta a la raíz (`./*`).
+
+```
+app/                        # Rutas y UI (App Router)
+├── (auth)/{login,registro}/
+├── (alumno)/{feed,perfil,postulaciones}/
+├── (empresa)/puestos/[id]/postulantes/
+├── (admin)/moderacion/
+├── layout.tsx              # Layout raíz: <html>/<body>, estilos y providers globales
+└── page.tsx                # Home (/)
+components/
+└── layout/                 # Navbar, sidebar, shells — compartidos entre roles
+features/<dominio>/         # auth, perfil, puestos, postulaciones, moderacion
+├── components/             # Componentes propios del dominio
+├── hooks/                  # Hooks de datos/estado del dominio
+└── types.ts                # Tipos del dominio
+lib/
+├── api-client.ts           # Cliente HTTP central: base URL, headers, token, errores
+└── auth.ts                 # Sesión, token, usuario actual, guards de rol
+types/
+└── index.ts                # Tipos globales (User, Rol)
+```
+
+## Qué va en cada lado
+
+- **`app/`** — solo routing y composición de pantalla. Una carpeta = un segmento de URL;
+  la ruta existe recién cuando la carpeta tiene un `page.tsx`. Las páginas deben ser
+  delgadas: importan de `features/` y componen. No poner acá lógica de dominio ni fetching.
+- **`(paréntesis)`** — route groups: agrupan por rol sin agregar segmento a la URL.
+  `app/(alumno)/feed/` sirve `/feed`, no `/alumno/feed`. Cada grupo puede tener su propio
+  `layout.tsx` para navbar/sidebar de ese rol.
+- **`[corchetes]`** — segmento dinámico (`/puestos/123/postulantes`).
+- **`components/layout/`** — UI compartida entre roles, sin lógica de dominio.
+- **`components/ui/`** — NO crear a mano: la genera `shadcn@latest init`.
+- **`features/<dominio>/`** — todo lo propio de un dominio (componentes, hooks, tipos).
+  Es el default: ante la duda, va acá y no en `app/` ni en `components/`.
+- **`lib/`** — infraestructura transversal, sin UI.
+- **`types/index.ts`** — tipos usados por más de un dominio. Los específicos van en
+  `features/<x>/types.ts`.
+
+## Reglas
+
+- Todo el fetching pasa por `lib/api-client.ts`. No usar `fetch` suelto en componentes.
+- Los imports usan el alias `@/` (`@/features/puestos/types`), no rutas relativas largas.
+- Un dominio no importa desde `features/` de otro dominio. Si algo se comparte, sube a
+  `components/`, `lib/` o `types/`.
+
+## Convención de trabajo en equipo
+
+- Una pantalla = una carpeta de ruta; quien la toma es dueño de ese `page.tsx`.
+- La lógica va en `features/<x>/`, no en la carpeta de ruta: así dos personas en dominios
+  distintos casi no tocan los mismos archivos.
+- `components/layout/`, `lib/` y `types/index.ts` son puntos de conflicto: coordinar antes
+  de tocarlos.
+
+## Estado actual
+
+Estructura scaffolded con stubs. Pendiente y aún sin definir:
+
+- Backend/API: no definido → `lib/api-client.ts` y `lib/auth.ts` son stubs vacíos.
+- `shadcn init`: todavía no se corrió → no existe `components/ui/` ni el theming.
+- Las `page.tsx` de cada ruta son placeholders.
