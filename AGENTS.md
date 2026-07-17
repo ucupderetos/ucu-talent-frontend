@@ -6,9 +6,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # AGENTS.md — UCU Talent (Frontend)
 
-> Decisiones de arquitectura del equipo. Actualizado tras el documento de
-> requerimientos **v3**. Mantener al día a medida que se tomen nuevas decisiones.
-> `CLAUDE.md` referencia este archivo — editar acá, no allá.
+> Decisiones de arquitectura del equipo. Actualizado tras el **SRS v2.1**
+> (`UCU_Talent_SRS_v2.docx`, julio 2026) — reemplaza al documento de requerimientos
+> anterior citado acá como "v3"; la numeración de RF cambió de secuencial (RF-01..RF-22)
+> a prefijos temáticos (RF-AUT, RF-PER, RF-PUE, RF-MOD, RF-FEED, RF-POS). Mantener al día
+> a medida que se tomen nuevas decisiones. `CLAUDE.md` referencia este archivo — editar
+> acá, no allá.
 
 ## Contexto del proyecto
 
@@ -114,8 +117,8 @@ los errores de RHF.
   datos*.
 - El valor real de Next.js acá es: route groups por rol, layouts anidados y `proxy.ts`
   para control de acceso — no el renderizado del lado del servidor.
-- (v3 bajó el requisito de rendimiento del feed a "opcional" — no cambia esta decisión,
-  las otras razones siguen aplicando igual.)
+- (RNF-08 pide feed <2s con hasta 200 puestos, sin exigir SSR para lograrlo — no cambia
+  esta decisión, las otras razones siguen aplicando igual.)
 
 ### Organización de código: feature-based
 
@@ -124,24 +127,30 @@ los errores de RHF.
 - Dominios actuales: `auth`, `perfil`, `puestos`, `postulaciones`, `moderacion`.
 - No usar convenciones de Atomic Design (`atoms/`, `molecules/`, `organisms/`).
 
-### Roles y control de acceso (RF-03, RBAC)
+### Roles y control de acceso (RF-AUT-05, RBAC)
 
 - 3 roles: **alumno**, **empresa**, **admin**. Cada uno ve solo lo que le corresponde.
-- Alumno: se valida contra padrón de cédulas o mail `@ucu` (RF-01).
-- Empresa: se registra o es invitada, y **necesita aprobación de Admin UCU antes de
-  poder operar** (RF-13) — el gate de aprobación es sobre la empresa, no sobre cada
-  puesto individual. En el MER es `Company.approved : boolean`.
-  ⚠️ Al ser booleano, **"rechazada" y "todavía no revisada" son el mismo valor**: no se
-  puede registrar un rechazo. Deuda aceptada por el equipo; si hace falta, se migra a enum.
-- Vacante (`Vacancy`): **nace en `pending` y Admin UCU aprueba antes de que salga**.
-  Estados del MER: `pending / paused / published / rejected / closed`.
-
-> 🔴 **El documento v3 está desactualizado acá.** Dice que el puesto *"se publica por
-> default al crearse"* y que Admin *"no aprueba antes de que salga"*. **Eso es falso**: el
-> MER tiene `pending` y el equipo lo confirmó. Falta actualizar el v3.
-> Impacto: el panel de admin es una **cola de pendientes** (aprobar/rechazar), no una
-> herramienta de despublicar lo ya publicado. Y la empresa no ve su vacante viva hasta
-> que la aprueben.
+- Alumno: dos vías de registro, excluyentes (RN-01). (a) Correo `@ucu.edu.uy` →
+  `StudentProfile.status = APROBADO` automático (RF-AUT-01). (b) Correo personal + cédula
+  → se valida contra `UniversityRegistry` (el padrón, cargado como dato semilla); si la
+  cédula figura, `APROBADO` automático; si no figura, `PENDIENTE` y cae en la cola de
+  revisión del Admin (RF-MOD-05/06, RF-AUT-02). Un alumno `PENDIENTE` o `RECHAZADO` puede
+  loguearse, armar su perfil y ver el feed, pero no postularse (RN-16, RF-AUT-06) —
+  simétrico a como el estado de la empresa gatea solo la publicación, no el login.
+- Empresa: se registra (RF-AUT-03) y **necesita aprobación de Admin UCU antes de poder
+  publicar** (RN-02, RF-MOD-04) — el gate de aprobación es sobre la empresa, no sobre cada
+  puesto individual. `Company.status: enum(PENDIENTE, APROBADA, RECHAZADA)` — **ya no es
+  booleano**: el rechazo es un estado propio, y el Admin puede revertir la decisión en
+  cualquier sentido (`PENDIENTE ↔ APROBADA ↔ RECHAZADA`).
+- Vacante (`Vacancy`): **post-moderación (DEC-01)** — nace ya `PUBLICADO` al crearse, sin
+  aprobación previa por puesto (RN-03). Admin UCU revisa periódicamente lo ya publicado y
+  puede darlo de baja (→ `RECHAZADO`, terminal, RF-MOD-02). La empresa dueña lo puede
+  cerrar cuando termina la búsqueda (→ `FINALIZADO`, terminal, RF-PUE-03). Ambos son
+  terminales y cada uno solo lo puede disparar su actor (RN-07). Estados:
+  `enum(PUBLICADO, RECHAZADO, FINALIZADO)` — **sin `pending` ni `paused`**.
+  Impacto: el panel de admin es una **bandeja de revisión de lo ya publicado** (para dar
+  de baja si corresponde, con las últimas 24h destacadas — RF-MOD-01), no una cola de
+  aprobación previa. La empresa ve su vacante viva apenas la crea, si ya está aprobada.
 - Cada route group (`(auth)`, `(alumno)`, `(empresa)`, `(admin)`) lleva su propio
   `layout.tsx` que valida el rol antes de renderizar. Ya existen: son de 3 líneas y
   delegan en `RoleGuard` (`features/auth/components/role-guard.tsx`).
@@ -182,28 +191,38 @@ solo puede **leer la cookie** — nunca pegarle a la base ni a la API.
 - `lib/api-client.ts` manda `credentials: "include"` para que el browser adjunte la cookie
   en cross-origin. Si el backend termina eligiendo un token en header, eso y `lib/auth.ts`
   son lo único que cambia.
-- **Falta definir**: cómo llega el estado de aprobación de la empresa (RF-13) al frontend
-  — ¿viene en `GET /me`? El layout de `(empresa)` hoy valida el **rol**, no la aprobación.
+- **Falta definir**: cómo llegan al frontend `Company.status` y `StudentProfile.status`
+  — ¿vienen en `GET /me`? Los layouts de `(empresa)` y `(alumno)` hoy validan el **rol**,
+  no el estado de aprobación.
 
-### Mails al postulante (RF-21) — CAMBIÓ
+### Mails: aviso a la empresa (backend) + contacto al alumno (`mailto:`, frontend)
 
-🔴 **El flujo `mailto:` quedó descartado. El backend manda el mail.**
+Confirmado por el SRS v2.1 — **esto revierte una decisión anterior del equipo** (ver nota
+al final): el `mailto:` está de vuelta y es del frontend; el backend solo manda un tipo
+de correo, y no es al alumno.
 
-- Cuando la empresa pasa una postulación a `FINALIZADO`, elige si sigue o no con el
-  candidato. **Esa decisión viaja como un campo del payload del cambio de estado**, y
-  Spring Boot se encarga de armar y enviar el mail con la plantilla correspondiente.
-- **El frontend no arma, no dispara y no previsualiza mails.** No hay `mailto:`, no hay
-  plantillas en el front, y `features/mensajeria/` deja de ser una consideración. La tabla
-  `MailTemplate` del MER es asunto del backend.
-- Lo único del front es el flag de decisión, en `features/postulaciones/types.ts`
-  (`ApplicationStatusChange`).
+- **El único correo automático del sistema** (RF-POS-01, RN-18) es el aviso a la
+  **empresa** cuando un alumno se postula: nombre del puesto, nombre y apellido del
+  postulante, fecha, skills coincidentes, y un link a la app. El link exige login si no
+  hay sesión y luego redirige al destino (DEC-11) — **nunca** un token sin autenticación,
+  para no filtrar el perfil de un alumno a quien reenvíe el mail. Envío asíncrono: un
+  fallo del proveedor nunca bloquea ni revierte el registro de la postulación (RNF-14);
+  `notified_at` da idempotencia ante reintentos.
+- **El alumno nunca es destinatario de un correo automático.** Consulta el estado de sus
+  postulaciones desde la app (RF-FEED-05), no por aviso del sistema.
+- Para contactar a un alumno, la empresa administra sus propios `MailTemplate`
+  (nombre, asunto, cuerpo — privados por empresa, RF-PUE-05) y, desde el perfil del
+  alumno, abre un enlace **`mailto:` precargado y editable** con uno de esos templates
+  (RF-POS-04). Se envía desde el cliente de correo de **la empresa** — el sistema no lo
+  manda ni guarda copia (RN-19). Se ofrece además un botón de "copiar texto" como
+  alternativa, porque los `mailto:` tienen un límite práctico de ~2000 caracteres (R-03).
+- `MailTemplate` **sí es una entidad core** (`types/index.ts`): la usa `puestos`/empresa
+  para el ABM de templates y `postulaciones` para armar el `mailto:` al contactar.
 
-> ⚠️ Ese flag decide **qué mail le llega a una persona real**. Si va mal, a un candidato
-> le llega el mail equivocado. No es un detalle cosmético.
-
-> 📌 **Esto contradice el v3**, que declara el envío automático de correo *fuera de
-> alcance* y solo admite `mailto:`. El alcance cambió: envío automático **está adentro**
-> (del lado del backend). Falta actualizar el v3.
+> ⚠️ **Esto revierte lo que decía antes esta sección**: que el `mailto:` estaba
+> descartado y el backend mandaba el mail al postulante según una decisión viajando en el
+> payload del cambio de estado (`ApplicationStatusChange`). Ese mecanismo ya no existe —
+> si hay código o un plan basado en él, hay que ajustarlo.
 
 ## Estructura de carpetas
 
@@ -268,18 +287,22 @@ Esto se deduce de la regla *"no importar desde `features/` de otro dominio"*, y 
 tenerlo explícito porque si no cada grupo lo resuelve distinto:
 
 - **`types/index.ts` → entidades core: espejan las tablas del MER.** `Vacancy` la usan
-  `puestos` (CRUD), `moderacion` (RF-12) y `postulaciones` (una postulación es *a una
+  `puestos` (CRUD), `moderacion` (RF-MOD-02) y `postulaciones` (una postulación es *a una
   vacante*). Si viviera en `features/puestos/types.ts`, esos imports estarían
   **prohibidos** por la regla. Lo mismo con `StudentProfile` (lo ve la empresa en sus
   postulantes), `Education`, `WorkExperience` y `Area`.
-  Hoy: `Role`, `DocumentType`, `Department`, `User`, `Area`, `Company`, `StudentProfile`,
-  `Degree`, `Education`, `WorkExperience`, `Modality`, `VacancyStatus`, `Vacancy`,
-  `ApplicationStatus`, `VacancyApplication`, `Paginated<T>`.
+  Hoy: `Role`, `DocumentType`, `Department`, `User`, `Area`, `Company` (con
+  `CompanyStatus: enum(PENDIENTE, APROBADA, RECHAZADA)`), `StudentProfile` (con
+  `StudentProfileStatus: enum(PENDIENTE, APROBADO, RECHAZADO)`), `UniversityRegistry`
+  (el padrón — tabla de consulta, sin FK a `User`), `Degree`, `Education`,
+  `WorkExperience`, `Modality`, `VacancyStatus: enum(PUBLICADO, RECHAZADO, FINALIZADO)`,
+  `Vacancy`, `ApplicationStatus: enum(PENDIENTE, VISTO, ACEPTADO, RECHAZADO)`,
+  `VacancyApplication`, `MailTemplate`, `Paginated<T>`.
 - **`features/<x>/types.ts` → lo específico del dominio**: filtros, payloads de formulario,
   view models. No cruzan a otro dominio, así que no suben.
 
-> `MailTemplate` del MER **no está tipada**: es asunto del backend, el frontend no arma
-> mails. Ver *Mails al postulante*.
+> `MailTemplate` **sí está tipada** en `types/index.ts` y **sí la arma el frontend** — ver
+> *Mails: aviso a la empresa (backend) + contacto al alumno (`mailto:`, frontend)*.
 
 > Los grupos se reparten por **rol**, pero el código se organiza por **dominio**, y no son
 > la misma línea: `features/puestos/` lo tocan los tres. Por eso las entidades core y los
@@ -299,7 +322,8 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 - El código de un dominio vive en `features/<dominio>/`, no directamente en `components/`.
 - Imports con el alias `@/` (`@/features/puestos/types`), no rutas relativas largas.
 - **Todo componente debe ser responsive (mobile + desktop) y funcionar en Chrome, Edge
-  y Safari** — desde v3 es obligatorio, no opcional. No asumir layouts fijos de escritorio.
+  y Safari** (RNF-06, RNF-07) — obligatorio, no opcional. No asumir layouts fijos de
+  escritorio; usable desde 360px de ancho.
 - Nunca commitear credenciales, tokens o archivos `.env` — usar variables de entorno.
 - Commits pequeños y descriptivos, trabajo en branches con Pull Request y code review.
   Nombrar ramas y commits según *Nomenclatura de ramas y commits* — no improvisar formato.
@@ -325,8 +349,10 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 - **No confiar en `proxy.ts` ni en los layouts como seguridad** — son UX. La autorización
   real la hace Spring Boot.
 - No introducir carpetas tipo `atoms/molecules/organisms`.
-- **No implementar `mailto:` ni plantillas de mail en el frontend** — el RF-21 cambió: el
-  backend manda el mail. El front solo transmite la decisión (ver *Mails al postulante*).
+- **No armar, disparar ni "enviar" un mail al alumno desde el backend** — el único correo
+  automático del sistema va a la empresa (RF-POS-01); contactar al alumno es un `mailto:`
+  del frontend que la empresa edita y envía desde su propio cliente (ver *Mails: aviso a
+  la empresa (backend) + contacto al alumno (`mailto:`, frontend)*).
 - **No traducir el modelo de datos al español** — los tipos espejan el MER en inglés.
 - No importar desde `features/` de otro dominio. Si algo se comparte, sube a
   `components/`, `lib/` o `types/`.
@@ -347,7 +373,7 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 
 | Dominio | alumno | empresa | admin |
 |---|---|---|---|
-| `puestos` | feed, ver detalle | crear/editar/pausar | moderar, despublicar |
+| `puestos` | feed, ver detalle | crear/editar/cerrar | moderar (dar de baja) |
 | `postulaciones` | postularse, ver estado | gestionar postulantes, `mailto:` | — |
 | `perfil` | dueño | ve perfiles de postulantes | — |
 | `moderacion` | — | — | dueño |
@@ -454,44 +480,46 @@ API exista.
 
 ## Pendiente de aclarar
 
-### ✅ Resueltas por el MER + el equipo
+### ✅ Resueltas por el SRS v2.1
 
-- ~~**Estado de postulación**: RF-20 usa "avanza", el modelo dice "aceptado".~~
-  El MER dice `enum(PENDIENTE, VISTO, FINALIZADO)` — ninguno de los dos. Tipado como
-  `ApplicationStatus`.
-- ~~**Avanza vs. rechazo para el RF-21**~~ → resuelto por diseño: la decisión viaja en el
-  payload del cambio de estado y **el backend manda el mail**. El enum no necesita
-  distinguirlo. Ver *Mails al postulante*.
-- ~~**Orden del feed por "coincidencia" (RF-14)**~~ → el MER tiene `Area` jerárquica
-  clasificando **tanto `Degree` como `Vacancy`**: el match es por reglas (área de la
-  carrera vs. área de la vacante), no IA/ML. **No choca con "fuera de alcance"**.
-- ~~**Notificaciones dentro o fuera de alcance**~~ → el backend manda mails; push sigue
-  afuera.
-
-### 🔴 El v3 quedó desactualizado — hay que corregirlo
-
-1. **`Vacancy.status` tiene `pending`**: el v3 dice que el puesto se publica solo al
-   crearse. Es falso — Admin UCU aprueba antes.
-2. **Envío automático de correo ya no está fuera de alcance**: el backend manda los mails
-   del RF-21. El `mailto:` quedó descartado.
+- ~~**Estado de postulación**: "avanza" vs. "aceptado".~~ `ApplicationStatus:
+  enum(PENDIENTE, VISTO, ACEPTADO, RECHAZADO)` (DEC-06) — dos estados terminales
+  explícitos, no un único `FINALIZADO`. Nunca retrocede (RN-08).
+- ~~**Avanza vs. rechazo para contactar al postulante**~~ → el propio estado
+  (`ACEPTADO`/`RECHAZADO`) ya lo distingue; no hace falta un flag aparte. Contactar al
+  alumno es un asunto separado: `mailto:` armado por la empresa — ver *Mails: aviso a la
+  empresa (backend) + contacto al alumno*.
+- ~~**Orden del feed por "coincidencia"**~~ → `Area` es jerárquica y clasifica tanto
+  `Degree` como `Vacancy` (RN-14): el match es por reglas (área de la carrera vs. área de
+  la vacante), no IA/ML. No choca con "fuera de alcance".
+- ~~**Notificaciones dentro o fuera de alcance**~~ → un único correo automático, a la
+  empresa (RF-POS-01); nunca al alumno. In-app y push siguen afuera.
+- ~~**`Vacancy.status` tiene `pending`**~~ → resuelto en sentido contrario a lo que decía
+  antes esta sección: **no tiene `pending`**. Post-moderación confirmada (DEC-01, RN-03):
+  el puesto se publica solo al crearse, Admin UCU revisa y da de baja después.
+- ~~**`Company.approved` es booleano**~~ → ya no: `Company.status:
+  enum(PENDIENTE, APROBADA, RECHAZADA)`. El rechazo ya es representable.
+- ~~**Formato de import de LinkedIn**~~ → confirmado **PDF/CSV/TXT/ZIP**, máx. 5 MB,
+  prioridad Baja (RF-PER-05) — no bloquea el MVP.
 
 ### 🟠 Abiertas
 
-- **Formato de import de LinkedIn**: RF-05 dice ZIP/CSV/PDF/txt, el flujo 6.2 dice
-  PDF/DOCX. El MER no tiene tabla de archivos importados (solo `User.linkedinUrl`), lo que
-  sugiere un alcance liviano. Confirmar con backend.
-  Bajó de prioridad Alta a Baja — no bloquea el MVP.
-- **`Company.approved` es booleano**: no permite registrar un rechazo. Deuda aceptada.
 - **El contrato de la API** — ver los `TODO:` en `types/` y `features/*/types.ts`. Todo lo
   que falta confirmar está marcado ahí.
+- **Cómo llegan `Company.status` / `StudentProfile.status` al frontend** — ¿en `GET /me`?
+  Ver *Auth: cookie `httpOnly`*.
 
 ## Fuera de alcance del proyecto
 
-Según el documento de requerimientos (v3): integración en vivo con la API de LinkedIn,
-video-CV, interfaz tipo "Tinder del empleo", chat en tiempo real, motor de recomendación
-con IA/ML/ranking automático de candidatos, notificaciones push, pagos/suscripciones,
-testing automatizado, CI/CD y despliegue en la nube.
+Según el SRS v2.1: integración en vivo con la API de LinkedIn, video-CV, interfaz tipo
+"Tinder del empleo", chat en tiempo real, motor de recomendación con IA/ML/ranking
+automático de candidatos, notificaciones in-app y push, pagos/suscripciones/pasarela de
+pagos, recuperación de contraseña por correo (identificada como evolución posterior al
+MVP), integración en vivo con los sistemas de la UCU para validar alumnos (el padrón se
+carga como dato semilla, sin ABM en la interfaz), testing automatizado, CI/CD y
+despliegue en la nube.
 
-⚠️ **Corrección**: el v3 lista *"envío automático de notificaciones por correo"* como fuera
-de alcance. **Ya no lo está**: el backend manda los mails del RF-21 (ver *Mails al
-postulante*). Sigue fuera de alcance el push. Falta actualizar el v3.
+El único correo automático del sistema es el aviso a la empresa por nueva postulación
+(RF-POS-01) — ver *Mails: aviso a la empresa (backend) + contacto al alumno*. Ningún otro
+evento (cambio de estado de un puesto, de una postulación o de una solicitud de registro)
+dispara un envío, y el alumno nunca es destinatario de uno.
