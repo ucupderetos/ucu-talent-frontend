@@ -1,0 +1,35 @@
+// Items de navegación por rol. Fuente única: si una sección cambia de URL, se
+// toca acá y se actualizan navbar y sidebar juntos.
+//
+// ⚠️ PUNTO DE CONFLICTO entre los 3 grupos — coordinar antes de editar.
+
+import {
+  BriefcaseIcon,
+  FileTextIcon,
+  NewspaperIcon,
+  ShieldCheckIcon,
+  UserIcon,
+  type LucideIcon,
+} from "lucide-react";
+
+import type { Role } from "@/types";
+
+export interface NavItem {
+  /** Los labels y las URLs quedan en español: son cara al usuario. */
+  label: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
+  student: [
+    { label: "Feed", href: "/feed", icon: NewspaperIcon },
+    { label: "Mis postulaciones", href: "/postulaciones", icon: FileTextIcon },
+    { label: "Mi perfil", href: "/perfil", icon: UserIcon },
+  ],
+  company: [
+    // ⚠️ /puestos todavía no tiene page.tsx — lo crea el grupo de empresa.
+    { label: "Mis puestos", href: "/puestos", icon: BriefcaseIcon },
+  ],
+  admin: [{ label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon }],
+};

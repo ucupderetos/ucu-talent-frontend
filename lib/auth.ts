@@ -1,4 +1,81 @@
-// Helpers de autenticación y sesión: token, usuario actual, guards de rol.
-// TODO: implementar cuando se defina el mecanismo de auth del backend.
+// Helpers de autenticación y sesión. Lógica pura, sin UI ni React.
+// El hook que consume esto es features/auth/hooks/use-session.ts.
+//
+// ⚠️ ASUNCIÓN CLAVE: el JWT viaja en una cookie httpOnly seteada por Spring Boot.
+// Consecuencia directa: el cliente NO puede leer el token ni el rol. Para saber
+// quién es el usuario hay que preguntárselo al backend (GET /me). Si el equipo
+// de backend termina eligiendo un token manejado en el cliente, este archivo y
+// el `credentials: "include"` de api-client.ts son lo único que cambia.
 
-export {};
+import { ApiError, apiClient } from "@/lib/api-client";
+import { MOCK_USERS } from "@/lib/fixtures";
+import type { Role, User } from "@/types";
+
+/**
+ * ⚠️ PROVISORIO: el path real lo define el contrato de la API.
+ * Es el endpoint que devuelve el usuario de la cookie de sesión.
+ */
+const CURRENT_USER_ENDPOINT = "/me";
+
+/**
+ * Modo desarrollo sin backend: NEXT_PUBLIC_MOCK_SESSION=student|company|admin
+ * saltea el GET /me y devuelve un usuario de fixtures.
+ *
+ * Existe porque, sin esto, no hay backend → falla /me → RoleGuard bloquea toda
+ * ruta protegida y ningún grupo puede ver sus pantallas. Poné el rol de tu
+ * grupo en .env.local y trabajá.
+ *
+ * 🔴 BORRAR cuando exista el backend. No es seguridad: solo cambia lo que el
+ * frontend CREE que sos. Spring Boot no lo mira, así que en producción un
+ * usuario que se lo setee no gana ningún permiso — pero igual no queremos este
+ * código vivo cuando ya no haga falta.
+ */
+const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
+
+function mockUser(): User | null {
+  if (!MOCK_ROLE) return null;
+  if (MOCK_ROLE in MOCK_USERS) return MOCK_USERS[MOCK_ROLE as Role];
+
+  // Typo en .env.local: mejor gritar que fingir que no hay sesión y mandar a
+  // login sin explicar por qué.
+  throw new Error(
+    `NEXT_PUBLIC_MOCK_SESSION="${MOCK_ROLE}" no es un rol válido. Usá: student, company o admin.`,
+  );
+}
+
+/**
+ * Devuelve el usuario de la sesión actual, o `null` si no hay sesión.
+ *
+ * Un 401 NO es un error acá: es la respuesta esperada para "no logueado".
+ * Cualquier otra falla (500, red caída) se propaga como ApiError, porque no
+ * queremos mostrar la pantalla de login cuando en realidad se cayó el backend.
+ */
+export async function getCurrentUser(signal?: AbortSignal): Promise<User | null> {
+  const mock = mockUser();
+  if (mock) return mock;
+
+  try {
+    return await apiClient.get<User>(CURRENT_USER_ENDPOINT, { signal });
+  } catch (error) {
+    if (error instanceof ApiError && error.isUnauthenticated) return null;
+    throw error;
+  }
+}
+
+/** ¿Este rol puede entrar a una sección restringida a `allowed`? */
+export function canAccess(role: Role | undefined, allowed: readonly Role[]): boolean {
+  return role !== undefined && allowed.includes(role);
+}
+
+/** Landing de cada rol después del login, y destino del redirect cuando alguien
+ *  cae en una sección que no le corresponde.
+ *  Las URLs quedan en español: son cara al usuario. */
+export const HOME_ROUTE_BY_ROLE: Record<Role, string> = {
+  student: "/feed",
+  company: "/puestos",
+  admin: "/moderacion",
+};
+
+export function homeRouteFor(role: Role): string {
+  return HOME_ROUTE_BY_ROLE[role];
+}
