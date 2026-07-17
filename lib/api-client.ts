@@ -31,12 +31,12 @@ export class ApiError extends Error {
   }
 
   /** No autenticado: no hay cookie de sesión o venció. */
-  get esNoAutenticado(): boolean {
+  get isUnauthenticated(): boolean {
     return this.status === 401;
   }
 
   /** Autenticado pero sin permiso para esto (rol equivocado, empresa no aprobada). */
-  get esProhibido(): boolean {
+  get isForbidden(): boolean {
     return this.status === 403;
   }
 }
@@ -47,7 +47,7 @@ interface RequestOptions {
   signal?: AbortSignal;
 }
 
-function construirUrl(path: string, params?: RequestOptions["params"]): string {
+function buildUrl(path: string, params?: RequestOptions["params"]): string {
   if (!BASE_URL) {
     throw new ApiError(
       0,
@@ -60,8 +60,8 @@ function construirUrl(path: string, params?: RequestOptions["params"]): string {
     BASE_URL.endsWith("/") ? BASE_URL : `${BASE_URL}/`,
   );
 
-  for (const [clave, valor] of Object.entries(params ?? {})) {
-    if (valor !== undefined) url.searchParams.set(clave, String(valor));
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value !== undefined) url.searchParams.set(key, String(value));
   }
 
   return url.toString();
@@ -73,7 +73,7 @@ async function request<T>(
   body?: unknown,
   options: RequestOptions = {},
 ): Promise<T> {
-  const url = construirUrl(path, options.params);
+  const url = buildUrl(path, options.params);
 
   let response: Response;
   try {
@@ -87,41 +87,41 @@ async function request<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: options.signal,
     });
-  } catch (causa) {
+  } catch (cause) {
     // Nunca llegamos al servidor: red caída, CORS, o abort.
-    if (causa instanceof DOMException && causa.name === "AbortError") throw causa;
-    throw new ApiError(0, "No se pudo conectar con el servidor.", causa);
+    if (cause instanceof DOMException && cause.name === "AbortError") throw cause;
+    throw new ApiError(0, "No se pudo conectar con el servidor.", cause);
   }
 
   if (response.status === 204) return undefined as T;
 
-  const textoCrudo = await response.text();
-  const payload = parsearJsonSeguro(textoCrudo);
+  const rawText = await response.text();
+  const payload = safeJsonParse(rawText);
 
   if (!response.ok) {
-    throw new ApiError(response.status, mensajeDeError(payload, response), payload);
+    throw new ApiError(response.status, errorMessage(payload, response), payload);
   }
 
   return payload as T;
 }
 
-function parsearJsonSeguro(texto: string): unknown {
-  if (!texto) return undefined;
+function safeJsonParse(text: string): unknown {
+  if (!text) return undefined;
   try {
-    return JSON.parse(texto);
+    return JSON.parse(text);
   } catch {
     // El backend mandó algo que no es JSON (ej. un stack trace de Spring en HTML).
-    return texto;
+    return text;
   }
 }
 
-function mensajeDeError(payload: unknown, response: Response): string {
+function errorMessage(payload: unknown, response: Response): string {
   // ⚠️ Spring Boot suele mandar { message } o { error }, pero la forma real del
   // error todavía no está confirmada. Ajustar cuando exista el contrato.
   if (payload && typeof payload === "object") {
-    const posible = payload as { message?: unknown; error?: unknown };
-    if (typeof posible.message === "string") return posible.message;
-    if (typeof posible.error === "string") return posible.error;
+    const candidate = payload as { message?: unknown; error?: unknown };
+    if (typeof candidate.message === "string") return candidate.message;
+    if (typeof candidate.error === "string") return candidate.error;
   }
   return `${response.status} ${response.statusText}`;
 }

@@ -12,23 +12,24 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { Rol } from "@/types";
+import type { Role } from "@/types";
 
 export interface NavItem {
+  /** Los labels y las URLs quedan en español: son cara al usuario. */
   label: string;
   href: string;
-  icono: LucideIcon;
+  icon: LucideIcon;
 }
 
-export const NAV_POR_ROL: Record<Rol, readonly NavItem[]> = {
-  alumno: [
-    { label: "Feed", href: "/feed", icono: NewspaperIcon },
-    { label: "Mis postulaciones", href: "/postulaciones", icono: FileTextIcon },
-    { label: "Mi perfil", href: "/perfil", icono: UserIcon },
+export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
+  student: [
+    { label: "Feed", href: "/feed", icon: NewspaperIcon },
+    { label: "Mis postulaciones", href: "/postulaciones", icon: FileTextIcon },
+    { label: "Mi perfil", href: "/perfil", icon: UserIcon },
   ],
-  empresa: [
+  company: [
     // ⚠️ /puestos todavía no tiene page.tsx — lo crea el grupo de empresa.
-    { label: "Mis puestos", href: "/puestos", icono: BriefcaseIcon },
+    { label: "Mis puestos", href: "/puestos", icon: BriefcaseIcon },
   ],
-  admin: [{ label: "Moderación", href: "/moderacion", icono: ShieldCheckIcon }],
+  admin: [{ label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon }],
 };

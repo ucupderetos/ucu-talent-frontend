@@ -13,22 +13,32 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-import { NAV_POR_ROL } from "@/components/layout/nav-items";
+import { NAV_BY_ROLE } from "@/components/layout/nav-items";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 
-export function Navbar({ usuario }: { usuario: User | null }) {
-  const [menuAbierto, setMenuAbierto] = useState(false);
+/**
+ * El MER separa `name` y `surname`.
+ * ⚠️ Para una empresa, `name` es el nombre de la empresa (`Company` no tiene
+ * campo propio de nombre) y no está claro qué trae `surname`.
+ * TODO: confirmar con backend — si viene vacío, el trim() lo cubre.
+ */
+function displayName(user: User): string {
+  return `${user.name} ${user.surname}`.trim();
+}
+
+export function Navbar({ user }: { user: User | null }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
-  const items = usuario ? NAV_POR_ROL[usuario.rol] : [];
+  const items = user ? NAV_BY_ROLE[user.role] : [];
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="flex h-14 items-center gap-2 px-4">
         {items.length > 0 && (
-          <Sheet open={menuAbierto} onOpenChange={setMenuAbierto}>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
@@ -46,7 +56,7 @@ export function Navbar({ usuario }: { usuario: User | null }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => setMenuAbierto(false)}
+                    onClick={() => setMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm",
                       pathname.startsWith(item.href)
@@ -54,7 +64,7 @@ export function Navbar({ usuario }: { usuario: User | null }) {
                         : "text-muted-foreground hover:bg-accent/50",
                     )}
                   >
-                    <item.icono className="size-4 shrink-0" />
+                    <item.icon className="size-4 shrink-0" />
                     {item.label}
                   </Link>
                 ))}
@@ -67,10 +77,10 @@ export function Navbar({ usuario }: { usuario: User | null }) {
           UCU Talent
         </Link>
 
-        {usuario && (
+        {user && (
           <div className="ml-auto flex min-w-0 items-center gap-3">
             <span className="hidden truncate text-sm text-muted-foreground sm:inline">
-              {usuario.nombre}
+              {displayName(user)}
             </span>
           </div>
         )}

@@ -11,22 +11,22 @@ import { useEffect } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/hooks/use-session";
-import { rutaInicialPara } from "@/lib/auth";
+import { homeRouteFor } from "@/lib/auth";
 
 export function GuestOnly({ children }: { children: React.ReactNode }) {
-  const { usuario, cargando } = useSession();
+  const { user, isLoading } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!cargando && usuario) router.replace(rutaInicialPara(usuario.rol));
-  }, [cargando, usuario, router]);
+    if (!isLoading && user) router.replace(homeRouteFor(user.role));
+  }, [isLoading, user, router]);
 
-  if (cargando) {
+  if (isLoading) {
     return <Skeleton className="h-64 w-full max-w-sm" />;
   }
 
   // Redirigiendo a su sección: no parpadeamos el formulario de login.
-  if (usuario) return null;
+  if (user) return null;
 
   return <>{children}</>;
 }

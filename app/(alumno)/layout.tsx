@@ -7,5 +7,5 @@
 import { RoleGuard } from "@/features/auth/components/role-guard";
 
 export default function AlumnoLayout({ children }: { children: React.ReactNode }) {
-  return <RoleGuard permitidos={["alumno"]}>{children}</RoleGuard>;
+  return <RoleGuard allowed={["student"]}>{children}</RoleGuard>;
 }

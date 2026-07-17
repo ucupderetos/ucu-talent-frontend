@@ -14,33 +14,33 @@ import { useEffect } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/hooks/use-session";
-import { puedeAcceder, rutaInicialPara } from "@/lib/auth";
-import type { Rol } from "@/types";
+import { canAccess, homeRouteFor } from "@/lib/auth";
+import type { Role } from "@/types";
 
 export function RoleGuard({
-  permitidos,
+  allowed,
   children,
 }: {
-  permitidos: readonly Rol[];
+  allowed: readonly Role[];
   children: React.ReactNode;
 }) {
-  const { usuario, cargando, error } = useSession();
+  const { user, isLoading, error } = useSession();
   const router = useRouter();
-  const autorizado = puedeAcceder(usuario?.rol, permitidos);
+  const authorized = canAccess(user?.role, allowed);
 
   useEffect(() => {
-    if (cargando || error) return;
-    if (!usuario) {
+    if (isLoading || error) return;
+    if (!user) {
       router.replace("/login");
       return;
     }
-    if (!autorizado) {
+    if (!authorized) {
       // Está logueado pero en la sección equivocada: lo mandamos a la suya.
-      router.replace(rutaInicialPara(usuario.rol));
+      router.replace(homeRouteFor(user.role));
     }
-  }, [cargando, error, usuario, autorizado, router]);
+  }, [isLoading, error, user, authorized, router]);
 
-  if (cargando) return <EsqueletoDeCarga />;
+  if (isLoading) return <LoadingSkeleton />;
 
   // Falla real del backend. Mandarlo a /login sería mentirle: no es que no esté
   // logueado, es que no pudimos preguntar.
@@ -56,12 +56,12 @@ export function RoleGuard({
   }
 
   // Redirigiendo: no parpadeamos contenido que no corresponde.
-  if (!usuario || !autorizado) return null;
+  if (!user || !authorized) return null;
 
-  return <AppShell usuario={usuario}>{children}</AppShell>;
+  return <AppShell user={user}>{children}</AppShell>;
 }
 
-function EsqueletoDeCarga() {
+function LoadingSkeleton() {
   return (
     <div className="flex flex-1 flex-col">
       <Skeleton className="h-14 w-full rounded-none" />

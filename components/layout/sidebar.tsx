@@ -1,20 +1,20 @@
 "use client";
 
 // Navegación lateral. Solo desktop: en mobile los mismos items salen por el
-// Sheet del Navbar, alimentados por la misma fuente (NAV_POR_ROL).
+// Sheet del Navbar, alimentados por la misma fuente (NAV_BY_ROLE).
 //
 // ⚠️ PUNTO DE CONFLICTO entre los 3 grupos — coordinar antes de editar.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { NAV_POR_ROL } from "@/components/layout/nav-items";
+import { NAV_BY_ROLE } from "@/components/layout/nav-items";
 import { cn } from "@/lib/utils";
-import type { Rol } from "@/types";
+import type { Role } from "@/types";
 
-export function Sidebar({ rol }: { rol: Rol }) {
+export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
-  const items = NAV_POR_ROL[rol];
+  const items = NAV_BY_ROLE[role];
 
   return (
     <aside className="hidden w-56 shrink-0 border-r md:block">
@@ -30,7 +30,7 @@ export function Sidebar({ rol }: { rol: Rol }) {
                 : "text-muted-foreground hover:bg-accent/50",
             )}
           >
-            <item.icono className="size-4 shrink-0" />
+            <item.icon className="size-4 shrink-0" />
             {item.label}
           </Link>
         ))}

@@ -8,17 +8,17 @@
 // el `credentials: "include"` de api-client.ts son lo único que cambia.
 
 import { ApiError, apiClient } from "@/lib/api-client";
-import { USUARIOS_MOCK } from "@/lib/fixtures";
-import type { Rol, User } from "@/types";
+import { MOCK_USERS } from "@/lib/fixtures";
+import type { Role, User } from "@/types";
 
 /**
  * ⚠️ PROVISORIO: el path real lo define el contrato de la API.
  * Es el endpoint que devuelve el usuario de la cookie de sesión.
  */
-const ENDPOINT_USUARIO_ACTUAL = "/me";
+const CURRENT_USER_ENDPOINT = "/me";
 
 /**
- * Modo desarrollo sin backend: NEXT_PUBLIC_MOCK_SESSION=alumno|empresa|admin
+ * Modo desarrollo sin backend: NEXT_PUBLIC_MOCK_SESSION=student|company|admin
  * saltea el GET /me y devuelve un usuario de fixtures.
  *
  * Existe porque, sin esto, no hay backend → falla /me → RoleGuard bloquea toda
@@ -30,16 +30,16 @@ const ENDPOINT_USUARIO_ACTUAL = "/me";
  * usuario que se lo setee no gana ningún permiso — pero igual no queremos este
  * código vivo cuando ya no haga falta.
  */
-const ROL_MOCK = process.env.NEXT_PUBLIC_MOCK_SESSION;
+const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
-function usuarioMock(): User | null {
-  if (!ROL_MOCK) return null;
-  if (ROL_MOCK in USUARIOS_MOCK) return USUARIOS_MOCK[ROL_MOCK as Rol];
+function mockUser(): User | null {
+  if (!MOCK_ROLE) return null;
+  if (MOCK_ROLE in MOCK_USERS) return MOCK_USERS[MOCK_ROLE as Role];
 
   // Typo en .env.local: mejor gritar que fingir que no hay sesión y mandar a
   // login sin explicar por qué.
   throw new Error(
-    `NEXT_PUBLIC_MOCK_SESSION="${ROL_MOCK}" no es un rol válido. Usá: alumno, empresa o admin.`,
+    `NEXT_PUBLIC_MOCK_SESSION="${MOCK_ROLE}" no es un rol válido. Usá: student, company o admin.`,
   );
 }
 
@@ -50,31 +50,32 @@ function usuarioMock(): User | null {
  * Cualquier otra falla (500, red caída) se propaga como ApiError, porque no
  * queremos mostrar la pantalla de login cuando en realidad se cayó el backend.
  */
-export async function obtenerUsuarioActual(signal?: AbortSignal): Promise<User | null> {
-  const mock = usuarioMock();
+export async function getCurrentUser(signal?: AbortSignal): Promise<User | null> {
+  const mock = mockUser();
   if (mock) return mock;
 
   try {
-    return await apiClient.get<User>(ENDPOINT_USUARIO_ACTUAL, { signal });
+    return await apiClient.get<User>(CURRENT_USER_ENDPOINT, { signal });
   } catch (error) {
-    if (error instanceof ApiError && error.esNoAutenticado) return null;
+    if (error instanceof ApiError && error.isUnauthenticated) return null;
     throw error;
   }
 }
 
-/** ¿Este rol puede entrar a una sección restringida a `permitidos`? */
-export function puedeAcceder(rol: Rol | undefined, permitidos: readonly Rol[]): boolean {
-  return rol !== undefined && permitidos.includes(rol);
+/** ¿Este rol puede entrar a una sección restringida a `allowed`? */
+export function canAccess(role: Role | undefined, allowed: readonly Role[]): boolean {
+  return role !== undefined && allowed.includes(role);
 }
 
 /** Landing de cada rol después del login, y destino del redirect cuando alguien
- *  cae en una sección que no le corresponde. */
-export const RUTA_INICIAL_POR_ROL: Record<Rol, string> = {
-  alumno: "/feed",
-  empresa: "/puestos",
+ *  cae en una sección que no le corresponde.
+ *  Las URLs quedan en español: son cara al usuario. */
+export const HOME_ROUTE_BY_ROLE: Record<Role, string> = {
+  student: "/feed",
+  company: "/puestos",
   admin: "/moderacion",
 };
 
-export function rutaInicialPara(rol: Rol): string {
-  return RUTA_INICIAL_POR_ROL[rol];
+export function homeRouteFor(role: Role): string {
+  return HOME_ROUTE_BY_ROLE[role];
 }

@@ -1,38 +1,57 @@
-// Tipos del dominio: puestos.
+// Tipos del dominio: puestos (MER: `Vacancy`).
 //
-// La entidad `Puesto` vive en @/types (la comparten moderacion y postulaciones).
-// Acá va solo lo específico de este dominio: filtros, orden e inputs de form.
+// La entidad `Vacancy` vive en @/types (la comparten moderacion y postulaciones).
+// Acá va solo lo específico: filtros, orden e inputs de formulario.
 //
 // ⚠️ PROVISORIO: el contrato de la API todavía no está definido.
 
-import type { EstadoPuesto } from "@/types";
+import type { Department, Modality, VacancyStatus } from "@/types";
 
 /**
  * Orden del feed.
  *
- * ⚠️ "coincidencia" (RF-14) está PENDIENTE DE ACLARAR: no está confirmado si es
- * un ordenamiento simple por reglas (carrera/skills en común) o si se lee como
- * motor de matching — lo cual chocaría con "fuera de alcance: recomendación con
- * IA/ML". No construir sobre esto sin confirmarlo con el equipo/docente.
+ * `match` (RF-14) se resuelve por reglas: matchea el `Area` de las carreras del
+ * alumno (Education → Degree → Area) contra el `Area` de la vacante. No es IA/ML,
+ * así que no choca con "fuera de alcance".
+ * TODO: confirmar si el backend expone ese orden o si se calcula en el front.
  */
-export type OrdenFeed = "recientes" | "coincidencia";
+export type FeedOrder = "recent" | "match";
 
-/** Filtros del feed de puestos (RF-14). */
-export interface FiltrosPuestos {
-  busqueda?: string;
-  carrera?: string;
-  skills?: string[];
-  orden?: OrdenFeed;
+/** Filtros del feed de vacantes (RF-14). */
+export interface VacancyFilters {
+  search?: string;
+  areaId?: string;
+  modality?: Modality;
+  location?: Department;
+  order?: FeedOrder;
 }
 
-/** Payload para crear o editar un puesto. La empresa no elige el estado al crear:
- *  se publica por default. */
-export interface PuestoInput {
-  titulo: string;
-  descripcion: string;
+/**
+ * Payload para crear o editar una vacante.
+ *
+ * La empresa no elige el estado: al crearse queda en `pending` hasta que Admin
+ * UCU la apruebe.
+ */
+export interface VacancyInput {
+  name: string;
+  description: string;
+  requirements: string;
+  areaId: string;
+  contractType: string;
+  modality: Modality;
+  salaryRange: string;
+  location: Department;
 }
 
-/** Cambio de estado de un puesto hecho por la empresa dueña. */
-export interface CambioEstadoPuesto {
-  estado: Extract<EstadoPuesto, "pausado" | "publicado" | "finalizado">;
+/**
+ * Cambio de estado hecho por la EMPRESA dueña de la vacante.
+ *
+ * `published` y `rejected` son de Admin UCU, no de la empresa — ver
+ * features/moderacion/types.ts.
+ *
+ * TODO: confirmar si despausar devuelve a `published` directo o si vuelve a
+ * pasar por `pending` (o sea, si requiere re-aprobación).
+ */
+export interface CompanyVacancyStatusChange {
+  status: Extract<VacancyStatus, "paused" | "published" | "closed">;
 }

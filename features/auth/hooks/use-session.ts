@@ -11,33 +11,33 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { obtenerUsuarioActual } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import type { User } from "@/types";
 
 /** Query key de la sesión. Exportada para poder invalidarla al hacer login/logout. */
-export const SESSION_QUERY_KEY = ["sesion"] as const;
+export const SESSION_QUERY_KEY = ["session"] as const;
 
-interface Sesion {
-  usuario: User | null;
+interface Session {
+  user: User | null;
   /** true mientras no sabemos todavía si hay sesión o no. */
-  cargando: boolean;
-  /** Falla real del backend (500, red caída). Un 401 NO llega acá: es usuario null. */
+  isLoading: boolean;
+  /** Falla real del backend (500, red caída). Un 401 NO llega acá: es user null. */
   error: Error | null;
 }
 
 /**
- * Sesión actual. Tirá del `cargando` antes de leer `usuario`: mientras es true,
- * `usuario: null` significa "todavía no sé", no "no hay nadie logueado".
+ * Sesión actual. Tirá del `isLoading` antes de leer `user`: mientras es true,
+ * `user: null` significa "todavía no sé", no "no hay nadie logueado".
  */
-export function useSession(): Sesion {
+export function useSession(): Session {
   const { data, isPending, error } = useQuery({
     queryKey: SESSION_QUERY_KEY,
-    queryFn: ({ signal }) => obtenerUsuarioActual(signal),
+    queryFn: ({ signal }) => getCurrentUser(signal),
   });
 
   return {
-    usuario: data ?? null,
-    cargando: isPending,
+    user: data ?? null,
+    isLoading: isPending,
     error,
   };
 }

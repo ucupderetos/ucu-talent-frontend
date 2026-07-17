@@ -9,99 +9,166 @@
 // NEXT_PUBLIC_MOCK_SESSION para poder simular el usuario logueado.
 
 import type {
-  Empresa,
-  PerfilAlumno,
-  Postulacion,
-  Puesto,
+  Area,
+  Company,
+  Degree,
+  Education,
+  Role,
+  StudentProfile,
   User,
+  Vacancy,
+  VacancyApplication,
 } from "@/types";
 
-export const USUARIOS_MOCK: Record<"alumno" | "empresa" | "admin", User> = {
-  alumno: {
+export const MOCK_USERS: Record<Role, User> = {
+  student: {
     id: "u-1",
-    nombre: "Lucía Fernández",
+    name: "Lucía",
+    surname: "Fernández",
     email: "lucia.fernandez@correo.ucu.edu.uy",
-    rol: "alumno",
+    role: "student",
+    phoneNumber: "099123456",
+    documentType: "cedula",
+    documentNumber: "5.123.456-7",
+    linkedinUrl: "https://linkedin.com/in/lucia-fernandez",
+    registeredAt: "2026-03-01T10:00:00.000Z",
   },
-  empresa: {
+  company: {
+    // Para una empresa, `name` es el nombre de la empresa: el MER no tiene
+    // `Company.name`. TODO: confirmar qué trae `surname` en este caso.
     id: "u-2",
-    nombre: "Martín Rodríguez",
-    email: "martin@datalab.com.uy",
-    rol: "empresa",
+    name: "DataLab",
+    surname: "",
+    email: "contacto@datalab.com.uy",
+    role: "company",
+    phoneNumber: "26001234",
+    documentType: "cedula",
+    documentNumber: "4.987.654-3",
+    linkedinUrl: "https://linkedin.com/company/datalab",
+    registeredAt: "2026-02-15T09:00:00.000Z",
   },
   admin: {
     id: "u-3",
-    nombre: "Admin UCU",
+    name: "Admin",
+    surname: "UCU",
     email: "talento@ucu.edu.uy",
-    rol: "admin",
+    role: "admin",
+    phoneNumber: "24872717",
+    documentType: "cedula",
+    documentNumber: "3.111.222-3",
+    linkedinUrl: "",
+    registeredAt: "2026-01-10T08:00:00.000Z",
   },
 };
 
-export const EMPRESAS_MOCK: Empresa[] = [
-  { id: "e-1", nombre: "DataLab", estado: "aprobada" },
-  // Para probar el gate de RF-13: esta todavía no puede operar.
-  { id: "e-2", nombre: "Startup Sin Aprobar", estado: "pendiente" },
+/** Áreas jerárquicas: son el mecanismo del match del RF-14. */
+export const MOCK_AREAS: Area[] = [
+  { id: "a-1", name: "Tecnología", parentAreaId: null },
+  { id: "a-2", name: "Desarrollo de Software", parentAreaId: "a-1" },
+  { id: "a-3", name: "Datos", parentAreaId: "a-1" },
 ];
 
-export const PUESTOS_MOCK: Puesto[] = [
+export const MOCK_DEGREES: Degree[] = [
+  { id: "d-1", areaId: "a-2", name: "Ingeniería en Informática", isUcu: true },
+  { id: "d-2", areaId: "a-3", name: "Analista en Sistemas", isUcu: true },
+];
+
+export const MOCK_COMPANIES: Company[] = [
   {
-    id: "p-1",
-    titulo: "Desarrollador/a Frontend Jr",
-    descripcion: "React y TypeScript. Pasantía de 20 hs semanales, modalidad híbrida.",
-    estado: "publicado",
-    empresaId: "e-1",
-    empresaNombre: "DataLab",
-    publicadoEn: "2026-07-10T14:00:00.000Z",
+    id: "c-1",
+    userId: "u-2",
+    industry: "Tecnología",
+    description: "Consultora de datos y software.",
+    webUrl: "https://datalab.com.uy",
+    linkedinUrl: "https://linkedin.com/company/datalab",
+    location: "Montevideo",
+    approved: true,
   },
   {
-    id: "p-2",
-    titulo: "Analista de Datos",
-    descripcion: "SQL y Python. Para estudiantes avanzados de Ingeniería o afines.",
-    estado: "pausado",
-    empresaId: "e-1",
-    empresaNombre: "DataLab",
-    publicadoEn: "2026-06-28T09:30:00.000Z",
+    // Para probar el gate de RF-13: esta todavía no puede operar.
+    id: "c-2",
+    userId: "u-5",
+    industry: "Software",
+    description: "Startup recién registrada.",
+    webUrl: "https://startup.com.uy",
+    linkedinUrl: "",
+    location: "Canelones",
+    approved: false,
   },
 ];
 
-export const ALUMNOS_MOCK: PerfilAlumno[] = [
+export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
+  { id: "sp-1", userId: "u-1", skills: ["React", "TypeScript", "SQL"] },
+  { id: "sp-2", userId: "u-4", skills: ["Python", "SQL"] },
+];
+
+export const MOCK_EDUCATION: Education[] = [
   {
-    id: "u-1",
-    nombre: "Lucía Fernández",
-    email: "lucia.fernandez@correo.ucu.edu.uy",
-    carrera: "Ingeniería en Informática",
-    skills: ["React", "TypeScript", "SQL"],
+    id: "e-1",
+    studentProfileId: "sp-1",
+    degreeId: "d-1",
+    description: "Cursando 4º año.",
+    startDate: "2023-03-01T00:00:00.000Z",
+    endDate: null,
+  },
+];
+
+/** Una vacante por cada estado relevante, para poder maquetar los casos. */
+export const MOCK_VACANCIES: Vacancy[] = [
+  {
+    id: "v-1",
+    companyId: "c-1",
+    areaId: "a-2",
+    name: "Desarrollador/a Frontend Jr",
+    description: "React y TypeScript. Pasantía de 20 hs semanales.",
+    requirements: "Estudiante avanzado. React, Git.",
+    contractType: "Pasantía",
+    modality: "hybrid",
+    status: "published",
+    salaryRange: "$35.000 - $45.000",
+    publishedAt: "2026-07-10T14:00:00.000Z",
+    closedAt: null,
+    location: "Montevideo",
   },
   {
-    id: "u-4",
-    nombre: "Diego Pereira",
-    email: "diego.pereira@correo.ucu.edu.uy",
-    carrera: "Analista en Sistemas",
-    skills: ["Python", "SQL"],
+    // Esperando aprobación de Admin UCU: no la ve nadie en el feed todavía.
+    id: "v-2",
+    companyId: "c-1",
+    areaId: "a-3",
+    name: "Analista de Datos",
+    description: "SQL y Python.",
+    requirements: "SQL intermedio, Python básico.",
+    contractType: "Part-time",
+    modality: "remote",
+    status: "pending",
+    salaryRange: "$40.000 - $55.000",
+    publishedAt: null,
+    closedAt: null,
+    location: "Montevideo",
   },
 ];
 
 /** Una postulación por cada estado, para poder maquetar los 3 casos. */
-export const POSTULACIONES_MOCK: Postulacion[] = [
+export const MOCK_APPLICATIONS: VacancyApplication[] = [
   {
-    id: "po-1",
-    puestoId: "p-1",
-    alumnoId: "u-1",
-    estado: "pendiente",
-    postuladoEn: "2026-07-12T11:00:00.000Z",
+    id: "va-1",
+    vacancyId: "v-1",
+    studentProfileId: "sp-1",
+    status: "PENDIENTE",
+    appliedAt: "2026-07-12T11:00:00.000Z",
   },
   {
-    id: "po-2",
-    puestoId: "p-1",
-    alumnoId: "u-4",
-    estado: "visto",
-    postuladoEn: "2026-07-11T16:45:00.000Z",
+    id: "va-2",
+    vacancyId: "v-1",
+    studentProfileId: "sp-2",
+    status: "VISTO",
+    appliedAt: "2026-07-11T16:45:00.000Z",
   },
   {
-    id: "po-3",
-    puestoId: "p-2",
-    alumnoId: "u-1",
-    estado: "finalizado",
-    postuladoEn: "2026-07-01T08:15:00.000Z",
+    id: "va-3",
+    vacancyId: "v-1",
+    studentProfileId: "sp-1",
+    status: "FINALIZADO",
+    appliedAt: "2026-07-01T08:15:00.000Z",
   },
 ];

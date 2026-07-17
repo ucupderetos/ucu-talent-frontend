@@ -1,41 +1,59 @@
-// Tipos del dominio: postulaciones.
+// Tipos del dominio: postulaciones (MER: `Vacancy_Application`).
 //
-// Las entidades `Postulacion` y `PerfilAlumno` viven en @/types (las comparten
-// alumno y empresa). Acá va lo específico: view models de la gestión de
-// postulantes y las plantillas de mail del RF-21.
+// Las entidades core viven en @/types. Acá va lo específico: view models de la
+// gestión de postulantes y el payload del cambio de estado.
 //
 // ⚠️ PROVISORIO: el contrato de la API todavía no está definido.
 
-import type { EstadoPostulacion, PerfilAlumno, Postulacion, Puesto } from "@/types";
+import type {
+  ApplicationStatus,
+  Education,
+  StudentProfile,
+  User,
+  Vacancy,
+  VacancyApplication,
+  WorkExperience,
+} from "@/types";
 
-/** Fila de la lista de postulantes que ve la empresa: la postulación + quién es. */
-export interface PostulanteEnLista {
-  postulacion: Postulacion;
-  alumno: PerfilAlumno;
+/**
+ * Fila de la lista de postulantes que ve la empresa.
+ *
+ * `StudentProfile` no trae nombre ni email (están en `User`), así que la vista
+ * necesita las dos entidades.
+ * TODO: confirmar si el backend devuelve esto ya agregado o si son 2 requests.
+ */
+export interface ApplicantListItem {
+  application: VacancyApplication;
+  profile: StudentProfile;
+  user: User;
 }
 
-/** Fila de "mis postulaciones" que ve el alumno: la postulación + a qué puesto. */
-export interface MiPostulacion {
-  postulacion: Postulacion;
-  puesto: Puesto;
+/** Detalle del postulante: la empresa ve el CV completo del candidato. */
+export interface ApplicantDetail extends ApplicantListItem {
+  education: Education[];
+  workExperience: WorkExperience[];
 }
 
-export interface CambioEstadoPostulacion {
-  estado: EstadoPostulacion;
+/** Fila de "mis postulaciones" que ve el alumno. */
+export interface MyApplication {
+  application: VacancyApplication;
+  vacancy: Vacancy;
 }
 
 /**
- * RF-21: la empresa contacta al postulante con una plantilla predefinida,
- * disparada como link `mailto:` — NO es envío automático desde el backend.
+ * Cambio de estado de una postulación, hecho por la empresa.
  *
- * ⚠️ El tipo de plantilla no se puede derivar de `EstadoPostulacion`: el enum
- * (pendiente/visto/finalizado) no distingue si el finalizado fue avance o
- * rechazo. Pendiente de confirmar con el equipo — ver comentario en @/types.
+ * 🔴 `continueWithCandidate` es lo que decide QUÉ MAIL manda el backend (RF-21).
+ * El frontend NO arma ni dispara mails: solo transmite la decisión. Si este flag
+ * va mal, al candidato le llega el mail equivocado — no es cosmético.
+ *
+ * Solo aplica cuando `status` pasa a `FINALIZADO`: el enum no distingue avance de
+ * rechazo, por eso la decisión viaja en un campo aparte.
+ *
+ * TODO: confirmar con backend el NOMBRE EXACTO del campo y sus valores.
+ * ¿`continueWithCandidate`? ¿`accepted`? ¿un enum en vez de booleano?
  */
-export type TipoPlantillaMail = "avanza" | "rechazado";
-
-export interface PlantillaMail {
-  tipo: TipoPlantillaMail;
-  asunto: string;
-  cuerpo: string;
+export interface ApplicationStatusChange {
+  status: ApplicationStatus;
+  continueWithCandidate?: boolean;
 }
