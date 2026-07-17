@@ -82,6 +82,11 @@ export function VacancyPagination({
                 <PaginationLink
                   href="#"
                   isActive={pageNumber === page}
+                  className={
+                    pageNumber === page
+                      ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
+                      : undefined
+                  }
                   onClick={(e) => {
                     e.preventDefault();
                     onPageChange(pageNumber);

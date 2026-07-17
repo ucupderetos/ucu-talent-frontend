@@ -24,7 +24,9 @@ export const VACANCY_STATUS_DESCRIPTION: Record<VacancyStatus, string> = {
 
 const VACANCY_STATUS_DOT_CLASS: Record<VacancyStatus, string> = {
   published: "bg-emerald-500",
-  pending: "bg-amber-500",
+  // Naranja de marca (--brand-orange): es el color que usa "Pendiente" en el
+  // diseño de referencia.
+  pending: "bg-(--brand-orange)",
   paused: "bg-sky-500",
   rejected: "bg-destructive",
   closed: "bg-muted-foreground",

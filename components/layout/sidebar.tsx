@@ -17,7 +17,7 @@ export function Sidebar({ role }: { role: Role }) {
   const items = NAV_BY_ROLE[role];
 
   return (
-    <aside className="hidden w-56 shrink-0 border-r md:block">
+    <aside className="hidden w-56 shrink-0 border-r border-sidebar-border bg-sidebar md:block">
       <nav className="sticky top-14 flex flex-col gap-1 p-4">
         {items.map((item) => (
           <Link
@@ -26,8 +26,8 @@ export function Sidebar({ role }: { role: Role }) {
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               pathname.startsWith(item.href)
-                ? "bg-accent font-medium text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50",
+                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
             )}
           >
             <item.icon className="size-4 shrink-0" />
