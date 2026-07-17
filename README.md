@@ -20,6 +20,32 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Docker
+
+Requiere Docker (y opcionalmente Docker Compose) instalado localmente.
+
+Build y ejecución manual:
+
+```bash
+docker build -t ucu-talent-frontend .
+docker run -p 3000:3000 ucu-talent-frontend
+```
+
+O con Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+En ambos casos, la app queda disponible en [http://localhost:3000](http://localhost:3000).
+
+Si la URL base de la API ya está definida, se puede pasar en build time (queda
+inlineada en el bundle porque usa el prefijo `NEXT_PUBLIC_`):
+
+```bash
+docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.ejemplo.com -t ucu-talent-frontend .
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
