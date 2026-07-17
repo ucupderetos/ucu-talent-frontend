@@ -39,6 +39,12 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Marca UCU, alineada con Webasignatura — no cambian con dark mode. */
+  --color-ucu-blue: #052e66;
+  --color-ucu-orange: #ff6602;
+  --color-ucu-teal: #0dafb1;
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

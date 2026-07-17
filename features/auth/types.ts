@@ -7,8 +7,6 @@
 // falta confirmar si el JWT viaja en cookie httpOnly (asunción actual) — de eso
 // depende que el login no devuelva token al cliente.
 
-import type { DocumentType } from "@/types";
-
 export interface Credentials {
   email: string;
   password: string;
@@ -16,17 +14,16 @@ export interface Credentials {
 
 /**
  * RF-01: el alumno se valida contra padrón de cédulas o mail @ucu.
- * El MER tiene `documentType` + `documentNumber` en `User`, que es por donde va
- * la validación por cédula. Cuál de los dos exige el backend está sin confirmar.
+ *
+ * ⚠️ Simplificado a propósito: solo cédula + mail + contraseña. El resto del
+ * perfil (nombre, apellido, teléfono) se completa después, no en el alta.
+ * `documentType` queda fijo en cédula uruguaya — si el backend termina
+ * aceptando otros documentos, se agrega un selector acá.
  */
 export interface StudentRegistration {
-  name: string;
-  surname: string;
   email: string;
   password: string;
-  documentType: DocumentType;
   documentNumber: string;
-  phoneNumber: string;
 }
 
 /**

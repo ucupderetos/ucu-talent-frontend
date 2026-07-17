@@ -1,16 +1,16 @@
 // Layout del route group (auth): login y registro.
 //
 // No lleva AppShell — todavía no sabemos quién es el usuario, así que no hay
-// navbar ni sidebar que mostrar. Solo centra el contenido.
+// navbar ni sidebar que mostrar. El shell visual (panel de marca + columna)
+// se renderiza siempre acá, ANTES de saber si hay sesión: así no hay salto de
+// layout mientras se resuelve la sesión.
+//
+// GuestOnly vive en cada page.tsx (no acá) porque el skeleton que muestra
+// mientras carga tiene que mirarse como el formulario real de esa pantalla —
+// login y registro no tienen los mismos campos.
 
-import { GuestOnly } from "@/features/auth/components/guest-only";
+import { AuthLayout } from "@/features/auth/components/AuthLayout";
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-1 items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <GuestOnly>{children}</GuestOnly>
-      </div>
-    </div>
-  );
+export default function AuthRouteLayout({ children }: { children: React.ReactNode }) {
+  return <AuthLayout>{children}</AuthLayout>;
 }

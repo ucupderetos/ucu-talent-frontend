@@ -9,11 +9,16 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/hooks/use-session";
 import { homeRouteFor } from "@/lib/auth";
 
-export function GuestOnly({ children }: { children: React.ReactNode }) {
+export function GuestOnly({
+  children,
+  fallback,
+}: {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+}) {
   const { user, isLoading } = useSession();
   const router = useRouter();
 
@@ -22,7 +27,7 @@ export function GuestOnly({ children }: { children: React.ReactNode }) {
   }, [isLoading, user, router]);
 
   if (isLoading) {
-    return <Skeleton className="h-64 w-full max-w-sm" />;
+    return <>{fallback}</>;
   }
 
   // Redirigiendo a su sección: no parpadeamos el formulario de login.
