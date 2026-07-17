@@ -1,5 +1,5 @@
-// Helpers de autenticación y sesión. Lógica pura, sin UI.
-// El provider de React vive en features/auth/components/session-provider.tsx.
+// Helpers de autenticación y sesión. Lógica pura, sin UI ni React.
+// El hook que consume esto es features/auth/hooks/use-session.ts.
 //
 // ⚠️ ASUNCIÓN CLAVE: el JWT viaja en una cookie httpOnly seteada por Spring Boot.
 // Consecuencia directa: el cliente NO puede leer el token ni el rol. Para saber

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
-import { SessionProvider } from "@/features/auth/components/session-provider";
 import { cn } from "@/lib/utils";
 
+import { Providers } from "./providers";
 import "./globals.css";
 
 // Inter alimenta --font-sans, que es la variable que consume el `@theme inline`
@@ -43,7 +43,7 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        <SessionProvider>{children}</SessionProvider>
+        <Providers>{children}</Providers>
         <Toaster />
       </body>
     </html>

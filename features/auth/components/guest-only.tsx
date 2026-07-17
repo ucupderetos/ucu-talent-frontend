@@ -10,9 +10,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSession } from "@/features/auth/hooks/use-session";
 import { rutaInicialPara } from "@/lib/auth";
-
-import { useSession } from "./session-provider";
 
 export function GuestOnly({ children }: { children: React.ReactNode }) {
   const { usuario, cargando } = useSession();

@@ -13,10 +13,9 @@ import { useEffect } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSession } from "@/features/auth/hooks/use-session";
 import { puedeAcceder, rutaInicialPara } from "@/lib/auth";
 import type { Rol } from "@/types";
-
-import { useSession } from "./session-provider";
 
 export function RoleGuard({
   permitidos,
