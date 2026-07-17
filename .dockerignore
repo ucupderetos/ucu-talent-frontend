@@ -1,0 +1,33 @@
+# dependencies
+node_modules
+.pnp
+.pnp.*
+
+# next.js build output
+.next
+out
+
+# production
+build
+
+# env files (nunca deben viajar dentro de la imagen)
+.env*
+
+# git / editor / OS
+.git
+.gitignore
+.DS_Store
+*.pem
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# docs y config de proyecto que no hacen falta en la imagen
+README.md
+AGENTS.md
+CLAUDE.md
+.vscode
+.idea
