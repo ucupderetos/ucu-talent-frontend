@@ -4,32 +4,49 @@ import { useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AuthFormSkeleton } from "@/features/auth/components/AuthLayout";
 import { useRegister } from "@/features/auth/hooks/use-register";
 
-const registerSchema = z.object({
-  documentNumber: z
-    .string()
-    .trim()
-    .min(1, "Ingresá tu cédula.")
-    .transform((value) => value.replace(/[.\-\s]/g, ""))
-    .pipe(z.string().regex(/^\d{7,8}$/, "Ingresá una cédula válida.")),
-  email: z
-    .string()
-    .trim()
-    .min(1, "Ingresá tu email.")
-    .pipe(z.email("Ingresá un email válido.")),
-  password: z
-    .string()
-    .min(1, "Ingresá una contraseña.")
-    .min(8, "La contraseña tiene que tener al menos 8 caracteres."),
-});
+const CEDULA_REGEX = /^\d{7,8}$/;
+const RUT_REGEX = /^\d{12}$/;
+
+const registerSchema = z
+  .object({
+    isCompany: z.boolean(),
+    documentNumber: z
+      .string()
+      .trim()
+      .min(1, "Ingresá el documento.")
+      .transform((value) => value.replace(/[.\-\s]/g, "")),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Ingresá tu email.")
+      .pipe(z.email("Ingresá un email válido.")),
+    password: z
+      .string()
+      .min(1, "Ingresá una contraseña.")
+      .min(8, "La contraseña tiene que tener al menos 8 caracteres."),
+  })
+  .superRefine((values, ctx) => {
+    const valid = values.isCompany
+      ? RUT_REGEX.test(values.documentNumber)
+      : CEDULA_REGEX.test(values.documentNumber);
+    if (!valid) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["documentNumber"],
+        message: values.isCompany ? "Ingresá un RUT válido." : "Ingresá una cédula válida.",
+      });
+    }
+  });
 
 type RegisterValues = z.infer<typeof registerSchema>;
 
@@ -37,19 +54,39 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { register: submitRegistration, isLoading, error } = useRegister();
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { documentNumber: "", email: "", password: "" },
+    defaultValues: { isCompany: false, documentNumber: "", email: "", password: "" },
   });
+
+  const isCompany = useWatch({ control, name: "isCompany" });
 
   return (
     <form onSubmit={handleSubmit((values) => submitRegistration(values))} noValidate>
       <FieldGroup>
+        <Field orientation="horizontal">
+          <Controller
+            control={control}
+            name="isCompany"
+            render={({ field }) => (
+              <Checkbox
+                id="isCompany"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+          <FieldLabel htmlFor="isCompany" className="font-normal">
+            Soy empresa
+          </FieldLabel>
+        </Field>
+
         <Field data-invalid={Boolean(errors.documentNumber)}>
-          <FieldLabel htmlFor="documentNumber">Cédula</FieldLabel>
+          <FieldLabel htmlFor="documentNumber">{isCompany ? "RUT" : "Cédula"}</FieldLabel>
           <Input
             id="documentNumber"
             type="text"

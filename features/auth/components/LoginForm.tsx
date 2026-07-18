@@ -13,12 +13,17 @@ import { Input } from "@/components/ui/input";
 import { AuthFormSkeleton } from "@/features/auth/components/AuthLayout";
 import { useLogin } from "@/features/auth/hooks/use-login";
 
+const UCU_EMAIL_REGEX = /@ucu\.edu\.uy$/i;
+
 const loginSchema = z.object({
   email: z
     .string()
     .trim()
     .min(1, "Ingresá tu email.")
-    .pipe(z.email("Ingresá un email válido.")),
+    .pipe(z.email("Ingresá un email válido."))
+    .refine((value) => UCU_EMAIL_REGEX.test(value), {
+      message: "Usá tu email institucional (@ucu.edu.uy).",
+    }),
   password: z.string().min(1, "Ingresá tu contraseña."),
 });
 

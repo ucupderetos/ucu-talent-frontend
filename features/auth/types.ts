@@ -13,17 +13,19 @@ export interface Credentials {
 }
 
 /**
- * RF-01: el alumno se valida contra padrón de cédulas o mail @ucu.
+ * RF-01/RF-13 simplificado: alta con email + contraseña + documento —
+ * cédula para alumno, RUT para empresa (`isCompany` decide cuál).
  *
- * ⚠️ Simplificado a propósito: solo cédula + mail + contraseña. El resto del
- * perfil (nombre, apellido, teléfono) se completa después, no en el alta.
- * `documentType` queda fijo en cédula uruguaya — si el backend termina
- * aceptando otros documentos, se agrega un selector acá.
+ * ⚠️ Simplificado a propósito: el resto del perfil (nombre, apellido,
+ * teléfono, industria...) se completa después, no en el alta. Para empresa
+ * esto NO es todavía el alta completa de RF-13 (ver `CompanyRegistration`)
+ * — es un primer paso mínimo hasta que el equipo defina el resto del flujo.
  */
-export interface StudentRegistration {
+export interface Registration {
   email: string;
   password: string;
   documentNumber: string;
+  isCompany: boolean;
 }
 
 /**
