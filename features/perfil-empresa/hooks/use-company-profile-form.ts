@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { DEPARTMENTS, DESCRIPTION_MAX } from "@/features/perfil-empresa/types";
+import { useState } from "react";
 
 // Reglas de validación del formulario. Reflejan los @NotBlank/@NotNull del
 // back donde corresponde (CreateCompanyRequest / UpdateCompanyRequest), más
@@ -43,7 +44,9 @@ export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
  * `useEffect`, por ejemplo).
  */
 export function useCompanyProfileForm() {
-  return useForm<CompanyProfileFormValues>({
+  const [mode, setMode] = useState<"view" | "edit">("view");
+
+  const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
     defaultValues: {
       name: "",
@@ -58,4 +61,13 @@ export function useCompanyProfileForm() {
       facebookUrl: "",
     },
   });
+  function startEditing() {
+    setMode("edit");
+  }
+
+  function stopEditing() {
+    setMode("view");
+  }
+
+  return { form, mode, startEditing, stopEditing };
 }

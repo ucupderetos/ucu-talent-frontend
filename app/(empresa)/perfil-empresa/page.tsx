@@ -7,8 +7,7 @@ import { CompanyProfileTips } from "@/features/perfil-empresa/components/Company
 import { useCompanyProfileForm } from "@/features/perfil-empresa/hooks/use-company-profile-form";
 
 export default function PerfilEmpresaPage() {
-  const form = useCompanyProfileForm();
-
+  const { form, mode, startEditing, stopEditing } = useCompanyProfileForm();
   return (
     <>
       <PageHeader
