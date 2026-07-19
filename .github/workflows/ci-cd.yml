@@ -20,7 +20,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm test
+      # - run: npm test (Tira error ya que no hay tests definidos)
   docker-build-check-frontend:
     name: Check dockerfile builds
     needs: unit-test-frontend
