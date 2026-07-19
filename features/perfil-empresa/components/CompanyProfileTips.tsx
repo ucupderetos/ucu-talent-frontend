@@ -28,7 +28,7 @@ export function CompanyProfileTips() {
       </Card>
 
       <Card className="bg-muted/40">
-        <CardContent className="flex items-start gap-3 pt-6">
+        <CardContent className="flex items-center gap-3">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <MailIcon className="size-4" />
           </div>
