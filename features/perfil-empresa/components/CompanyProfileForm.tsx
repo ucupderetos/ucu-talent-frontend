@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateCompanyProfile } from "@/features/perfil-empresa/hooks/use-update-company-profile";
 import type { CompanyProfileFormValues } from "@/features/perfil-empresa/hooks/use-company-profile-form";
+import { CompanyProfileReadOnly } from "@/features/perfil-empresa/components/CompanyProfileReadOnly";
 import {
     DEPARTMENTS,
     DEPARTMENT_LABELS,
@@ -58,8 +59,16 @@ function SocialField({
 
 export function CompanyProfileForm({
     form,
+    mode,
+    startEditing,
+    commitSave,
+    cancelEditing,
 }: {
     form: UseFormReturn<CompanyProfileFormValues>;
+    mode: "view" | "edit";
+    startEditing: () => void;
+    commitSave: (values: CompanyProfileFormValues) => void;
+    cancelEditing: () => void;
 }) {
     const { updateProfile, isLoading, error } = useUpdateCompanyProfile();
     const {
@@ -72,16 +81,24 @@ export function CompanyProfileForm({
     const description = useWatch({ control, name: "description" }) ?? "";
     const location = useWatch({ control, name: "location" });
 
-    const onSubmit: SubmitHandler<CompanyProfileFormValues> = (values) => {
-        updateProfile(values);
+    const onSubmit: SubmitHandler<CompanyProfileFormValues> = async (values) => {
+        await updateProfile(values);
+        commitSave(values);
     };
+    // Modo lectura: mostramos los datos como texto, con el botón "Editar perfil".
+    if (mode === "view") {
+        return <CompanyProfileReadOnly form={form} onEdit={startEditing} />;
+    }
 
+    // Modo edición: el formulario real, con validación.
     return (
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="lg:col-span-2">
             <Card>
                 <CardHeader>
                     <CardTitle>Información general</CardTitle>
-                    <CardDescription>Completá los datos principales de tu empresa.</CardDescription>
+                    <CardDescription>
+                        Completá los datos principales de tu empresa. Los campos marcados con * son obligatorios.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <FieldGroup>
@@ -230,9 +247,14 @@ export function CompanyProfileForm({
 
                         {error && <FieldError>{error}</FieldError>}
 
-                        <Button type="submit" disabled={isLoading} className="w-fit">
-                            {isLoading ? "Guardando..." : "Guardar cambios"}
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button type="submit" disabled={isLoading} className="w-fit">
+                                {isLoading ? "Guardando..." : "Guardar cambios"}
+                            </Button>
+                            <Button type="button" variant="outline" onClick={cancelEditing} className="w-fit">
+                                Cancelar
+                            </Button>
+                        </div>
                     </FieldGroup>
                 </CardContent>
             </Card>

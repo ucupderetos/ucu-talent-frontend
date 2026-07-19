@@ -45,22 +45,25 @@ export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
  */
 export function useCompanyProfileForm() {
   const [mode, setMode] = useState<"view" | "edit">("view");
+  const emptyValues: CompanyProfileFormValues = {
+    name: "",
+    webUrl: "",
+    description: "",
+    industry: "",
+    location: undefined as unknown as CompanyProfileFormValues["location"],
+    linkedinUrl: "",
+    companySize: "",
+    foundedYear: "",
+    instagramUrl: "",
+    facebookUrl: "",
+  };
+  const [savedValues, setSavedValues] = useState<CompanyProfileFormValues>(emptyValues);
 
   const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
-    defaultValues: {
-      name: "",
-      webUrl: "",
-      description: "",
-      industry: "",
-      location: undefined,
-      linkedinUrl: "",
-      companySize: "",
-      foundedYear: "",
-      instagramUrl: "",
-      facebookUrl: "",
-    },
+    defaultValues: emptyValues,
   });
+
   function startEditing() {
     setMode("edit");
   }
@@ -69,5 +72,20 @@ export function useCompanyProfileForm() {
     setMode("view");
   }
 
-  return { form, mode, startEditing, stopEditing };
+  /** Se llama después de un guardado exitoso: fija el nuevo "último guardado"
+   *  y vuelve a modo lectura. */
+  function commitSave(values: CompanyProfileFormValues) {
+    setSavedValues(values);
+    form.reset(values);
+    stopEditing();
+  }
+
+  /** Se llama al cancelar: descarta cambios sin guardar, vuelve a lo último
+   *  guardado (no a vacío). */
+  function cancelEditing() {
+    form.reset(savedValues);
+    stopEditing();
+  }
+
+  return { form, mode, startEditing, stopEditing, commitSave, cancelEditing };
 }
