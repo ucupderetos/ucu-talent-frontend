@@ -67,9 +67,6 @@ export function CompanyProfileReadOnly({
                 <div className="grid gap-6 sm:grid-cols-2">
                     <ReadOnlyField label="Nombre de la empresa" value={values.name} />
                     <ReadOnlyField label="Sitio web" value={values.webUrl} />
-                </div>        <div className="grid gap-6 sm:grid-cols-2">
-                    <ReadOnlyField label="Nombre de la empresa" value={values.name} />
-                    <ReadOnlyField label="Sitio web" value={values.webUrl} />
                 </div>
 
                 <ReadOnlyField label="Descripción" value={values.description} />
