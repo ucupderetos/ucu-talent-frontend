@@ -17,8 +17,10 @@ import { DEPARTMENT_LABELS } from "@/features/perfil-empresa/types";
 
 export function CompanyProfilePreview({
   form,
+  logoPreviewUrl,
 }: {
   form: UseFormReturn<CompanyProfileFormValues>;
+  logoPreviewUrl: string | null;
 }) {
   const values = useWatch({ control: form.control });
 
@@ -31,8 +33,13 @@ export function CompanyProfilePreview({
       <CardContent>
         <div className="rounded-lg border p-4">
           <div className="flex items-start gap-3">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-md border text-[10px] text-muted-foreground">
-              Logo
+            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border text-[10px] text-muted-foreground">
+              {logoPreviewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- preview local (blob:)
+                <img src={logoPreviewUrl} alt="Logo de la empresa" className="size-full object-cover" />
+              ) : (
+                "Logo"
+              )}
             </div>
             <div className="min-w-0">
               <p className="truncate font-semibold">

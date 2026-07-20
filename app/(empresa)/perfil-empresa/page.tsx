@@ -7,7 +7,15 @@ import { CompanyProfileTips } from "@/features/perfil-empresa/components/Company
 import { useCompanyProfileForm } from "@/features/perfil-empresa/hooks/use-company-profile-form";
 
 export default function PerfilEmpresaPage() {
-  const { form, mode, startEditing, commitSave, cancelEditing } = useCompanyProfileForm();
+  const {
+    form,
+    mode,
+    startEditing,
+    commitSave,
+    cancelEditing,
+    logoPreviewUrl,
+    handleLogoChange,
+  } = useCompanyProfileForm();
   return (
     <>
       <PageHeader
@@ -22,10 +30,11 @@ export default function PerfilEmpresaPage() {
           startEditing={startEditing}
           commitSave={commitSave}
           cancelEditing={cancelEditing}
+          logoPreviewUrl={logoPreviewUrl}
+          onLogoChange={handleLogoChange}
         />
         <div className="flex flex-col gap-6">
-          <CompanyProfilePreview form={form} />
-          <CompanyProfileTips />
+          <CompanyProfilePreview form={form} logoPreviewUrl={logoPreviewUrl} />          <CompanyProfileTips />
         </div>
       </div>
     </>

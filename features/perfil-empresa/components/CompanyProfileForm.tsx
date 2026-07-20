@@ -2,6 +2,7 @@
 
 import { LinkIcon } from "lucide-react";
 import { useForm, useWatch, type SubmitHandler, type UseFormReturn } from "react-hook-form";
+import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -63,12 +64,16 @@ export function CompanyProfileForm({
     startEditing,
     commitSave,
     cancelEditing,
+    logoPreviewUrl,
+    onLogoChange,
 }: {
     form: UseFormReturn<CompanyProfileFormValues>;
     mode: "view" | "edit";
     startEditing: () => void;
     commitSave: (values: CompanyProfileFormValues) => void;
     cancelEditing: () => void;
+    logoPreviewUrl: string | null;
+    onLogoChange: (file: File) => void;
 }) {
     const { updateProfile, isLoading, error } = useUpdateCompanyProfile();
     const {
@@ -80,6 +85,7 @@ export function CompanyProfileForm({
 
     const description = useWatch({ control, name: "description" }) ?? "";
     const location = useWatch({ control, name: "location" });
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const onSubmit: SubmitHandler<CompanyProfileFormValues> = async (values) => {
         await updateProfile(values);
@@ -87,9 +93,8 @@ export function CompanyProfileForm({
     };
     // Modo lectura: mostramos los datos como texto, con el botón "Editar perfil".
     if (mode === "view") {
-        return <CompanyProfileReadOnly form={form} onEdit={startEditing} />;
+        return <CompanyProfileReadOnly form={form} onEdit={startEditing} logoPreviewUrl={logoPreviewUrl} />;
     }
-
     // Modo edición: el formulario real, con validación.
     return (
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="lg:col-span-2">
@@ -104,17 +109,40 @@ export function CompanyProfileForm({
                     <FieldGroup>
                         <div className="grid gap-6 sm:grid-cols-2">
                             {/* Logo — TODO: sin respaldo en el back */}
+                            {/* Logo — preview local; guardado real pendiente de endpoint de storage */}
                             <Field>
                                 <FieldLabel>Logo de la empresa</FieldLabel>
-                                <div className="flex size-24 items-center justify-center rounded-md border text-xs text-muted-foreground">
-                                    Sin logo
+                                <div>
+                                    <div className="flex size-24 items-center justify-center overflow-hidden rounded-md border text-xs text-muted-foreground">
+                                        {logoPreviewUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element -- preview local (blob:), no pasa por el optimizador de imágenes de Next
+                                            <img src={logoPreviewUrl} alt="Logo de la empresa" className="size-full object-cover" />
+                                        ) : (
+                                            "Sin logo"
+                                        )}
+                                    </div>
                                 </div>
-                                <Button type="button" variant="outline" size="sm" className="w-fit">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) onLogoChange(file);
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-fit"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
                                     Cambiar logo
                                 </Button>
                                 <p className="text-xs text-muted-foreground">JPG o PNG. Máx. 2MB.</p>
                             </Field>
-
                             <div className="flex flex-col gap-6">
                                 <Field data-invalid={Boolean(errors.name)}>
                                     <FieldLabel htmlFor="name">Nombre de la empresa *</FieldLabel>

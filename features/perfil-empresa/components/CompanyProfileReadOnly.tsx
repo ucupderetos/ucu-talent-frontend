@@ -38,9 +38,11 @@ function ReadOnlyField({
 export function CompanyProfileReadOnly({
     form,
     onEdit,
+    logoPreviewUrl,
 }: {
     form: UseFormReturn<CompanyProfileFormValues>;
     onEdit: () => void;
+    logoPreviewUrl: string | null;
 }) {
     const values = useWatch({ control: form.control });
 
@@ -59,8 +61,13 @@ export function CompanyProfileReadOnly({
                 {/* Logo — TODO: sin respaldo en el back */}
                 <div className="space-y-1">
                     <p className="text-sm font-medium">Logo de la empresa</p>
-                    <div className="flex size-24 items-center justify-center rounded-md border text-xs text-muted-foreground">
-                        Sin logo
+                    <div className="flex size-24 items-center justify-center overflow-hidden rounded-md border text-xs text-muted-foreground">
+                        {logoPreviewUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- preview local (blob:)
+                            <img src={logoPreviewUrl} alt="Logo de la empresa" className="size-full object-cover" />
+                        ) : (
+                            "Sin logo"
+                        )}
                     </div>
                 </div>
 

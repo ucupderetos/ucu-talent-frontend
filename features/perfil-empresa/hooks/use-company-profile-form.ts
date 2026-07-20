@@ -58,6 +58,23 @@ export function useCompanyProfileForm() {
     facebookUrl: "",
   };
   const [savedValues, setSavedValues] = useState<CompanyProfileFormValues>(emptyValues);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+
+  /** Genera una URL local (blob:) para previsualizar el archivo elegido, sin
+   *  subirlo a ningún lado todavía.
+   *
+   *  TODO: cuando el back tenga un endpoint de storage, acá se agrega el
+   *  apiClient.post(`/company/${id}/logo`, formData) y `logoPreviewUrl` pasa
+   *  a ser la URL que devuelva el servidor, en vez de la blob: local. */
+  function handleLogoChange(file: File) {
+    const url = URL.createObjectURL(file);
+    setLogoPreviewUrl((previous) => {
+      // Libera la URL anterior para no acumular memoria si el usuario cambia
+      // el logo varias veces antes de guardar.
+      if (previous) URL.revokeObjectURL(previous);
+      return url;
+    });
+  }
 
   const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
@@ -87,5 +104,14 @@ export function useCompanyProfileForm() {
     stopEditing();
   }
 
-  return { form, mode, startEditing, stopEditing, commitSave, cancelEditing };
+  return {
+    form,
+    mode,
+    startEditing,
+    stopEditing,
+    commitSave,
+    cancelEditing,
+    logoPreviewUrl,
+    handleLogoChange,
+  };
 }
