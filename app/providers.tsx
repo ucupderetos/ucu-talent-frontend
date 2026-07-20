@@ -10,6 +10,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ApiError } from "@/lib/api-client";
 
 function crearQueryClient() {
@@ -46,5 +47,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // No hay SessionProvider: TanStack Query ya deduplica el GET /me por queryKey,
   // así que un context propio para la sesión sería redundante. Ver
   // features/auth/hooks/use-session.ts.
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  //
+  // TooltipProvider global: lo necesita el Sidebar colapsado (tooltips con el
+  // label al pasar el mouse por los íconos).
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>{children}</TooltipProvider>
+    </QueryClientProvider>
+  );
 }
