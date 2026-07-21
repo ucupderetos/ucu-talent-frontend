@@ -588,20 +588,30 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
 - `lib/auth.ts` + `features/auth/`: sesión vía `GET /me` (`hooks/use-session.ts`) y
   guards de rol (`components/role-guard.tsx`, `components/guest-only.tsx`).
 - `.env.example`, `lib/fixtures.ts` y el modo sesión mock.
+- ✅ **`ProfileGuard`** (`features/perfil/components/ProfileGuard.tsx`) y la ruta
+  **`app/completar-perfil/page.tsx`** — ver *Registro en dos pasos y ProfileGuard*.
+  Montado en `(alumno)/layout.tsx` y `(empresa)/layout.tsx`, adentro de `RoleGuard`.
+- ✅ **El registro real, en 3 llamadas encadenadas** (`use-register.ts`):
+  `POST /user` → `POST /auth/login` → `POST /student-profile`/`POST /company`. El
+  perfil pide los campos mínimos `@NotBlank` de `docs/ENDPOINTS.md` en el mismo
+  formulario de `/registro` (un solo paso visual, sin navegación entre medio).
+  `features/perfil/hooks/use-complete-profile.ts` reintenta solo el paso 3 desde
+  `/completar-perfil`.
 
 **Todavía NO existe:**
 
 - **`proxy.ts`** — no hay ninguna primera línea de defensa. Va en rama `feature/`, no
   `chore/`: es funcionalidad.
-- **`ProfileGuard`** (`features/perfil/components/`) y la ruta **`app/completar-perfil/`**
-  — ver *Registro en dos pasos*. Hasta que existan, una cuenta sin perfil rompe las
-  pantallas de `(alumno)` y `(empresa)`.
-- **`features/<x>/hooks/`** — vacíos salvo `auth`. Ya se pueden escribir contra
-  `ENDPOINTS.md`. `features/auth/hooks/use-session.ts` sirve de plantilla del patrón.
-- **Los endpoints en `lib/api-client.ts`** — el contrato ya está, falta cablearlo.
-- **`app/(empresa)/puestos/page.tsx`** — la ruta `/puestos` está en el nav pero no existe;
-  la crea el grupo de empresa.
-- Las `page.tsx` de cada ruta siguen siendo placeholders.
+- **`features/<x>/hooks/`** — vacíos salvo `auth`, `perfil` (`use-complete-profile.ts`) y
+  `puestos` (`use-company-vacancies.ts`, `use-current-company.ts`, todavía sobre fixtures).
+  Ya se pueden escribir contra `ENDPOINTS.md`. `features/auth/hooks/use-session.ts` sirve
+  de plantilla del patrón.
+- ✅ **`app/(empresa)/puestos/page.tsx`** — ya existe ("Mis ofertas"), construida por el
+  grupo de empresa. ⚠️ Ver el gap de `VacancyStatus` en *Roles y control de acceso*: la
+  pantalla hoy colapsa todo a `PENDIENTE`/`FINALIZADO` porque el backend real no tiene más
+  estados — revisar labels/acciones apenas exista `PUBLICADO`/`RECHAZADO` (A-14).
+- Las `page.tsx` de `/feed`, `/perfil`, `/postulaciones` y
+  `/puestos/[id]/postulantes` siguen siendo placeholders.
 
 ### El backend ya está levantado
 
@@ -631,7 +641,7 @@ otra cosa. Ver `A-13`.
 Sigue existiendo mientras la cookie cross-origin no ande:
 
 ```bash
-NEXT_PUBLIC_MOCK_SESSION=student   # o company | admin
+NEXT_PUBLIC_MOCK_SESSION=ALUMNO   # o EMPRESA | ADMIN
 ```
 
 Saltea el `GET /me` y devuelve un usuario de `lib/fixtures.ts`. **No es seguridad**: solo
@@ -641,11 +651,9 @@ cambia lo que el frontend *cree* que sos, el backend no lo mira.
 funcione contra `api-dev`, se borran `lib/fixtures.ts`, `NEXT_PUBLIC_MOCK_SESSION` y sus
 usos en `lib/auth.ts` y `features/auth/hooks/use-logout.ts`.
 
-⚠️ Los valores siguen siendo `student|company|admin` porque el código todavía no migró al
-enum nuevo. Cuando `Role` pase a `ALUMNO|EMPRESA|ADMIN` (ver *Idioma del código*), hay que
-actualizar `lib/auth.ts`, `lib/fixtures.ts` y `.env.example` en la misma tanda — son tres
-archivos de la zona de conflicto, así que va en una rama propia y coordinada. Si el mock
-se borra antes de esa migración, el problema desaparece solo.
+✅ **La migración a `Role: ALUMNO|EMPRESA|ADMIN` ya se hizo** en `lib/auth.ts`,
+`lib/fixtures.ts` y `.env.example` (ver *Idioma del código*) — ya no queda código usando
+los literales viejos (`student`/`company`/`admin`).
 
 ## Pendiente de aclarar
 
