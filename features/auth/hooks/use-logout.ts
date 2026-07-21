@@ -4,12 +4,8 @@
 // local para que `useSession()` (y los guards que dependen de ella) vuelvan
 // a preguntar por GET /me en la próxima carga.
 //
-// ⚠️ ANDAMIO TEMPORAL: el contrato de la API todavía no define un endpoint de
-// logout (ver AGENTS.md — "el contrato de la API"). Se asume `POST /logout`,
-// que invalida la cookie httpOnly del lado del servidor.
-//
-// TODO(api): confirmar el path real y si hace falta invalidar algo más que la
-// cookie (ej. refresh tokens).
+// `POST /auth/logout` (docs/ENDPOINTS.md, sección 7) vence la cookie httpOnly
+// del lado del servidor. Es público, no hace falta sesión para llamarlo.
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -17,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { SESSION_QUERY_KEY } from "@/features/auth/hooks/use-session";
 import { apiClient } from "@/lib/api-client";
 
-const LOGOUT_ENDPOINT = "/logout";
+const LOGOUT_ENDPOINT = "/auth/logout";
 
 /**
  * En modo mock (`NEXT_PUBLIC_MOCK_SESSION`) no hay cookie real que invalidar:
