@@ -15,6 +15,7 @@ import {
   BriefcaseIcon,
   BuildingIcon,
   FileTextIcon,
+  LayoutDashboardIcon,
   NewspaperIcon,
   PlusIcon,
   ShieldCheckIcon,
@@ -46,6 +47,7 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
     { label: "Perfil de empresa", href: "/perfil", icon: BuildingIcon },
   ],
   ADMIN: [
+    { label: "Centro de Gestión", href: "/dashboard", icon: LayoutDashboardIcon },
     { label: "Validaciones", href: "/moderacion/validaciones", icon: UserCheckIcon },
     { label: "Usuarios", href: "/moderacion/usuarios", icon: UsersIcon },
     { label: "Postulaciones", href: "/moderacion/postulaciones", icon: FileTextIcon },

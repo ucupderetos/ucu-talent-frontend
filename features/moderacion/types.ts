@@ -156,3 +156,74 @@ export interface AdminApplicationFilters {
   page?: number;
   perPage?: number;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Dashboard de Admin                                                         */
+/* -------------------------------------------------------------------------- */
+
+export type DashboardStat = {
+  id: string;
+  title: string;
+  value: string;
+  weeklyChange: string;
+};
+
+export type VacancyStatus =
+  | "published"
+  | "finalized"
+  | "rejected";
+
+export type RecentVacancy = {
+  id: number;
+  position: string;
+  company: string;
+  publishedAt: string;
+  applications: number | null;
+  status: VacancyStatus;
+};
+
+
+
+export type PendingCompanyValidation = {
+  id: number;
+  name: string;
+  description: string;
+  registeredAt: string;
+ 
+};
+
+export type ActivityType =
+  | "company"
+  | "vacancy"
+  | "application"
+  | "user"
+  | "validation";
+
+export type RecentActivityItem = {
+  id: number;
+  title: string;
+  description: string;
+  time: string;
+  type: ActivityType;
+};
+
+export type ApplicationStatus =
+
+  | "pending"
+
+  | "aproved"
+
+  | "rejected"; 
+
+
+export type ApplicationStatusSummary = {
+
+  status: ApplicationStatus;
+
+  label: string;
+
+  count: number;
+
+  percentage: number;
+
+};
