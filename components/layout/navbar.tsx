@@ -41,7 +41,7 @@ function displayName(user: User): string {
 
 /** Iniciales para el fallback del avatar (sin foto todavía en el MER). */
 function initials(user: User): string {
-  return `${user.name.charAt(0)}${user.surname.charAt(0)}`.toUpperCase() || "?";
+  return `${user.name?.charAt(0) ?? ""}${user.surname?.charAt(0) ?? ""}`.toUpperCase() || "?";
 }
 
 export function Navbar({ user }: { user: User | null }) {
