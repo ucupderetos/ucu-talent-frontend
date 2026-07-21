@@ -42,7 +42,10 @@ export function CompanyVacanciesView() {
         title="Ofertas"
         description="Gestioná todas las ofertas de tu empresa. Podés ver su estado, postulantes y rendimiento."
         actions={
-          <Button onClick={() => toast.info("Crear oferta todavía no está disponible.")}>
+          <Button
+            className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent"
+            onClick={() => toast.info("Crear oferta todavía no está disponible.")}
+          >
             <PlusIcon />
             Crear nueva oferta
           </Button>
