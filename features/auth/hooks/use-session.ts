@@ -29,6 +29,17 @@ interface Session {
   isLoading: boolean;
   /** Falla real del backend (500, red caída). Un 401 NO llega acá: es user null. */
   error: Error | null;
+  /**
+   * `false` cuando el `User` existe pero el perfil (`StudentProfile`/
+   * `Company`) todavía no (`404` — se cortó a mitad del registro, ver
+   * "Registro en dos pasos y ProfileGuard" en AGENTS.md). La usa
+   * `ProfileGuard` para mandar a `/completar-perfil`. Sin sentido para
+   * `ADMIN` (perfil se crea en la misma transacción que la cuenta) — no
+   * chequear esto fuera de `(alumno)`/`(empresa)`.
+   *
+   * Igual que `user`, no confiar en este valor mientras `isLoading` es true.
+   */
+  hasProfile: boolean;
 }
 
 /**
@@ -65,5 +76,5 @@ export function useSession(): Session {
 
   const user: User | null = identity ? { ...identity, ...displayProfile } : null;
 
-  return { user, isLoading, error };
+  return { user, isLoading, error, hasProfile: displayProfile != null };
 }

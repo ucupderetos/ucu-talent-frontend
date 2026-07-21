@@ -67,35 +67,47 @@ export async function getCurrentUser(signal?: AbortSignal): Promise<User | null>
  *
  * Devuelve `{ name, surname }` con `surname` ausente para `EMPRESA` (el
  * `CompanyResponse` no tiene apellido — el nombre ahí es la razón social).
+ *
+ * Devuelve `null` (no lanza) si el perfil todavía no existe (`404`): es el
+ * caso de una cuenta que se quedó a mitad del registro (`POST /user` +
+ * `POST /auth/login` sin el `POST /student-profile`/`/company` final, ver
+ * "Registro en dos pasos y ProfileGuard" en AGENTS.md). `ProfileGuard`
+ * (`features/perfil/components/`) usa esto para saber si mandar a
+ * `/completar-perfil`.
  */
 export async function getDisplayProfile(
   user: User,
   signal?: AbortSignal,
-): Promise<{ name: string; surname?: string }> {
+): Promise<{ name: string; surname?: string } | null> {
   if (MOCK_ROLE) return { name: user.name ?? "", surname: user.surname };
 
-  switch (user.role) {
-    case "ALUMNO": {
-      const profile = await apiClient.get<StudentProfile>("/student-profile", {
-        params: { userId: user.userId },
-        signal,
-      });
-      return { name: profile.name, surname: profile.surname };
+  try {
+    switch (user.role) {
+      case "ALUMNO": {
+        const profile = await apiClient.get<StudentProfile>("/student-profile", {
+          params: { userId: user.userId },
+          signal,
+        });
+        return { name: profile.name, surname: profile.surname };
+      }
+      case "EMPRESA": {
+        const profile = await apiClient.get<Company>("/company", {
+          params: { userId: user.userId },
+          signal,
+        });
+        return { name: profile.name };
+      }
+      case "ADMIN": {
+        const profile = await apiClient.get<Admin>("/admin", {
+          params: { userId: user.userId },
+          signal,
+        });
+        return { name: profile.name, surname: profile.surname };
+      }
     }
-    case "EMPRESA": {
-      const profile = await apiClient.get<Company>("/company", {
-        params: { userId: user.userId },
-        signal,
-      });
-      return { name: profile.name };
-    }
-    case "ADMIN": {
-      const profile = await apiClient.get<Admin>("/admin", {
-        params: { userId: user.userId },
-        signal,
-      });
-      return { name: profile.name, surname: profile.surname };
-    }
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
   }
 }
 
