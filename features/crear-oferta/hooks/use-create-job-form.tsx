@@ -8,20 +8,72 @@
 // del navegador — se pierde si se recarga la página. Cuando el back tenga un
 // endpoint de borradores, acá se agrega la persistencia real.
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createContext, useContext, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
+import { z } from "zod";
 
-// TODO: definir el schema completo de zod cuando armemos los campos del
-// Paso 1 — por ahora, un placeholder mínimo para no bloquear la estructura.
-export interface CreateJobFormValues {
-  name: string;
-}
+// Enum Departamento del back — mismo catálogo que Company.location en
+// perfil-empresa/types.ts.
+export const DEPARTMENTS = [
+  "ARTIGAS", "CANELONES", "CERRO_LARGO", "COLONIA", "DURAZNO", "FLORES",
+  "FLORIDA", "LAVALLEJA", "MALDONADO", "MONTEVIDEO", "PAYSANDU", "RIO_NEGRO",
+  "RIVERA", "ROCHA", "SALTO", "SAN_JOSE", "SORIANO", "TACUAREMBO", "TREINTA_Y_TRES",
+] as const;
+
+export const DEPARTMENT_LABELS: Record<string, string> = {
+  ARTIGAS: "Artigas", CANELONES: "Canelones", CERRO_LARGO: "Cerro Largo",
+  COLONIA: "Colonia", DURAZNO: "Durazno", FLORES: "Flores", FLORIDA: "Florida",
+  LAVALLEJA: "Lavalleja", MALDONADO: "Maldonado", MONTEVIDEO: "Montevideo",
+  PAYSANDU: "Paysandú", RIO_NEGRO: "Río Negro", RIVERA: "Rivera", ROCHA: "Rocha",
+  SALTO: "Salto", SAN_JOSE: "San José", SORIANO: "Soriano",
+  TACUAREMBO: "Tacuarembó", TREINTA_Y_TRES: "Treinta y Tres",
+};
+
+// Enum Modality del back.
+export const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const;
+
+const TITLE_MAX = 100;
+
+// Reglas de validación del Paso 1 (Información básica). Reflejan
+// CreateVacancyRequest donde corresponde; los campos sin respaldo en el back
+// (vacancies, zone) no tienen validación estricta todavía.
+const step1Schema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Ingresá el título del puesto.")
+    .max(TITLE_MAX, `Máximo ${TITLE_MAX} caracteres.`),
+  areaId: z.string().trim().min(1, "Seleccioná un área."),
+  contractType: z.string().trim().min(1, "Seleccioná un tipo de contrato."),
+  modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
+  // RN: la localidad es obligatoria salvo que la modalidad sea REMOTO.
+  // La validación condicional se hace con `.refine` sobre el objeto completo.
+  location: z.string().optional(),
+  // TODO: sin respaldo en el back.
+  vacancies: z.string(),
+  zone: z.string(),
+}).refine(
+  (data) => data.modality === "REMOTO" || Boolean(data.location),
+  { message: "La ubicación es obligatoria salvo que la modalidad sea remota.", path: ["location"] },
+);
+
+export type CreateJobFormValues = z.infer<typeof step1Schema>;
 
 const CreateJobFormContext = createContext<UseFormReturn<CreateJobFormValues> | null>(null);
 
 export function CreateJobFormProvider({ children }: { children: ReactNode }) {
   const form = useForm<CreateJobFormValues>({
-    defaultValues: { name: "" },
+    resolver: zodResolver(step1Schema),
+    defaultValues: {
+      name: "",
+      areaId: "",
+      contractType: "",
+      modality: undefined,
+      location: "",
+      vacancies: "1",
+      zone: "",
+    },
   });
 
   return (
@@ -32,7 +84,7 @@ export function CreateJobFormProvider({ children }: { children: ReactNode }) {
 }
 
 /** Acceso al form compartido desde cualquier paso del wizard. Tira error si
- *  se usa fuera del layout de crear/ — señal de un import mal ubicado. */
+ *  se usa fuera del layout de crear-oferta/ — señal de un import mal ubicado. */
 export function useCreateJobForm() {
   const context = useContext(CreateJobFormContext);
   if (!context) {
