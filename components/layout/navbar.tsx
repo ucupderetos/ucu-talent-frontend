@@ -30,13 +30,13 @@ import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 
 /**
- * El MER separa `name` y `surname`.
- * ⚠️ Para una empresa, `name` es el nombre de la empresa (`Company` no tiene
- * campo propio de nombre) y no está claro qué trae `surname`.
- * TODO: confirmar con backend — si viene vacío, el trim() lo cubre.
+ * `User.name`/`User.surname` los completa `useSession()` con una segunda
+ * consulta al perfil del rol (no vienen en `MeResponse`) — pueden llegar
+ * `undefined` un instante antes de resolver. Para `EMPRESA`, `name` es la
+ * razón social y no hay `surname` (`CompanyResponse` no lo tiene).
  */
 function displayName(user: User): string {
-  return `${user.name} ${user.surname}`.trim();
+  return [user.name, user.surname].filter(Boolean).join(" ");
 }
 
 /** Iniciales para el fallback del avatar (sin foto todavía en el MER). */

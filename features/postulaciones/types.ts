@@ -1,26 +1,28 @@
-// Tipos del dominio: postulaciones (MER: `Vacancy_Application`).
+// Tipos del dominio: postulaciones (MER/wire: `VacancyApplication`).
 //
 // Las entidades core viven en @/types. Acá va lo específico: view models de la
 // gestión de postulantes y el payload del cambio de estado.
-//
-// ⚠️ PROVISORIO: el contrato de la API todavía no está definido.
 
 import type {
-  ApplicationStatus,
   Education,
   StudentProfile,
   User,
   Vacancy,
   VacancyApplication,
+  VacancyApplicationStatus,
   WorkExperience,
 } from "@/types";
 
 /**
  * Fila de la lista de postulantes que ve la empresa.
  *
- * `StudentProfile` no trae nombre ni email (están en `User`), así que la vista
- * necesita las dos entidades.
- * TODO: confirmar si el backend devuelve esto ya agregado o si son 2 requests.
+ * `profile` (`StudentProfile`) ya trae `name`/`surname` directo — a diferencia
+ * de la asunción previa a tener el contrato, no hace falta combinarlo con
+ * `user`. `user` (`GET /user/{studentProfileId}`) aporta lo que sí es de
+ * `User`: `email` y `status` (para saber si el alumno está `APROBADO`).
+ * TODO: confirmar si el backend expone esto ya agregado en un solo endpoint o
+ * si de verdad hay que pedir `VacancyApplication` + `StudentProfile` + `User`
+ * por separado (hoy, según `docs/ENDPOINTS.md`, son 3 requests).
  */
 export interface ApplicantListItem {
   application: VacancyApplication;
@@ -42,18 +44,18 @@ export interface MyApplication {
 
 /**
  * Cambio de estado de una postulación, hecho por la empresa.
+ * Wire: `UpdateVacancyApplicationRequest` — `PUT /vacancy-application/{id}`.
  *
- * 🔴 `continueWithCandidate` es lo que decide QUÉ MAIL manda el backend (RF-21).
- * El frontend NO arma ni dispara mails: solo transmite la decisión. Si este flag
- * va mal, al candidato le llega el mail equivocado — no es cosmético.
- *
- * Solo aplica cuando `status` pasa a `FINALIZADO`: el enum no distingue avance de
- * rechazo, por eso la decisión viaja en un campo aparte.
- *
- * TODO: confirmar con backend el NOMBRE EXACTO del campo y sus valores.
- * ¿`continueWithCandidate`? ¿`accepted`? ¿un enum en vez de booleano?
+ * 🔴 GAP CONFIRMADO: el payload real SOLO tiene `status`. No existe ningún
+ * campo para transmitir "seguir con el candidato o no" (lo que en el diseño
+ * original de RF-21 se llamaba `continueWithCandidate`). Tal como está el
+ * contrato hoy, el backend no tiene forma de saber qué mail mandarle al
+ * postulante al pasar a `FINALIZADO` — o decide el contenido del mail solo en
+ * base al `status`, o falta un campo que `docs/ENDPOINTS.md` todavía no
+ * documenta. Confirmar con backend ANTES de construir la UI de "marcar
+ * postulación como finalizada": si se asume un campo que no existe, la
+ * request rompe con 400.
  */
 export interface ApplicationStatusChange {
-  status: ApplicationStatus;
-  continueWithCandidate?: boolean;
+  status: VacancyApplicationStatus;
 }
