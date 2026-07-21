@@ -4,26 +4,33 @@ import { useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AuthFormSkeleton } from "@/features/auth/components/AuthLayout";
 import { useLogin } from "@/features/auth/hooks/use-login";
 
-const UCU_EMAIL_REGEX = /@ucu\.edu\.uy$/i;
-
+/**
+ * Sin restricción de dominio (decisión de equipo, ver `RegisterForm`): un
+ * alumno puede registrarse y loguearse con email personal + cédula, no solo
+ * con `@ucu.edu.uy` (RN-01, vía b).
+ *
+ * El toggle "Soy empresa" no condiciona ninguna regla hoy — se mantiene a
+ * pedido del equipo para la futura validación de RUT (pendiente, referencia
+ * a compartir).
+ */
 const loginSchema = z.object({
+  isCompany: z.boolean(),
   email: z
     .string()
     .trim()
     .min(1, "Ingresá tu email.")
     .pipe(z.email("Ingresá un email válido."))
-    .refine((value) => UCU_EMAIL_REGEX.test(value), {
-      message: "Usá tu email institucional (@ucu.edu.uy).",
-    }),
+    .transform((value) => value.toLowerCase()),
   password: z.string().min(1, "Ingresá tu contraseña."),
 });
 
@@ -33,17 +40,34 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading, error } = useLogin();
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { isCompany: false, email: "", password: "" },
   });
 
   return (
-    <form onSubmit={handleSubmit((values) => login(values))} noValidate>
+    <form
+      onSubmit={handleSubmit(({ email, password }) => login({ email, password }))}
+      noValidate
+    >
       <FieldGroup>
+        <Field orientation="horizontal">
+          <Controller
+            control={control}
+            name="isCompany"
+            render={({ field }) => (
+              <Checkbox id="isCompany" checked={field.value} onCheckedChange={field.onChange} />
+            )}
+          />
+          <FieldLabel htmlFor="isCompany" className="font-normal">
+            Soy empresa
+          </FieldLabel>
+        </Field>
+
         <Field data-invalid={Boolean(errors.email)}>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input

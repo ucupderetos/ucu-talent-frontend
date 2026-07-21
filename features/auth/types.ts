@@ -1,48 +1,55 @@
 // Tipos del dominio: auth.
 //
-// `User` y `Role` viven en @/types. Acá va lo específico: credenciales y
-// payloads de registro.
+// `User`, `Role`, `DocumentType`, `Department` viven en @/types. Acá va lo
+// específico: credenciales y el payload de alta de cuenta.
 //
-// ⚠️ PROVISORIO: el contrato de la API todavía no está definido. En particular,
-// falta confirmar si el JWT viaja en cookie httpOnly (asunción actual) — de eso
-// depende que el login no devuelva token al cliente.
+// El registro es un solo paso — `POST /user` (email, password, role) + login
+// explícito. El perfil (`StudentProfile`/`Company`) NO se pide en el
+// registro: se completa después desde "editar perfil" (`features/perfil/`,
+// todavía sin construir) — decisión de equipo.
+
+import type { Department, DocumentType } from "@/types";
 
 export interface Credentials {
   email: string;
   password: string;
 }
 
-/**
- * RF-01/RF-13 simplificado: alta con email + contraseña + documento —
- * cédula para alumno, RUT para empresa (`isCompany` decide cuál).
- *
- * ⚠️ Simplificado a propósito: el resto del perfil (nombre, apellido,
- * teléfono, industria...) se completa después, no en el alta. Para empresa
- * esto NO es todavía el alta completa de RF-13 (ver `CompanyRegistration`)
- * — es un primer paso mínimo hasta que el equipo defina el resto del flujo.
- */
+/** `POST /user` — alta de cuenta. Registro público solo admite
+ *  `ALUMNO` | `EMPRESA`. */
 export interface Registration {
   email: string;
   password: string;
-  documentNumber: string;
-  isCompany: boolean;
+  role: "ALUMNO" | "EMPRESA";
 }
 
 /**
- * RF-13: la empresa se registra y queda con `approved: false` hasta que Admin UCU
- * la apruebe.
- *
- * ⚠️ `Company` no tiene campo de nombre propio en el MER: el nombre de la empresa
- * va en `User.name`. TODO: confirmar.
+ * `POST /student-profile` — completar perfil de alumno. `phoneNumber`,
+ * `linkedinUrl` y `skills` son opcionales en el backend: no bloquean el alta.
+ * ⚠️ Sin consumidor todavía — lo va a usar `features/perfil/` cuando se
+ * construya esa pantalla, no el registro.
  */
-export interface CompanyRegistration {
-  /** Va a `User.name` — el MER no tiene `Company.name`. */
-  companyName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
+export interface StudentProfileRegistrationInput {
+  name: string;
+  surname: string;
+  documentType: DocumentType;
+  documentNumber: string;
+  phoneNumber?: string;
+  linkedinUrl?: string;
+  skills?: string[];
+}
+
+/**
+ * `POST /company` — completar perfil de empresa. Todos los campos son
+ * `@NotBlank` en el backend: no hay forma de diferir ninguno una vez que se
+ * complete el perfil. ⚠️ Sin consumidor todavía — lo va a usar
+ * `features/perfil/` cuando se construya esa pantalla, no el registro.
+ */
+export interface CompanyRegistrationInput {
+  name: string;
   industry: string;
   description: string;
   webUrl: string;
   linkedinUrl: string;
+  location: Department;
 }

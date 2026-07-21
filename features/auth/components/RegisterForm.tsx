@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -13,42 +13,54 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { AuthFormSkeleton } from "@/features/auth/components/AuthLayout";
 import { useRegister } from "@/features/auth/hooks/use-register";
+import type { Registration } from "@/features/auth/types";
+import { ApiError } from "@/lib/api-client";
 
-const CEDULA_REGEX = /^\d{7,8}$/;
-const RUT_REGEX = /^\d{12}$/;
-
+/**
+ * El registro solo pide email, contraseña y rol — decisión de equipo: nombre,
+ * cédula, RUT y el resto del perfil se completan después desde "editar
+ * perfil" (`features/perfil/`, todavía sin construir), tanto para alumno
+ * como para empresa.
+ *
+ * El email NO exige dominio `@ucu.edu.uy` para nadie: el alumno tiene dos vías
+ * excluyentes de alta (RN-01) — (a) email `@ucu.edu.uy` → aprobado automático,
+ * o (b) email personal + cédula validada contra el padrón — así que restringir
+ * el dominio en el form bloquearía la vía (b), que es válida por SRS.
+ */
 const registerSchema = z
   .object({
     isCompany: z.boolean(),
-    documentNumber: z
-      .string()
-      .trim()
-      .min(1, "Ingresá el documento.")
-      .transform((value) => value.replace(/[.\-\s]/g, "")),
     email: z
       .string()
       .trim()
       .min(1, "Ingresá tu email.")
-      .pipe(z.email("Ingresá un email válido.")),
+      .pipe(z.email("Ingresá un email válido."))
+      .transform((value) => value.toLowerCase()),
     password: z
       .string()
       .min(1, "Ingresá una contraseña.")
       .min(8, "La contraseña tiene que tener al menos 8 caracteres."),
+    confirmPassword: z.string().min(1, "Repetí tu contraseña."),
   })
   .superRefine((values, ctx) => {
-    const valid = values.isCompany
-      ? RUT_REGEX.test(values.documentNumber)
-      : CEDULA_REGEX.test(values.documentNumber);
-    if (!valid) {
+    if (values.confirmPassword !== values.password) {
       ctx.addIssue({
         code: "custom",
-        path: ["documentNumber"],
-        message: values.isCompany ? "Ingresá un RUT válido." : "Ingresá una cédula válida.",
+        path: ["confirmPassword"],
+        message: "Las contraseñas no coinciden.",
       });
     }
   });
 
 type RegisterValues = z.infer<typeof registerSchema>;
+
+function toRegistration(values: RegisterValues): Registration {
+  return {
+    email: values.email,
+    password: values.password,
+    role: values.isCompany ? "EMPRESA" : "ALUMNO",
+  };
+}
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -57,16 +69,30 @@ export function RegisterForm() {
     control,
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { isCompany: false, documentNumber: "", email: "", password: "" },
+    defaultValues: { isCompany: false, email: "", password: "", confirmPassword: "" },
   });
 
-  const isCompany = useWatch({ control, name: "isCompany" });
+  async function onSubmit(values: RegisterValues) {
+    try {
+      await submitRegistration(toRegistration(values));
+    } catch (cause) {
+      // El 409 (email duplicado) se muestra en el campo, no en el banner
+      // genérico — `useRegister().error` ya lo silencia para ese caso.
+      if (cause instanceof ApiError && cause.status === 409) {
+        setError("email", {
+          type: "manual",
+          message: "Ese email ya está registrado. ¿Ya tenés cuenta? Iniciá sesión.",
+        });
+      }
+    }
+  }
 
   return (
-    <form onSubmit={handleSubmit((values) => submitRegistration(values))} noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
         <Field orientation="horizontal">
           <Controller
@@ -83,20 +109,6 @@ export function RegisterForm() {
           <FieldLabel htmlFor="isCompany" className="font-normal">
             Soy empresa
           </FieldLabel>
-        </Field>
-
-        <Field data-invalid={Boolean(errors.documentNumber)}>
-          <FieldLabel htmlFor="documentNumber">{isCompany ? "RUT" : "Cédula"}</FieldLabel>
-          <Input
-            id="documentNumber"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            aria-invalid={Boolean(errors.documentNumber)}
-            className="h-12 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
-            {...register("documentNumber")}
-          />
-          <FieldError errors={[errors.documentNumber]} />
         </Field>
 
         <Field data-invalid={Boolean(errors.email)}>
@@ -133,6 +145,19 @@ export function RegisterForm() {
             </button>
           </div>
           <FieldError errors={[errors.password]} />
+        </Field>
+
+        <Field data-invalid={Boolean(errors.confirmPassword)}>
+          <FieldLabel htmlFor="confirmPassword">Repetir contraseña</FieldLabel>
+          <Input
+            id="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            aria-invalid={Boolean(errors.confirmPassword)}
+            className="h-12 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+            {...register("confirmPassword")}
+          />
+          <FieldError errors={[errors.confirmPassword]} />
         </Field>
 
         {error && <FieldError>{error}</FieldError>}
