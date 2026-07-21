@@ -47,12 +47,16 @@ const step1Schema = z.object({
   areaId: z.string().trim().min(1, "Seleccioná un área."),
   contractType: z.string().trim().min(1, "Seleccioná un tipo de contrato."),
   modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
-  // RN: la localidad es obligatoria salvo que la modalidad sea REMOTO.
-  // La validación condicional se hace con `.refine` sobre el objeto completo.
   location: z.string().optional(),
   // TODO: sin respaldo en el back.
   vacancies: z.string(),
   zone: z.string(),
+  // Paso 2: Detalles del puesto.
+  description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
+  // TODO: el back exige `requirements` como campo obligatorio separado
+  // (CreateVacancyRequest.requirements, @NotBlank), pero el wireframe del
+  // Paso 2 no lo contempla como campo propio. Confirmar con el equipo si se
+  // agrega una sección de "Requisitos" o si description cubre ambos casos.
 }).refine(
   (data) => data.modality === "REMOTO" || Boolean(data.location),
   { message: "La ubicación es obligatoria salvo que la modalidad sea remota.", path: ["location"] },
@@ -73,6 +77,7 @@ export function CreateJobFormProvider({ children }: { children: ReactNode }) {
       location: "",
       vacancies: "1",
       zone: "",
+      description: "",   // 👈 nuevo
     },
   });
 
