@@ -1,13 +1,11 @@
-name: CI/CD Frontend Next.js
+name: CI/CD Frontend Next.js (Prod)
 on:
-  pull_request:
-    branches: [dev]
   push:
-    branches: [dev]
+    branches: [main]
 env:
   PROJECT_ID: reto-universitario-2026
   REGION: us-central1
-  SERVICE: web-dev
+  SERVICE: web-prod
   IMAGE: us-central1-docker.pkg.dev/reto-universitario-2026/ucutalent/frontend
 jobs:
   unit-test-frontend:
@@ -20,25 +18,23 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      # - run: npm test (Tira error ya que no hay tests definidos)
+      # - run: npm test
   docker-build-check-frontend:
     name: Check dockerfile builds
     needs: unit-test-frontend
     runs-on: ubuntu-latest
-    environment: development
+    environment: production
     steps:
       - uses: actions/checkout@v4
       - run: |
           docker build \
             --build-arg NEXT_PUBLIC_API_BASE_URL=${{ vars.API_BASE_URL }} \
             -t temp-image:ci-check .
-
   build-and-deploy:
     name: Build, push y deploy a Cloud Run
     needs: [unit-test-frontend, docker-build-check-frontend]
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    environment: development
+    environment: production
     permissions:
       contents: read
     steps:
