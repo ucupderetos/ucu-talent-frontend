@@ -18,10 +18,17 @@ export default function InformacionBasicaPage() {
     console.log("TODO: guardar borrador", form.getValues());
   }
 
-  function handleNext() {
-    form.handleSubmit(() => {
-      router.push("/crear-oferta/detalles-del-puesto");
-    })();
+  async function handleNext() {
+    const isStepValid = await form.trigger([
+      "name",
+      "areaId",
+      "contractType",
+      "modality",
+      "location",
+    ]);
+    if (isStepValid) {
+      router.push("/crear-oferta/detalles-puesto");
+    }
   }
 
   return (
