@@ -663,6 +663,17 @@ se borra antes de esa migración, el problema desaparece solo.
 | **A-04** | **Contrato de paginación.** Confirmado que el feed va paginado, pero no la forma: nombres de parámetros y envoltorio de respuesta. | `Paginated<T>` está tipado pero sin contrato real detrás. |
 | **A-05** | **Contrato de filtros del feed.** El SRS pide filtros combinables (área con subáreas, carrera, contrato, modalidad, localidad, keyword) + orden configurable. La API de hoy acepta **un query param por vez** y no tiene keyword, `contractType`, carrera ni ordenamiento. | Sin un endpoint de feed real, el feed del SRS no se puede construir. |
 | **A-13** | **Cookie cross-origin contra `api-dev`.** Confirmar que el backend manda `SameSite=None; Secure` y tiene CORS con `Allow-Credentials: true` + origin explícito para `http://localhost:3000`. | Sin esto no hay sesión real y el modo mock no se puede retirar. Es lo primero a probar. |
+| **A-14** | **`VacancyStatus` del backend no es el acordado.** Hoy expone `PENDIENTE, FINALIZADO` y el `POST` fuerza `PENDIENTE` — o sea, **pre-moderación**. Lo acordado es post-moderación: `PUBLICADO, RECHAZADO, FINALIZADO`, publicando al crear (DEC-01, RN-03). | Todo lo que este documento dice sobre moderación es falso contra la API actual: el feed, la bandeja de admin y el alta de puesto. |
+| **A-15** | **Campos finales de `Vacancy`.** Hoy `contractType` es string libre (vs. enum `PASANTIA/FULL_TIME/PART_TIME/ZAFRAL`), el salario es un `salaryRange` string único (vs. `salaryMin`/`salaryMax`/`currency`) y `location` es `@NotNull` (vs. nullable cuando la modalidad es `REMOTO`, RF-PUE-01). | El formulario de alta de puesto no se puede construir: cambia la cantidad de inputs, los tipos y las validaciones de Zod. |
+| **A-16** | **Nombre de la cookie de sesión.** `ENDPOINTS.md` dice que el login setea una cookie httpOnly, pero no cómo se llama. | `proxy.ts` solo puede leer la cookie por nombre — sin ese dato no se puede escribir el guard optimista. |
+
+### 🟠 Contrato incompleto
+
+| # | Qué falta | Impacto |
+|---|---|---|
+| **A-17** | **`selected` no existe en el backend.** No está en `VacancyApplicationResponse` ni en `UpdateVacancyApplicationRequest`. Tampoco está claro si la cascada `VISTO → FINALIZADO` al cerrar el puesto está implementada. | La empresa no puede marcar su elección — ver *Postulaciones*. |
+| **A-18** | **`CompanyResponse` no expone `status`.** El `AccountStatus` llega en `GET /me`, que es el propio usuario. Pero el Admin necesita ver el estado de **cada** empresa en su listado (RF-MOD-03). | El listado de empresas del admin no puede mostrar ni filtrar por estado. |
+| **A-19** | **Formato de error de la API.** ¿Qué devuelve un `400` de validación? Para cumplir RNF-05 ("el error se muestra junto al campo") hace falta un error por campo, no un string suelto. | Define la forma de `ApiError` en `lib/api-client.ts` y cómo se mapea a `setError` de RHF. |
 
 ### 🟡 Definiciones de UI
 
@@ -677,6 +688,7 @@ se borra antes de esa migración, el problema desaparece solo.
 | # | Qué falta |
 |---|---|
 | **A-09** | **`GET /me` no devuelve `name`.** Pedido a backend: agregarlo a `MeResponse` (y de paso un `hasProfile: boolean`, que le ahorra a `ProfileGuard` un fetch por carga). Mientras tanto, el navbar hace un segundo fetch al perfil. |
+| **A-20** | **Datos semilla de `Area` y `Degree` en `api-dev`.** ¿Están cargados? Sin ellos, los selects de área (alta de puesto, filtros del feed) y de carrera (educación del perfil) quedan vacíos y no se puede probar nada de punta a punta. Es el riesgo R-06 del SRS. |
 | **A-10** | **Contrato del documento.** Confirmados los tres tipos (`CEDULA_IDENTIDAD`, `DNI`, `PASAPORTE`) + número. Falta: si el número es único global o por tipo, y las reglas de validación por tipo. |
 | **A-11** | **Contrato de subida de archivos.** El MER tiene `profileImageUrl`, `logoUrl` y `cvUrl`, pero no hay endpoint de upload. Falta el mecanismo (multipart al backend vs. URL prefirmada) y los límites. |
 | **A-12** | **Gaps de autorización del backend.** `ENDPOINTS.md` marca varios `⚠️ Sin restricción` (education, degree, area, university-registry) y `PUT`/`DELETE /vacancy` sin ownership. Este documento afirma que "la autorización real la hace Spring Boot" — hoy no se cumple del todo. Es transitorio, pero conviene no asumirlo resuelto. |
