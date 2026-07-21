@@ -1,8 +1,11 @@
 "use client";
 
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, ArrowRightIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 
 export const JOB_WIZARD_STEPS = [
   { number: 1, label: "Información básica", href: "/crear-oferta/informacion-basica" },
@@ -49,5 +52,44 @@ export function JobWizardSteps({ currentStep }: { currentStep: number }) {
         );
       })}
     </ol>
+  );
+}
+/** Header del wizard: título + descripción + acciones (reusa PageHeader),
+ *  con la barra de pasos debajo. Se usa igual en los 3 pasos. */
+export function JobWizardHeader({
+  currentStep,
+  nextStepLabel,
+  onSaveDraft,
+  onNext,
+  isNextDisabled,
+}: {
+  currentStep: number;
+  /** Texto del botón principal, ej. "Siguiente: Detalles del puesto". */
+  nextStepLabel: string;
+  onSaveDraft: () => void;
+  onNext: () => void;
+  isNextDisabled?: boolean;
+}) {
+  return (
+    <>
+      <PageHeader
+        title="Crear nueva oferta"
+        description="Completá la información del puesto. Podrás revisarla antes de enviarla a revisión."
+        actions={
+          <>
+            <Button type="button" variant="outline" onClick={onSaveDraft}>
+              Guardar borrador
+            </Button>
+            <Button type="button" onClick={onNext} disabled={isNextDisabled} className="gap-2">
+              {nextStepLabel}
+              <ArrowRightIcon className="size-4" />
+            </Button>
+          </>
+        }
+      />
+      <div className="mb-6">
+        <JobWizardSteps currentStep={currentStep} />
+      </div>
+    </>
   );
 }
