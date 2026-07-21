@@ -110,3 +110,17 @@ export interface CompanyVacancyRow extends Vacancy {
   /** Postulaciones de los últimos 7 días. Alimenta el "+N esta semana". */
   newApplicantsThisWeek: number;
 }
+
+/**
+ * Respuesta paginada de "Mis ofertas". Vive acá (no en `@/types`) porque hoy
+ * es 100% client-side sobre fixtures — `GET /vacancy` real no pagina (ver
+ * `docs/ENDPOINTS.md`, sin params de página/tamaño). Cuando el backend
+ * exponga paginación de verdad, esto pasa a reflejar ESE contrato — no es una
+ * entidad core del MER, es un view model de esta tabla.
+ */
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  perPage: number;
+}

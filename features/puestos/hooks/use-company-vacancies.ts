@@ -14,8 +14,13 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { MOCK_APPLICATIONS, MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
-import type { CompanyVacancyFilters, CompanyVacancyOrder, CompanyVacancyRow } from "@/features/puestos/types";
-import type { Paginated, Vacancy } from "@/types";
+import type {
+  CompanyVacancyFilters,
+  CompanyVacancyOrder,
+  CompanyVacancyRow,
+  Paginated,
+} from "@/features/puestos/types";
+import type { Vacancy } from "@/types";
 
 const NEW_APPLICANT_WINDOW_DAYS = 7;
 const DEFAULT_PER_PAGE = 5;
@@ -58,12 +63,12 @@ async function fetchCompanyVacancies(
 }
 
 function toRow(vacancy: Vacancy): CompanyVacancyRow {
-  const applications = MOCK_APPLICATIONS.filter((a) => a.vacancyId === vacancy.id);
+  const applications = MOCK_APPLICATIONS.filter((a) => a.vacancyId === vacancy.vacancyId);
   const weekAgo = Date.now() - NEW_APPLICANT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
   return {
     ...vacancy,
-    areaName: MOCK_AREAS.find((area) => area.id === vacancy.areaId)?.name ?? "—",
+    areaName: MOCK_AREAS.find((area) => area.areaId === vacancy.areaId)?.name ?? "—",
     applicantsCount: applications.length,
     newApplicantsThisWeek: applications.filter((a) => new Date(a.appliedAt).getTime() >= weekAgo)
       .length,
@@ -105,8 +110,8 @@ function sortRows(
   }
 }
 
-/** 0 para vacantes sin `publishedAt` (pending/rejected): el MER no tiene
- *  `createdAt`, así que no hay una fecha mejor para ordenarlas. */
+/** 0 para vacantes sin `publicationDate` (todavía `PENDIENTE`): el wire real
+ *  no tiene `createdAt`, así que no hay una fecha mejor para ordenarlas. */
 function publishedTimestamp(row: CompanyVacancyRow): number {
-  return row.publishedAt ? new Date(row.publishedAt).getTime() : 0;
+  return row.publicationDate ? new Date(row.publicationDate).getTime() : 0;
 }
