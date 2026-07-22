@@ -1,19 +1,17 @@
 "use client";
 
-// Envoltorio "Label + Limpiar" para una sección de filtro dentro del popover
-// de Filtros (un MultiSelect por sección). El link "Limpiar" solo aparece si
-// esa sección tiene algo tildado — no agrega ruido a los filtros vacíos.
+// Envoltorio "Label + control" para una sección de filtro dentro del popover
+// de Filtros (un MultiSelect por sección). Limpiar una sección puntual vive
+// DENTRO del propio dropdown del MultiSelect (ver multi-select.tsx) — este
+// componente solo agrupa el label con su control.
 // Compartido por vacancy-filters.tsx (empresa) y vacancy-feed-filters.tsx
-// (alumno) para no repetir el mismo header en cada uno.
+// (alumno) para no repetir el mismo layout en cada uno.
 
 import { Label } from "@/components/ui/label";
 
-/**
- * Mismo link de texto para los dos niveles de "limpiar" (por sección y
- * "Limpiar todo") — son la misma acción a distinta escala, así que se ven
- * igual. No un `Button`: al lado del `Label` de una sección, un botón con
- * fondo/borde pesa demasiado para una acción secundaria.
- */
+/** Link de texto para "Limpiar todo", al pie del popover de Filtros. No un
+ *  `Button`: en esa fila, un botón con fondo/borde pesa más de lo que la
+ *  acción amerita. */
 export function ClearLink({
   onClick,
   children = "Limpiar",
@@ -34,21 +32,14 @@ export function ClearLink({
 
 export function FilterSection({
   label,
-  hasSelection,
-  onClear,
   children,
 }: {
   label: string;
-  hasSelection: boolean;
-  onClear: () => void;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <Label>{label}</Label>
-        {hasSelection && <ClearLink onClick={onClear} />}
-      </div>
+      <Label>{label}</Label>
       {children}
     </div>
   );
