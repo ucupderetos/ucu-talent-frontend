@@ -1,117 +1,55 @@
 "use client";
 
+// Estado del formulario de perfil de empresa (MER: `Company`).
+//
+// ⚠️ Actualizado contra el MER — ver AGENTS.md → "Las tres fuentes y su
+// orden de precedencia". Ya no hay campos "solo UI" sin respaldo: todo lo
+// que se pide acá existe en `Company`. La única pieza pendiente real es la
+// subida de logo (A-11: no hay endpoint de upload todavía).
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { DEPARTMENTS, DESCRIPTION_MAX } from "@/features/perfil-empresa/types";
-import { useState } from "react";
 
-// Reglas de validación del formulario. Reflejan los @NotBlank/@NotNull del
-// back donde corresponde (CreateCompanyRequest / UpdateCompanyRequest), más
-// las reglas propias de UI para los campos sin respaldo en el back todavía.
+// Reglas de validación. Reflejan los campos de `Company` en el MER.
 const companyProfileSchema = z.object({
-  name: z.string().trim().min(1, "Ingresá el nombre de la empresa."),
-  webUrl: z
-    .string()
-    .trim()
-    .min(1, "Ingresá el sitio web.")
-    .pipe(z.url("Ingresá una URL válida.")),
+  razonSocial: z.string().trim().min(1, "Ingresá la razón social."),
+  rut: z.string().trim().min(1, "Ingresá el RUT."),
+  phoneNumber: z.string().trim().min(1, "Ingresá un teléfono."),
+  industry: z.string().trim().min(1, "Ingresá la industria."),
   description: z
     .string()
     .trim()
     .min(1, "Ingresá una descripción.")
     .max(DESCRIPTION_MAX, `Máximo ${DESCRIPTION_MAX} caracteres.`),
-  industry: z.string().trim().min(1, "Ingresá la industria."),
-  location: z.enum(DEPARTMENTS, "Seleccioná un departamento."),
+  webUrl: z
+    .string()
+    .trim()
+    .min(1, "Ingresá el sitio web.")
+    .pipe(z.url("Ingresá una URL válida.")),
   linkedinUrl: z.string().trim(),
-  // TODO: sin respaldo en el back — sin validación estricta por ahora.
-  companySize: z.string(),
-  foundedYear: z.string(),
-  instagramUrl: z.string(),
-  facebookUrl: z.string(),
+  location: z.enum(DEPARTMENTS, "Seleccioná un departamento."),
+  // A-11: sin endpoint de upload todavía — string libre por ahora.
+  logoUrl: z.string(),
 });
 
 export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
 
-/**
- * Form compartido de perfil de empresa: se crea una sola vez en `page.tsx` y
- * se pasa por props a `CompanyProfileForm` (que lo registra) y a
- * `CompanyProfilePreview` (que solo lo observa con `useWatch`).
- *
- * TODO: cuando el back esté listo, acá se agrega el GET /company?userId=
- * inicial para precargar `defaultValues` (con `form.reset(data)` en un
- * `useEffect`, por ejemplo).
- */
 export function useCompanyProfileForm() {
-  const [mode, setMode] = useState<"view" | "edit">("view");
-  const emptyValues: CompanyProfileFormValues = {
-    name: "",
-    webUrl: "",
-    description: "",
-    industry: "",
-    location: undefined as unknown as CompanyProfileFormValues["location"],
-    linkedinUrl: "",
-    companySize: "",
-    foundedYear: "",
-    instagramUrl: "",
-    facebookUrl: "",
-  };
-  const [savedValues, setSavedValues] = useState<CompanyProfileFormValues>(emptyValues);
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
-
-  /** Genera una URL local (blob:) para previsualizar el archivo elegido, sin
-   *  subirlo a ningún lado todavía.
-   *
-   *  TODO: cuando el back tenga un endpoint de storage, acá se agrega el
-   *  apiClient.post(`/company/${id}/logo`, formData) y `logoPreviewUrl` pasa
-   *  a ser la URL que devuelva el servidor, en vez de la blob: local. */
-  function handleLogoChange(file: File) {
-    const url = URL.createObjectURL(file);
-    setLogoPreviewUrl((previous) => {
-      // Libera la URL anterior para no acumular memoria si el usuario cambia
-      // el logo varias veces antes de guardar.
-      if (previous) URL.revokeObjectURL(previous);
-      return url;
-    });
-  }
-
-  const form = useForm<CompanyProfileFormValues>({
+  return useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
-    defaultValues: emptyValues,
+    defaultValues: {
+      razonSocial: "",
+      rut: "",
+      phoneNumber: "",
+      industry: "",
+      description: "",
+      webUrl: "",
+      linkedinUrl: "",
+      location: undefined,
+      logoUrl: "",
+    },
   });
-
-  function startEditing() {
-    setMode("edit");
-  }
-
-  function stopEditing() {
-    setMode("view");
-  }
-
-  /** Se llama después de un guardado exitoso: fija el nuevo "último guardado"
-   *  y vuelve a modo lectura. */
-  function commitSave(values: CompanyProfileFormValues) {
-    setSavedValues(values);
-    form.reset(values);
-    stopEditing();
-  }
-
-  /** Se llama al cancelar: descarta cambios sin guardar, vuelve a lo último
-   *  guardado (no a vacío). */
-  function cancelEditing() {
-    form.reset(savedValues);
-    stopEditing();
-  }
-
-  return {
-    form,
-    mode,
-    startEditing,
-    stopEditing,
-    commitSave,
-    cancelEditing,
-    logoPreviewUrl,
-    handleLogoChange,
-  };
 }

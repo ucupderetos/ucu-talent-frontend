@@ -1,52 +1,38 @@
 // Tipos del dominio: perfil de empresa (MER: `Company`).
 //
-// Las entidades core viven en @/types. Acá va lo específico: payloads de
+// Las entidades core viven en @/types. Acá va lo específico: el payload de
 // edición del formulario de perfil.
 //
-// ⚠️ PROVISORIO: varios campos del mockup no tienen respaldo en el contrato
-// actual del back (ver CompanyProfileUiOnlyInput más abajo). Confirmar con
-// backend si se agregan a `Company` o si quedan fuera del MVP.
+// ⚠️ Actualizado contra el MER (posterior al SRS, ver AGENTS.md → "Las tres
+// fuentes y su orden de precedencia"). El MER sacó los datos personales de
+// `User` y los pasó a cada perfil (`Company` incluido), y agregó `rut` y
+// `phone_number` a `Company`. Por eso ya no existe un `CompanyOwnerInput`
+// separado que pegue en `User`: todo el perfil de empresa, incluida la razón
+// social, es una sola entidad y se guarda con un único PUT.
 
 /**
- * Payload de edición de `Company`, tal como lo espera `UpdateCompanyRequest`.
- *
- * OJO: no incluye el nombre de la empresa — ese vive en `User.name`, no en
- * `Company` (ver `CompanyOwnerInput`).
+ * Payload de edición de `Company`, tal como debería esperarlo
+ * `UpdateCompanyRequest` una vez que el backend lo exponga (ver AGENTS.md →
+ * A-11 para `logoUrl`: el campo existe en el MER pero todavía no hay
+ * endpoint de upload, así que por ahora se resuelve con preview local).
  */
 export interface CompanyProfileInput {
-  industry: string; // Company.industry — texto libre, no hay catálogo cerrado en el back
+  razonSocial: string; // Company.razon_social — antes vivía (mal) en User.name
+  rut: string; // Company.rut — identificador fiscal, nuevo en el MER
+  phoneNumber: string; // Company.phone_number — movido de User al MER
+  industry: string; // texto libre, no hay catálogo cerrado en el back
   description: string;
   webUrl: string;
   linkedinUrl: string;
   /** Enum `Department` del back (19 departamentos de Uruguay). */
   location: string;
+  /** Company.logo_url — bucket. Sin endpoint de upload todavía (A-11). */
+  logoUrl: string;
 }
 
-/** Datos que viven en `User`, no en `Company`. */
-export interface CompanyOwnerInput {
-  name: string; // User.name — se muestra como "nombre de la empresa"
-}
-
-/**
- * Campos del mockup de Figma sin respaldo en `Company` hoy: logo, tamaño de
- * empresa, año de fundación, Instagram y Facebook (solo `linkedinUrl` existe
- * en el back). Se mantienen como estado de UI para no perder el diseño, pero
- * NO se envían en el payload de guardado hasta que se confirme el alcance.
- *
- * ⚠️ PENDIENTE DE ACLARAR: confirmar con el equipo si se agregan a `Company`
- * o si quedan fuera del MVP.
- */
-export interface CompanyProfileUiOnlyInput {
-  companySize: string;
-  foundedYear: string;
-  instagramUrl: string;
-  facebookUrl: string;
-}
-
-/** Estado completo del formulario: lo que va al back + lo que es solo UI. */
-export type CompanyProfileFormValues = CompanyProfileInput &
-  CompanyOwnerInput &
-  CompanyProfileUiOnlyInput;
+/** Estado completo del formulario. Ya no hay campos "solo UI": todos los
+ *  que se muestran en pantalla tienen respaldo en `Company` del MER. */
+export type CompanyProfileFormValues = CompanyProfileInput;
 
 export const DESCRIPTION_MAX = 1000;
 
