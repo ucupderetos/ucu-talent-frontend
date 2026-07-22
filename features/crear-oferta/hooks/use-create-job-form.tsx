@@ -9,9 +9,9 @@
 // endpoint de borradores, acá se agrega la persistencia real.
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createContext, useContext, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 // Enum Departamento del back — mismo catálogo que Company.location en
 // perfil-empresa/types.ts.
@@ -64,7 +64,13 @@ const step1Schema = z.object({
 
 export type CreateJobFormValues = z.infer<typeof step1Schema>;
 
-const CreateJobFormContext = createContext<UseFormReturn<CreateJobFormValues> | null>(null);
+interface CreateJobFormContextValue {
+  form: UseFormReturn<CreateJobFormValues>;
+  furthestStep: number;
+  markStepReached: (step: number) => void;
+}
+
+const CreateJobFormContext = createContext<CreateJobFormContextValue | null>(null);
 
 export function CreateJobFormProvider({ children }: { children: ReactNode }) {
   const form = useForm<CreateJobFormValues>({
@@ -77,19 +83,23 @@ export function CreateJobFormProvider({ children }: { children: ReactNode }) {
       location: "",
       vacancies: "1",
       zone: "",
-      description: "",   // 👈 nuevo
+      description: "",
     },
   });
 
+  const [furthestStep, setFurthestStep] = useState(1);
+
+  function markStepReached(step: number) {
+    setFurthestStep((prev) => Math.max(prev, step));
+  }
+
   return (
-    <CreateJobFormContext.Provider value={form}>
+    <CreateJobFormContext.Provider value={{ form, furthestStep, markStepReached }}>
       {children}
     </CreateJobFormContext.Provider>
   );
 }
 
-/** Acceso al form compartido desde cualquier paso del wizard. Tira error si
- *  se usa fuera del layout de crear-oferta/ — señal de un import mal ubicado. */
 export function useCreateJobForm() {
   const context = useContext(CreateJobFormContext);
   if (!context) {

@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { CheckIcon, ArrowRightIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
+import { useCreateJobForm } from "../hooks/use-create-job-form";
 
 export const JOB_WIZARD_STEPS = [
     { number: 1, label: "Información básica", href: "/crear-oferta/informacion-basica" },
@@ -14,49 +15,66 @@ export const JOB_WIZARD_STEPS = [
 ] as const;
 
 /** Barra de progreso del wizard: círculos numerados conectados por líneas.
- *  `currentStep` es el número de paso activo (1, 2 o 3). Los pasos anteriores
- *  al activo se muestran como completados (con check), no clickeables todavía
- *  — la navegación hacia atrás se resuelve con los botones de cada paso, no
- *  clickeando el indicador (evita saltar a un paso sin completar el actual). */
+ *  Los pasos ya completados son clickeables para volver atrás y editar —
+ *  el paso actual y los futuros NO son clickeables, así no se puede saltar
+ *  adelante sin pasar por la validación de "Siguiente" de cada paso. */
 export function JobWizardSteps({ currentStep }: { currentStep: number }) {
+    const { furthestStep } = useCreateJobForm();
+
     return (
-        <ol className="flex items-center gap-3">
+        <ol className="flex items-center gap-10">
             {JOB_WIZARD_STEPS.map((step, index) => {
                 const isCompleted = step.number < currentStep;
                 const isCurrent = step.number === currentStep;
+                const isClickable = step.number <= furthestStep && step.number !== currentStep;
+
+                const circle = (
+                    <span
+                        className={cn(
+                            "flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-medium",
+                            isCurrent && "bg-primary text-primary-foreground",
+                            isCompleted && "bg-primary/20 text-primary",
+                            !isCurrent && !isCompleted && "bg-muted text-muted-foreground",
+                        )}
+                    >
+                        {isCompleted ? <CheckIcon className="size-4" /> : step.number}
+                    </span>
+                );
+
+                const label = (
+                    <span
+                        className={cn(
+                            "text-sm",
+                            isCurrent ? "font-medium text-foreground" : "text-muted-foreground",
+                        )}
+                    >
+                        {step.label}
+                    </span>
+                );
 
                 return (
-                    <li key={step.number} className="flex items-center gap-3">
-                        {index > 0 && <span className="h-px w-10 bg-border" aria-hidden />}
-                        <div className="flex items-center gap-2">
-                            <span
-                                className={cn(
-                                    "flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-medium",
-                                    isCurrent && "bg-primary text-primary-foreground",
-                                    isCompleted && "bg-primary/20 text-primary",
-                                    !isCurrent && !isCompleted && "bg-muted text-muted-foreground",
-                                )}
-                            >
-                                {isCompleted ? <CheckIcon className="size-4" /> : step.number}
-                            </span>
-                            <span
-                                className={cn(
-                                    "text-sm",
-                                    isCurrent ? "font-medium text-foreground" : "text-muted-foreground",
-                                )}
-                            >
-                                {step.label}
-                            </span>
-                        </div>
+                    <li key={step.number} className="flex items-center gap-10">
+                        {index > 0 && <span className="h-px w-20 bg-border" aria-hidden />}
+                        {isClickable ? (
+                            <Link href={step.href} className="flex items-center gap-2 hover:opacity-70">
+                                {circle}
+                                {label}
+                            </Link>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                {circle}
+                                {label}
+                            </div>
+                        )}
                     </li>
                 );
             })}
         </ol>
     );
 }
+
 /** Header del wizard: título + descripción (reusa PageHeader) con la barra
- *  de pasos debajo. Los botones de acción viven en cada página, no acá,
- *  porque en el wireframe van al pie del formulario, no arriba. */
+ *  de pasos debajo. Los botones de acción viven en cada página. */
 export function JobWizardHeader({ currentStep }: { currentStep: number }) {
     return (
         <>

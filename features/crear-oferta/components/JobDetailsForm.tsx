@@ -11,7 +11,7 @@ import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-f
 const DESCRIPTION_MAX = 2000;
 
 export function JobDetailsForm() {
-  const form = useCreateJobForm();
+  const { form } = useCreateJobForm();
   const {
     register,
     control,

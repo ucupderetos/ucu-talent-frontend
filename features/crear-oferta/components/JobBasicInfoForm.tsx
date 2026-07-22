@@ -50,7 +50,7 @@ const AREAS_PLACEHOLDER = [
 ];
 
 export function JobBasicInfoForm() {
-    const form = useCreateJobForm();
+    const { form } = useCreateJobForm();
     const {
         register,
         control,

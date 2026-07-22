@@ -10,16 +10,12 @@ import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-f
 
 export default function DetallesDelPuestoPage() {
     const router = useRouter();
-    const form = useCreateJobForm();
-
-    function handleSaveDraft() {
-        // TODO: sin endpoint de borradores en el back todavía.
-        console.log("TODO: guardar borrador", form.getValues());
-    }
+    const { form, markStepReached } = useCreateJobForm();
 
     async function handleNext() {
         const isStepValid = await form.trigger(["description"]);
         if (isStepValid) {
+            markStepReached(3);
             router.push("/crear-oferta/revision");
         }
     }
@@ -31,8 +27,15 @@ export default function DetallesDelPuestoPage() {
             <JobDetailsForm />
 
             <div className="mt-6 flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={handleSaveDraft}>
-                    Guardar borrador
+                <Button type="button" variant="outline" onClick={() => router.push("/puestos")}>
+                    Cancelar
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/crear-oferta/informacion-basica")}
+                >
+                    Atrás
                 </Button>
                 <Button type="button" onClick={handleNext} className="gap-2">
                     Siguiente: Revisión
