@@ -4,68 +4,48 @@
 // de app/(empresa)/crear-oferta/, así sobrevive a la navegación entre los
 // 3 pasos (Next no remonta el layout al navegar entre rutas hijas).
 //
+// ⚠️ Alineado a `VacancyInput` (features/puestos/types.ts), que ya refleja
+// `CreateVacancyRequest` real del back. `companyId` NO se pide en el form:
+// se resuelve con useCurrentCompany() al armar el payload final (ver
+// use-publish-job.ts), no lo tipea el usuario.
+//
 // TODO: RF-PUE-01 pide "Guardar borrador". Hoy el estado solo vive en memoria
-// del navegador — se pierde si se recarga la página. Cuando el back tenga un
-// endpoint de borradores, acá se agrega la persistencia real.
+// del navegador — se pierde si se recarga la página.
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
-import { createContext, useContext, useState, type ReactNode } from "react";
-
-// Enum Departamento del back — mismo catálogo que Company.location en
-// perfil-empresa/types.ts.
-export const DEPARTMENTS = [
-  "ARTIGAS", "CANELONES", "CERRO_LARGO", "COLONIA", "DURAZNO", "FLORES",
-  "FLORIDA", "LAVALLEJA", "MALDONADO", "MONTEVIDEO", "PAYSANDU", "RIO_NEGRO",
-  "RIVERA", "ROCHA", "SALTO", "SAN_JOSE", "SORIANO", "TACUAREMBO", "TREINTA_Y_TRES",
-] as const;
-
-export const DEPARTMENT_LABELS: Record<string, string> = {
-  ARTIGAS: "Artigas", CANELONES: "Canelones", CERRO_LARGO: "Cerro Largo",
-  COLONIA: "Colonia", DURAZNO: "Durazno", FLORES: "Flores", FLORIDA: "Florida",
-  LAVALLEJA: "Lavalleja", MALDONADO: "Maldonado", MONTEVIDEO: "Montevideo",
-  PAYSANDU: "Paysandú", RIO_NEGRO: "Río Negro", RIVERA: "Rivera", ROCHA: "Rocha",
-  SALTO: "Salto", SAN_JOSE: "San José", SORIANO: "Soriano",
-  TACUAREMBO: "Tacuarembó", TREINTA_Y_TRES: "Treinta y Tres",
-};
-
-// Enum Modality del back.
-export const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const;
 
 const TITLE_MAX = 100;
 
-// Reglas de validación del Paso 1 (Información básica). Reflejan
-// CreateVacancyRequest donde corresponde; los campos sin respaldo en el back
-// (vacancies, zone) no tienen validación estricta todavía.
-const step1Schema = z.object({
+// Enum Modality real (@/types).
+export const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const;
+
+// Reglas de validación. Reflejan `VacancyInput` (features/puestos/types.ts),
+// sin `companyId` (se agrega al armar el payload, no lo carga el usuario).
+const jobFormSchema = z.object({
   name: z
     .string()
     .trim()
     .min(1, "Ingresá el título del puesto.")
     .max(TITLE_MAX, `Máximo ${TITLE_MAX} caracteres.`),
   areaId: z.string().trim().min(1, "Seleccioná un área."),
-  contractType: z.string().trim().min(1, "Seleccioná un tipo de contrato."),
+  contractType: z.string().trim().min(1, "Ingresá el tipo de contrato."),
   modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
   location: z.string().optional(),
-  // TODO: sin respaldo en el back.
-  vacancies: z.string(),
-  zone: z.string(),
-  // Paso 2: Detalles del puesto.
   description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
-  // TODO: el back exige `requirements` como campo obligatorio separado
-  // (CreateVacancyRequest.requirements, @NotBlank), pero el wireframe del
-  // Paso 2 no lo contempla como campo propio. Confirmar con el equipo si se
-  // agrega una sección de "Requisitos" o si description cubre ambos casos.
+  requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
+  salaryRange: z.string().trim().min(1, "Ingresá el rango salarial."),
 }).refine(
   (data) => data.modality === "REMOTO" || Boolean(data.location),
   { message: "La ubicación es obligatoria salvo que la modalidad sea remota.", path: ["location"] },
 );
 
-export type CreateJobFormValues = z.infer<typeof step1Schema>;
+export type JobFormValues = z.infer<typeof jobFormSchema>;
 
 interface CreateJobFormContextValue {
-  form: UseFormReturn<CreateJobFormValues>;
+  form: UseFormReturn<JobFormValues>;
   furthestStep: number;
   markStepReached: (step: number) => void;
 }
@@ -73,17 +53,17 @@ interface CreateJobFormContextValue {
 const CreateJobFormContext = createContext<CreateJobFormContextValue | null>(null);
 
 export function CreateJobFormProvider({ children }: { children: ReactNode }) {
-  const form = useForm<CreateJobFormValues>({
-    resolver: zodResolver(step1Schema),
+  const form = useForm<JobFormValues>({
+    resolver: zodResolver(jobFormSchema),
     defaultValues: {
       name: "",
       areaId: "",
       contractType: "",
       modality: undefined,
       location: "",
-      vacancies: "1",
-      zone: "",
       description: "",
+      requirements: "",
+      salaryRange: "",
     },
   });
 
@@ -107,3 +87,6 @@ export function useCreateJobForm() {
   }
   return context;
 }
+
+// Re-exportado para los componentes que arman el Select de ubicación —
+// mismo catálogo que usa perfil-empresa.

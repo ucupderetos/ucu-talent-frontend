@@ -6,10 +6,8 @@ import { MapPinIcon, BriefcaseIcon, CalendarIcon, FileTextIcon, BuildingIcon } f
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-import {
-  useCreateJobForm,
-  DEPARTMENT_LABELS,
-} from "@/features/crear-oferta/hooks/use-create-job-form";
+import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
+import { DEPARTMENT_LABELS } from "@/features/crear-oferta/types";
 
 const CONTRACT_TYPE_LABELS: Record<string, string> = {
   PASANTIA: "Pasantía",
@@ -52,7 +50,7 @@ export function JobReview() {
               {location && modality !== "REMOTO" && (
                 <span className="flex items-center gap-1.5">
                   <MapPinIcon className="size-4" />
-                  {DEPARTMENT_LABELS[location] ?? location}
+                  {location ? (DEPARTMENT_LABELS[location as keyof typeof DEPARTMENT_LABELS] ?? location) : null}
                 </span>
               )}
               {contractType && (
