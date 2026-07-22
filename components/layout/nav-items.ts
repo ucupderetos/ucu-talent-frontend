@@ -28,12 +28,7 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
     { label: "Mis postulaciones", href: "/postulaciones", icon: FileTextIcon },
     { label: "Mi perfil", href: "/perfil", icon: UserIcon },
   ],
-<<<<<<< HEAD
   EMPRESA: [
-    // ⚠️ /puestos todavía no tiene page.tsx — lo crea el grupo de empresa.
-=======
-  company: [
->>>>>>> 5f2e462 (feat(company-profile): add sidebar nav item)
     { label: "Mis puestos", href: "/puestos", icon: BriefcaseIcon },
     { label: "Perfil de empresa", href: "/perfil-empresa", icon: BuildingIcon },
   ],
