@@ -106,6 +106,228 @@ Consecuencias prácticas — **no ignorar**:
 - La paleta se cambia con `npx shadcn apply <preset> --only theme`, no editando
   `globals.css` a mano.
 
+## Guía de estilo de componentes (UI)
+
+> Objetivo: que un componente nuevo (lo arme una persona o la IA) se vea como si lo
+> hubiera hecho el mismo equipo que hizo el resto. Esto documenta lo que **ya existe** en
+> `app/globals.css` y `components/ui/` — no inventa un sistema de diseño paralelo. Ante la
+> duda entre "lo que dice acá" y "lo que ya hace un componente de `components/ui/`", gana
+> el componente: esta guía se corrige, no se la fuerza.
+
+### Colores
+
+Todo color va por **token semántico** (`bg-primary`, `text-muted-foreground`,
+`border-border`, `bg-destructive/10`...), nunca un hex u oklch suelto en un componente.
+Los tokens ya están declarados en `app/globals.css` — un componente no declara los suyos.
+
+| Rol | Token / utilidad | Cuándo |
+|---|---|---|
+| Acción primaria | `bg-primary` / `text-primary` / `ring-ring` | Botón principal, focus ring, links — es **navy** (`--brand-navy`, `#052E66`). |
+| Acción secundaria | `bg-secondary` | Botón secundario, sin protagonismo visual (gris neutro, no de marca). |
+| Texto apagado / ayuda | `text-muted-foreground` | Descripciones, helper text, metadata. |
+| Fondo sutil | `bg-muted` / `bg-accent` | Hover de filas, fondos de sección, superficies de bajo contraste. |
+| Error / destructivo | `bg-destructive` / `text-destructive` | Estados de error, botones destructivos, `aria-invalid`. |
+| Bordes | `border-border` (general) / `border-input` (controles de formulario) | Nunca un gris arbitrario (`border-gray-200`, etc.). |
+
+**Los 3 colores de marca** (`bg-ucu-blue`, `bg-ucu-orange`, `bg-ucu-teal`, y sus
+variantes `text-*`/`border-*`) son para **superficies de marca explícitas** — el panel
+hero de `(auth)`, ilustraciones, acentos puntuales (los puntitos de color de
+`AuthLayout`) — no un reemplazo puntual de `bg-primary` porque "queda lindo". Si el rol es
+"botón principal" o "focus ring", va `bg-primary`/`ring-ring`, no `bg-ucu-blue` a mano:
+como `--primary`/`--ring` ya **son** navy, es exactamente el mismo resultado visual sin
+repetir el color en cada componente.
+
+`ucu-teal` es el único color de marca con un rol semántico fijo fuera de "acento": es
+`--sidebar-primary`/`--sidebar-ring` (el ítem activo del Sidebar), porque el Sidebar ya es
+navy de fondo — un ítem activo navy sobre navy no se vería. `ucu-orange` no tiene token
+semántico propio: es acento puntual (dots, texto destacado), nunca un fondo grande ni un
+botón — es el color más saturado de los tres y compite con el contenido si se usa de más.
+
+⚠️ Herencia de una decisión anterior: hasta hace poco `--primary`/`--ring` eran un teal de
+marca oscurecido (para dar contraste con texto blanco) y `login-form.tsx`/`register-form.tsx`
+pisaban el navy a mano en cada input (`focus-visible:border-ucu-blue
+focus-visible:ring-ucu-blue/20`) porque esa pantalla ya es navy-forward. Ahora que
+`--primary`/`--ring` son navy por default, esos overrides quedaron **redundantes** — no
+hace falta tocarlos para que este ticket cierre, pero si se edita ese archivo por otra
+razón, se pueden borrar sin que cambie nada visualmente.
+
+### Tipografía
+
+Una sola familia, **Inter**, vía `--font-sans` (la trae el layout raíz,
+`app/layout.tsx`). `font-heading` hoy apunta a la misma variable — no hay una tipografía
+de títulos distinta todavía; si se agrega una, el punto de cambio es esa variable en
+`app/globals.css`, no cada componente.
+
+| Uso | Clases | Ejemplo real |
+|---|---|---|
+| Título de página | `text-2xl font-semibold tracking-tight` | `PageHeader` (`h1`) |
+| Bajada de página | `text-sm text-muted-foreground` | `PageHeader` (`p`, con `mt-1`) |
+| Título de card | `font-heading text-base font-medium` | `CardTitle` |
+| Cuerpo / texto de control | `text-sm` (formularios: `text-base` en el input, `md:text-sm`) | `Input`, `CardDescription` |
+| Label de campo | `text-sm font-medium` | `FieldLabel` / `FieldTitle` |
+| Ayuda / error de campo | `text-sm text-muted-foreground` (error: `text-destructive` vía `data-[invalid=true]`) | `FieldDescription` |
+| Texto de badge/pill | `text-xs font-medium` | `Badge` |
+
+⚠️ **El encabezado de una pantalla es siempre `PageHeader`** (`components/layout/page-header.tsx`)
+— título + bajada opcional + acciones. No se crea un componente nuevo por pantalla o por
+rol (tipo `DashboardHeader`) aunque sea solo para admin: es exactamente el caso que
+`PageHeader` existe para evitar (ver el comentario en el propio archivo). Si hace falta un
+acento visual que `PageHeader` no tiene, se agrega ahí — no se bifurca el componente.
+
+### Tamaño de controles interactivos
+
+Los primitivos de `components/ui/` (`Button`, `Input`, `SelectTrigger`) traen por default
+un tamaño compacto (`h-8`) pensado para UI densa. Conviven dos contextos con necesidades
+distintas, y **ambos son correctos** — no hay que unificarlos a un solo alto:
+
+- **Formulario de página completa** (login, registro, completar perfil: la persona
+  completa el formulario y listo, nada más en pantalla): controles más grandes y
+  táctiles. Estándar: **`h-11`** en `Input`/`SelectTrigger` (con `px-4 text-base`), **`h-12`**
+  en el botón de submit principal. Se aplica con `className` en el sitio de uso — **no** se
+  edita el default de `components/ui/` a mano (esa regla de arriba sigue aplicando).
+- **Barra de filtros / tabla densa** (`vacancy-filters.tsx`, `vacancy-feed-filters.tsx`,
+  `vacancy-table.tsx`): se deja el tamaño default de los primitivos (`h-8`). Es una barra de
+  herramientas sobre una lista, no un formulario — la densidad ahí es una ventaja, no un
+  descuido.
+
+⚠️ **Gotcha de `SelectTrigger`**: su tamaño no es una clase `h-*` común, es
+`data-[size=default]:h-8` / `data-[size=sm]:h-7` (variantes por atributo). Un `className="h-11"`
+suelto **no le gana** a ese default — `tailwind-merge` solo dedupea clases con el mismo
+prefijo de variante. Hay que pisarlo con el mismo prefijo: `className="data-[size=default]:h-11"`
+(ver `register-form.tsx` para el patrón ya en uso).
+
+**Pendiente de aplicar** (no se toca en este ticket, queda registrado): `complete-profile-form.tsx`
+es un formulario de página completa igual que `register-form.tsx`, pero todavía usa los
+tamaños default de los primitivos en vez de `h-11`/`h-12` — falta alinearlo.
+
+### Barras de filtros / toolbars
+
+Cualquier fila de búsqueda + filtros (feed, "Mis ofertas", listados futuros de admin) sigue
+siempre el mismo layout — dos partes con roles fijos que no se intercambian:
+
+- **Búsqueda + filtros van agrupados a la izquierda.** El buscador tiene un ancho fijo y
+  compacto (no `flex-1` estirándose a lo ancho del contenedor).
+- **Los filtros van detrás de un único botón "Filtros"** (`FilterIcon` + label, con un
+  `Badge` de conteo si hay filtros activos) que abre un `Popover` — no selects sueltos
+  siempre visibles en la barra. Un control de **orden** (`Select` de "Más recientes"/"Más
+  antiguas"/etc.), si la pantalla lo tiene, queda visible fuera del popover: ordenar no es
+  lo mismo que filtrar.
+- **Cada filtro dentro del popover es un `MultiSelect`** (más de un valor a la vez — ej.
+  varias carreras, varios tipos de contrato): pinta y comportamiento de `SelectTrigger`
+  (Radix `Select` no soporta multi-valor, por eso es un combobox armado con
+  `Popover` + `Command` — ver `features/puestos/components/multi-select.tsx`), con el
+  trigger resumiendo la selección (`"2 seleccionadas"`). No un `Select` de valor único
+  suelto en la barra. Dentro de la lista desplegable, **cada opción muestra su propio
+  `Checkbox`** (visual, `pointer-events-none` — el click lo maneja el `CommandItem`) para
+  que se entienda de un vistazo que se puede tildar más de una. El filtro pasa a ser un
+  array (`areaIds?: string[]`, no `areaId?: string`) y el filtrado en memoria matchea por
+  pertenencia (`.includes(...)`), no por igualdad.
+- **La acción primaria de la pantalla (crear, publicar) va siempre arriba a la derecha**,
+  en el `actions` de `PageHeader` — nunca en la misma fila que los filtros. Estas dos
+  posiciones (filtros a la izquierda, acción primaria arriba a la derecha) no se tocan.
+
+```tsx
+<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+  <div className="relative w-full sm:w-64">
+    {/* Input con ícono de búsqueda */}
+  </div>
+  {/* Select de orden acá, si existe */}
+  <Popover>
+    <PopoverTrigger asChild>
+      <Button variant="outline">
+        <FilterIcon />
+        Filtros
+        {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent align="start" className="flex w-72 flex-col gap-3">
+      {/* Un Label + <MultiSelect className="w-full" ... /> por filtro */}
+    </PopoverContent>
+  </Popover>
+</div>
+```
+
+Ver `vacancy-feed-filters.tsx` y `vacancy-filters.tsx` para el patrón ya aplicado.
+
+### Espaciado
+
+No hay tokens de espaciado propios: se usa la escala default de Tailwind
+(`gap-1`, `gap-2`, `gap-3`...) de forma consistente por nivel:
+
+| Nivel | Clase | Dónde |
+|---|---|---|
+| Página → header | `mb-6` | Separación entre `PageHeader` y el contenido de la página. |
+| Contenedor de página | `p-4 md:p-6` | `<main>` de `AppShell` — el padding de toda pantalla autenticada. |
+| Entre secciones de una página | `gap-6` | Bloques grandes dentro de una pantalla (ver `VacancyFeedView`). |
+| Grillas de cards | `gap-4` | `grid` de resultados (feed, tablas en tarjetas). |
+| Barra de filtros / toolbar | `gap-2` a `gap-3` | Entre controles de una misma fila de filtros. |
+| Dentro de un `Card` | `--card-spacing` (`--spacing(4)`, o `--spacing(3)` con `size="sm"`) | No pisar el padding del `Card` a mano — usar la prop `size`. |
+| Entre campos de un formulario | `FieldGroup` (`gap-5`) / `Field` (`gap-2` label↔control) | Usar `Field`/`FieldGroup` de `components/ui/field`, no `space-y-*` a mano. |
+
+### Bordes y radios
+
+`--radius` es `0.625rem` (10px), con una escala derivada en `app/globals.css`
+(`--radius-sm` = ×0.6 hasta `--radius-4xl` = ×2.6). Un componente nuevo no inventa un
+radio: usa la utilidad que ya le corresponde a su tipo.
+
+| Componente | Radio |
+|---|---|
+| `Button`, `Input`, `Textarea`, `SelectTrigger` | `rounded-lg` |
+| `Card` | `rounded-xl` |
+| `Badge` (pill) | `rounded-4xl` (full) |
+| `EmptyState` (caja con borde punteado) | `rounded-lg border-dashed` |
+
+Color de borde: siempre `border-border` (contenedores) o `border-input` (controles de
+formulario) — nunca un gris arbitrario.
+
+### Header dinámico + breadcrumb (🚧 documentado, todavía NO implementado)
+
+> No tocar `components/layout/navbar.tsx` por esto todavía — queda anotado acá para
+> cuando se decida encarar, igual que las demás decisiones de esta guía que están
+> "pendientes de aplicar". Es zona de conflicto (los 3 grupos comparten `Navbar`):
+> coordinar antes de implementarlo.
+
+Hoy `Navbar` muestra un título fijo, `"UCU Talent"`, en las tres secciones. La decisión
+es reemplazarlo por:
+
+- **En una pantalla de listado** (`/feed`, `/puestos`, `/moderacion`...): el título de la
+  sección activa — mismo ícono + label que ya tiene resaltado el item activo del
+  Sidebar/Sheet (`NAV_BY_ROLE` en `components/layout/nav-items.ts`, matcheado contra
+  `pathname`). Una sola fuente para el label, no un texto nuevo hardcodeado en `Navbar`.
+- **En una pantalla de detalle anidada** (ej. el detalle de una vacante): un breadcrumb
+  `Sección > Nombre del ítem` — el segmento de la sección como link, el último segmento
+  (el ítem actual) en texto/negrita sin link, sin ícono de flecha entre medio más que un
+  separador simple (`>` o `ChevronRightIcon`).
+
+Aplica **a las 3 secciones por igual** (alumno, empresa, admin) — no es un ajuste puntual
+de una pantalla.
+
+### Estados de los componentes
+
+La mayoría de los estados ya vienen resueltos en los primitivos de `components/ui/` —
+**no se repiten a mano** en cada uso:
+
+- **Focus**: `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`
+  — ya está en `Button`/`Input`/`Textarea`/`SelectTrigger`. Como `--ring` ya es navy, no
+  hace falta (ni se debe) pisarlo con un color de marca a mano — ver el aviso de
+  *Colores* arriba.
+- **Disabled**: `disabled:opacity-50 disabled:pointer-events-none` — ya en los primitivos.
+- **Inválido / error**: `aria-invalid:border-destructive aria-invalid:ring-3
+  aria-invalid:ring-destructive/20` — se dispara solo con el atributo `aria-invalid`, que
+  `Field`/`FieldError` ya conectan a los errores de RHF. No se pinta un borde rojo a mano
+  por `className`.
+- **Hover**: cada `variant` de `Button`/`Badge` ya define el suyo (`hover:bg-primary/80`,
+  etc.) — no se agrega un `hover:` suelto salvo un caso puntual sin variant que lo cubra.
+- **Carga, en un botón de submit**: `disabled={isLoading}` + el label cambia a gerundio +
+  puntos suspensivos (`"Guardando..."`, `"Iniciando sesión..."`, `"Creando cuenta..."`) —
+  sin ícono de spinner. Ver `login-form.tsx`, `register-form.tsx`,
+  `complete-profile-form.tsx`.
+- **Carga, de una sección o página**: `<Skeleton>` con el mismo tamaño y radio que el
+  contenido final (no un spinner centrado), mostrado mientras `isLoading` de la query. Ver
+  `GridSkeleton` en `vacancy-feed-view.tsx` o `AuthFormSkeleton` en `auth-layout.tsx`.
+- **Vacío**: `EmptyState` (ícono + título + bajada opcional + acción opcional) — no un
+  `<div>` armado a mano por pantalla.
+
 ## Fetching de datos: TanStack Query
 
 Confirmado por el equipo. Toda lectura de la API va por `useQuery`, toda escritura por

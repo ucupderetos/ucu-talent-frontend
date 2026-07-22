@@ -70,9 +70,10 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* Teal de marca oscurecido (misma tonalidad que --brand-teal): el teal
-     tal cual, con texto blanco, no llega a 4.5:1 de contraste. */
-  --primary: oklch(0.5 0.09 196.268);
+  /* Navy de marca: color primario estándar del sistema (botones, focus ring,
+     links) — ver "Guía de estilo de componentes". Ya tiene de sobra el 4.5:1
+     de contraste con texto blanco, no hace falta oscurecerlo como al teal. */
+  --primary: var(--brand-navy);
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
@@ -83,7 +84,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.684 0.115 196.268); /* --brand-teal en oklch */
+  --ring: var(--brand-navy);
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
@@ -93,6 +94,8 @@
   /* --brand-navy en oklch: fondo del Sidebar (y del nav mobile). */
   --sidebar: oklch(0.312 0.108 258.136);
   --sidebar-foreground: oklch(0.96 0.01 258.136);
+  /* Teal (no navy): el sidebar YA es navy de fondo, un ítem activo navy sobre
+     navy no se vería. Es el único lugar donde el teal sigue siendo "primary". */
   --sidebar-primary: oklch(0.684 0.115 196.268); /* --brand-teal en oklch */
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-accent: oklch(0.4 0.09 258.136); /* navy más claro: hover/activo */

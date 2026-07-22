@@ -113,12 +113,13 @@ export type CompanyVacancyOrder = "recent" | "oldest" | "applicants";
 
 /** Filtros de la tabla de "Mis ofertas". Hoy se resuelven en el cliente sobre
  *  fixtures — cuando exista el contrato de la API, probablemente viajen como
- *  query params de un GET paginado. */
+ *  query params de un GET paginado.
+ *  `statuses`/`areaIds`/`locations`: multi-selección, ver `vacancy-filters.tsx`. */
 export interface CompanyVacancyFilters {
   search?: string;
-  status?: VacancyStatus;
-  areaId?: string;
-  location?: Department;
+  statuses?: VacancyStatus[];
+  areaIds?: string[];
+  locations?: Department[];
   order?: CompanyVacancyOrder;
   page?: number;
   perPage?: number;

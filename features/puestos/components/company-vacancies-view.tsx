@@ -93,7 +93,12 @@ export function CompanyVacanciesView() {
 }
 
 function hasActiveFilters(filters: CompanyVacancyFilters): boolean {
-  return Boolean(filters.search || filters.status || filters.areaId || filters.location);
+  return Boolean(
+    filters.search ||
+      filters.statuses?.length ||
+      filters.areaIds?.length ||
+      filters.locations?.length,
+  );
 }
 
 /**
