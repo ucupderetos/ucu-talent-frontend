@@ -24,17 +24,32 @@ const DEFAULT_FILTERS: CompanyVacancyFilters = { order: "recent", page: 1, perPa
 
 export function CompanyVacanciesView() {
   const { company, isLoading: isLoadingCompany } = useCurrentCompany();
-  const [filters, setFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
+
+  // Los filtros solo se buscan al presionar "Aplicar filtros": `draftFilters`
+  // es lo que el usuario va tocando en los inputs, `appliedFilters` es lo que
+  // realmente le llega al hook de datos. La paginación es la excepción: sí
+  // actúa de inmediato, no es parte del "borrador".
+  const [draftFilters, setDraftFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading: isLoadingVacancies, isError } = useCompanyVacancies(
     company?.companyId,
-    filters,
+    appliedFilters,
   );
 
   const { areas, locations } = useCompanyVacancyOptions(company?.companyId);
 
   const isLoading = isLoadingCompany || isLoadingVacancies;
-  const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
+  const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(appliedFilters);
+
+  function applyFilters() {
+    setAppliedFilters({ ...draftFilters, page: 1 });
+  }
+
+  function clearFilters() {
+    setDraftFilters(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,10 +68,14 @@ export function CompanyVacanciesView() {
       />
 
       <VacancyFilters
-        filters={filters}
+        filters={draftFilters}
         areas={areas}
         locations={locations}
-        onChange={setFilters}
+        onChange={setDraftFilters}
+        onApply={applyFilters}
+        onClear={clearFilters}
+        canApply={hasFilterFieldsChanged(draftFilters, appliedFilters)}
+        canClear={hasActiveFilters(draftFilters) || hasActiveFilters(appliedFilters)}
       />
 
       {isLoading && <TableSkeleton />}
@@ -86,8 +105,8 @@ export function CompanyVacanciesView() {
             page={data.page}
             perPage={data.perPage}
             total={data.total}
-            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
-            onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
+            onPageChange={(page) => setAppliedFilters((f) => ({ ...f, page }))}
+            onPerPageChange={(perPage) => setAppliedFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
         </>
       )}
@@ -102,6 +121,29 @@ function hasActiveFilters(filters: CompanyVacancyFilters): boolean {
       filters.areaIds?.length ||
       filters.locations?.length,
   );
+}
+
+/** Compara borrador vs. aplicado para habilitar "Aplicar filtros" — ignora
+ *  `page`/`perPage`, que no son parte del borrador que edita la barra de
+ *  filtros. `statuses`/`areaIds`/`locations` son multi-selección, así que se
+ *  comparan como conjuntos (el orden en que se van tildando no importa). */
+function hasFilterFieldsChanged(
+  draft: CompanyVacancyFilters,
+  applied: CompanyVacancyFilters,
+): boolean {
+  return (
+    (draft.search ?? "") !== (applied.search ?? "") ||
+    !sameValues(draft.statuses, applied.statuses) ||
+    !sameValues(draft.areaIds, applied.areaIds) ||
+    !sameValues(draft.locations, applied.locations) ||
+    (draft.order ?? "recent") !== (applied.order ?? "recent")
+  );
+}
+
+function sameValues<T>(a: T[] = [], b: T[] = []): boolean {
+  if (a.length !== b.length) return false;
+  const setB = new Set(b);
+  return a.every((value) => setB.has(value));
 }
 
 /**
