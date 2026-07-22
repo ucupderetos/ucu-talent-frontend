@@ -159,6 +159,11 @@ los errores de RHF.
   capas técnicas.
 - Dominios actuales: `auth`, `perfil`, `puestos`, `postulaciones`, `moderacion`.
 - No usar convenciones de Atomic Design (`atoms/`, `molecules/`, `organisms/`).
+- **Nombre de archivo: `kebab-case` siempre**, incluidos los componentes (`vacancy-table.tsx`,
+  `role-guard.tsx`, `auth-layout.tsx`) — ya era el criterio dominante en el repo antes de
+  este párrafo. El nombre del componente exportado sigue en `PascalCase` de React
+  (`export function VacancyTable`); lo que cambia es solo el nombre de archivo, no el
+  identificador.
 
 ### Roles y control de acceso (RF-AUT-05, RBAC)
 
@@ -299,7 +304,7 @@ Ya no es una asunción: `ENDPOINTS.md` lo define.
 ### Postulaciones: máquina de estados y `selected`
 
 ```
-ApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)
+VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)
 selected: boolean   // default false, independiente del status
 ```
 
@@ -422,7 +427,7 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
   (el padrón — tabla de consulta, sin FK a `User`), `Degree`, `Education`,
   `WorkExperience`, `Modality: enum(PRESENCIAL, HIBRIDO, REMOTO)`,
   `VacancyStatus: enum(PUBLICADO, RECHAZADO, FINALIZADO)`, `Vacancy`,
-  `ApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)`, `VacancyApplication` (con
+  `VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)`, `VacancyApplication` (con
   `selected: boolean`), `Paginated<T>`.
 - **`features/<x>/types.ts` → lo específico del dominio**: filtros, payloads de formulario,
   view models. No cruzan a otro dominio, así que no suben.
@@ -431,7 +436,7 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 > contra ella:
 > - `CompanyStatus` y `StudentProfileStatus` → **se unifican en `AccountStatus`**, que
 >   vive en `User` y llega en `GET /me`.
-> - `ApplicationStatus` deja de tener `ACEPTADO`/`RECHAZADO` → es
+> - `VacancyApplicationStatus` deja de tener `ACEPTADO`/`RECHAZADO` → es
 >   `PENDIENTE, VISTO, FINALIZADO` + el flag `selected`.
 > - **`MailTemplate` se elimina.** Ver *Mails*.
 > - Se agrega `Admin` (perfil con PK compartida, mismo patrón que los otros dos).
@@ -715,7 +720,7 @@ Además, **descartado por decisión posterior al SRS**:
   contacto empresa → alumno ocurre enteramente fuera del sistema. Ver *Mails*.
 - **La vía de registro por `@ucu.edu.uy`** (RF-AUT-01, RN-01a) — no hay aprobación
   automática por dominio de correo. Toda cuenta nace `PENDIENTE`.
-- **`ApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADO`
+- **`VacancyApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADO`
   más el flag `selected`.
 
 Los correos automáticos son **dos** y los manda el backend: aviso de nueva postulación a

@@ -13,7 +13,7 @@ import { useEffect } from "react";
 
 import { RoleGuard } from "@/features/auth/components/role-guard";
 import { useSession } from "@/features/auth/hooks/use-session";
-import { CompleteProfileForm } from "@/features/perfil/components/CompleteProfileForm";
+import { CompleteProfileForm } from "@/features/perfil/components/complete-profile-form";
 import { homeRouteFor } from "@/lib/auth";
 import type { Role } from "@/types";
 

@@ -12,7 +12,7 @@
 // sí misma en loop).
 
 import { RoleGuard } from "@/features/auth/components/role-guard";
-import { ProfileGuard } from "@/features/perfil/components/ProfileGuard";
+import { ProfileGuard } from "@/features/perfil/components/profile-guard";
 
 export default function EmpresaLayout({ children }: { children: React.ReactNode }) {
   return (

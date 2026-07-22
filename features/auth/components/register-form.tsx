@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AuthFormSkeleton } from "@/features/auth/components/AuthLayout";
+import { AuthFormSkeleton } from "@/features/auth/components/auth-layout";
 import { useRegister, type RegistrationProfile } from "@/features/auth/hooks/use-register";
 import type { Registration } from "@/features/auth/types";
 import { ApiError } from "@/lib/api-client";

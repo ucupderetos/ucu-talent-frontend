@@ -18,9 +18,8 @@ import type {
   CompanyVacancyFilters,
   CompanyVacancyOrder,
   CompanyVacancyRow,
-  Paginated,
 } from "@/features/puestos/types";
-import type { Vacancy } from "@/types";
+import type { Paginated, Vacancy } from "@/types";
 
 const NEW_APPLICANT_WINDOW_DAYS = 7;
 const DEFAULT_PER_PAGE = 5;

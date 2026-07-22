@@ -10,7 +10,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { AuthFormSkeleton } from "@/features/auth/components/AuthLayout";
+import { AuthFormSkeleton } from "@/features/auth/components/auth-layout";
 import { useLogin } from "@/features/auth/hooks/use-login";
 
 /**

@@ -11,7 +11,7 @@
 // es del equipo, no del grupo de alumno — coordinar antes de tocarlo.
 
 import { RoleGuard } from "@/features/auth/components/role-guard";
-import { ProfileGuard } from "@/features/perfil/components/ProfileGuard";
+import { ProfileGuard } from "@/features/perfil/components/profile-guard";
 
 export default function AlumnoLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -54,6 +54,31 @@ export interface VacancyInput {
 }
 
 /**
+ * Filtros del feed de vacantes (vista alumno) tal como se resuelven HOY en el
+ * cliente sobre fixtures — ver `hooks/use-feed-vacancies.ts`. No confundir con
+ * `VacancyFilters` de arriba: esos son los query params reales de
+ * `GET /vacancy` para cuando exista el contrato de paginación (A-04/A-05).
+ */
+export interface FeedFilters {
+  search?: string;
+  areaId?: string;
+  contractType?: string;
+}
+
+/**
+ * Card de una vacante en el feed: la `Vacancy` del MER más los datos
+ * derivados que la card necesita mostrar (nombre de empresa y de área). No es
+ * una entidad del MER, por eso vive acá y no en `@/types`.
+ */
+export interface FeedVacancyRow extends Vacancy {
+  companyName: string;
+  areaName: string;
+  /** Área padre de `areaName`, si la tiene (jerarquía de `Area`) — la card
+   *  muestra ambas como tags. `null` en áreas raíz. */
+  parentAreaName: string | null;
+}
+
+/**
  * Cambio de estado hecho por la EMPRESA dueña de la vacante.
  *
  * 🔴 GAP CONFIRMADO: `VacancyStatus` hoy solo tiene `PENDIENTE` y `FINALIZADO`
@@ -109,18 +134,4 @@ export interface CompanyVacancyRow extends Vacancy {
   applicantsCount: number;
   /** Postulaciones de los últimos 7 días. Alimenta el "+N esta semana". */
   newApplicantsThisWeek: number;
-}
-
-/**
- * Respuesta paginada de "Mis ofertas". Vive acá (no en `@/types`) porque hoy
- * es 100% client-side sobre fixtures — `GET /vacancy` real no pagina (ver
- * `docs/ENDPOINTS.md`, sin params de página/tamaño). Cuando el backend
- * exponga paginación de verdad, esto pasa a reflejar ESE contrato — no es una
- * entidad core del MER, es un view model de esta tabla.
- */
-export interface Paginated<T> {
-  items: T[];
-  total: number;
-  page: number;
-  perPage: number;
 }

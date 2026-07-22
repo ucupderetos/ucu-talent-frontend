@@ -289,3 +289,15 @@ export interface VacancyApplication {
   status: VacancyApplicationStatus;
   appliedAt: string; // ISO 8601
 }
+
+// ---------------------------------------------------------------------------
+// Utilidades cross-domain
+// ---------------------------------------------------------------------------
+
+/** Envoltorio genérico de paginación — lo usa cualquier listado paginado, sin importar el dominio. */
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  perPage: number;
+}

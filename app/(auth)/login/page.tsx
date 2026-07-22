@@ -1,8 +1,8 @@
 // Ruta: /login — pantalla de inicio de sesión.
 
-import { AuthHeader, AuthHeaderSkeleton } from "@/features/auth/components/AuthLayout";
+import { AuthHeader, AuthHeaderSkeleton } from "@/features/auth/components/auth-layout";
 import { GuestOnly } from "@/features/auth/components/guest-only";
-import { LoginForm, LoginFormSkeleton } from "@/features/auth/components/LoginForm";
+import { LoginForm, LoginFormSkeleton } from "@/features/auth/components/login-form";
 
 export default function LoginPage() {
   return (

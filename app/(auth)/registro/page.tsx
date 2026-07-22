@@ -1,11 +1,11 @@
 // Ruta: /registro — alta de alumno (RF-AUT-01/02).
 
-import { AuthHeader, AuthHeaderSkeleton } from "@/features/auth/components/AuthLayout";
+import { AuthHeader, AuthHeaderSkeleton } from "@/features/auth/components/auth-layout";
 import { GuestOnly } from "@/features/auth/components/guest-only";
 import {
   RegisterForm,
   RegisterFormSkeleton,
-} from "@/features/auth/components/RegisterForm";
+} from "@/features/auth/components/register-form";
 
 export default function RegistroPage() {
   return (
