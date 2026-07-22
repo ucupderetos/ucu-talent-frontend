@@ -81,9 +81,9 @@ function filterRows(
   const search = filters.search?.trim().toLowerCase();
 
   return rows.filter((row) => {
-    if (filters.status && row.status !== filters.status) return false;
-    if (filters.areaId && row.areaId !== filters.areaId) return false;
-    if (filters.location && row.location !== filters.location) return false;
+    if (filters.statuses?.length && !filters.statuses.includes(row.status)) return false;
+    if (filters.areaIds?.length && !filters.areaIds.includes(row.areaId)) return false;
+    if (filters.locations?.length && !filters.locations.includes(row.location)) return false;
     if (search) {
       const haystack = `${row.name} ${row.areaName}`.toLowerCase();
       if (!haystack.includes(search)) return false;

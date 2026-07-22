@@ -1,12 +1,19 @@
 "use client";
 
-// Barra de filtros de "Mis ofertas": búsqueda + estado + área + ubicación +
-// orden. Controlado desde afuera (`company-vacancies-view.tsx`) — este
-// componente no sabe de dónde vienen los datos, solo emite el filtro nuevo.
+// Barra de filtros de "Mis ofertas": búsqueda + orden (siempre visibles) + un
+// botón único "Filtros" que abre un panel con tres MultiSelect (estado, área,
+// ubicación) — cada uno con pinta de Select, pero se puede tildar más de una
+// opción adentro. Controlado desde afuera (`company-vacancies-view.tsx`) —
+// este componente no sabe de dónde vienen los datos, solo emite el filtro
+// nuevo.
 
-import { SearchIcon } from "lucide-react";
+import { FilterIcon, SearchIcon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -14,11 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "@/features/puestos/components/multi-select";
 import { VACANCY_STATUS_LABEL } from "@/features/puestos/components/vacancy-status-badge";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
 import type { Area, Department, VacancyStatus } from "@/types";
-
-const ALL = "all";
 
 const ORDER_LABEL: Record<CompanyVacancyOrder, string> = {
   recent: "Más recientes",
@@ -37,9 +43,12 @@ export function VacancyFilters({
   locations: string[];
   onChange: (filters: CompanyVacancyFilters) => void;
 }) {
+  const activeCount =
+    (filters.statuses?.length ?? 0) + (filters.areaIds?.length ?? 0) + (filters.locations?.length ?? 0);
+
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <div className="relative flex-1 sm:max-w-sm">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="relative w-full sm:w-64">
         <SearchIcon
           className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
@@ -53,88 +62,75 @@ export function VacancyFilters({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Select
-          value={filters.status ?? ALL}
-          onValueChange={(value) =>
-            onChange({
-              ...filters,
-              status: value === ALL ? undefined : (value as VacancyStatus),
-              page: 1,
-            })
-          }
-        >
-          <SelectTrigger aria-label="Filtrar por estado">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos los estados</SelectItem>
-            {Object.entries(VACANCY_STATUS_LABEL).map(([status, label]) => (
-              <SelectItem key={status} value={status}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <Select
+        value={filters.order ?? "recent"}
+        onValueChange={(value) => onChange({ ...filters, order: value as CompanyVacancyOrder })}
+      >
+        <SelectTrigger aria-label="Ordenar ofertas">
+          <SelectValue placeholder="Orden" />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(ORDER_LABEL).map(([order, label]) => (
+            <SelectItem key={order} value={order}>
+              {label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-        <Select
-          value={filters.areaId ?? ALL}
-          onValueChange={(value) =>
-            onChange({ ...filters, areaId: value === ALL ? undefined : value, page: 1 })
-          }
-        >
-          <SelectTrigger aria-label="Filtrar por área">
-            <SelectValue placeholder="Área" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todas las áreas</SelectItem>
-            {areas.map((area) => (
-              <SelectItem key={area.areaId} value={area.areaId}>
-                {area.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline">
+            <FilterIcon />
+            Filtros
+            {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label>Estado</Label>
+            <MultiSelect
+              label="Estado"
+              placeholder="Todos los estados"
+              options={Object.entries(VACANCY_STATUS_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              selected={filters.statuses ?? []}
+              onChange={(statuses) =>
+                onChange({ ...filters, statuses: statuses as VacancyStatus[], page: 1 })
+              }
+              className="w-full"
+            />
+          </div>
 
-        <Select
-          value={filters.location ?? ALL}
-          onValueChange={(value) =>
-            onChange({
-              ...filters,
-              location: value === ALL ? undefined : (value as Department),
-              page: 1,
-            })
-          }
-        >
-          <SelectTrigger aria-label="Filtrar por ubicación">
-            <SelectValue placeholder="Ubicación" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todas las ubicaciones</SelectItem>
-            {locations.map((location) => (
-              <SelectItem key={location} value={location}>
-                {location}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <div className="flex flex-col gap-1.5">
+            <Label>Área</Label>
+            <MultiSelect
+              label="Área"
+              placeholder="Todas las áreas"
+              options={areas.map((area) => ({ value: area.areaId, label: area.name }))}
+              selected={filters.areaIds ?? []}
+              onChange={(areaIds) => onChange({ ...filters, areaIds, page: 1 })}
+              className="w-full"
+            />
+          </div>
 
-        <Select
-          value={filters.order ?? "recent"}
-          onValueChange={(value) => onChange({ ...filters, order: value as CompanyVacancyOrder })}
-        >
-          <SelectTrigger aria-label="Ordenar ofertas">
-            <SelectValue placeholder="Orden" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(ORDER_LABEL).map(([order, label]) => (
-              <SelectItem key={order} value={order}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Ubicación</Label>
+            <MultiSelect
+              label="Ubicación"
+              placeholder="Todas las ubicaciones"
+              options={locations.map((location) => ({ value: location, label: location }))}
+              selected={filters.locations ?? []}
+              onChange={(locations) =>
+                onChange({ ...filters, locations: locations as Department[], page: 1 })
+              }
+              className="w-full"
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
