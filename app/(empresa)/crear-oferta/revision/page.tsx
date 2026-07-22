@@ -30,24 +30,36 @@ export default function RevisionPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <JobReview />
-        <JobReviewCompanyInfo />
-      </div>
 
-      {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
-      <div className="mt-6 flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={() => router.push("/puestos")}>
-          Cancelar
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push("/crear-oferta/detalles-puesto")}
-        >
-          Atrás
-        </Button>
-        <Button type="button" onClick={handlePublish} disabled={isLoading}>
-          {isLoading ? "Publicando..." : "Publicar oferta"}
-        </Button>
+        <div className="flex flex-col">
+          <JobReviewCompanyInfo />
+
+          {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+
+          <div className="mt-auto flex flex-col gap-2 pt-4">
+            <Button type="button" onClick={handlePublish} disabled={isLoading} className="w-full">
+              {isLoading ? "Publicando..." : "Publicar oferta"}
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/puestos")}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/crear-oferta/detalles-puesto")}
+                className="flex-1"
+              >
+                Atrás
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );

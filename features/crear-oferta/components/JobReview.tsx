@@ -1,20 +1,21 @@
 "use client";
 
 import { useWatch } from "react-hook-form";
-import { MapPinIcon, BriefcaseIcon, CalendarIcon, FileTextIcon, BuildingIcon } from "lucide-react";
+import {
+  MapPinIcon,
+  BriefcaseIcon,
+  CalendarIcon,
+  FileTextIcon,
+  BuildingIcon,
+  ClipboardListIcon,
+  BanknoteIcon,
+} from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
 import { DEPARTMENT_LABELS } from "@/features/crear-oferta/types";
-
-const CONTRACT_TYPE_LABELS: Record<string, string> = {
-  PASANTIA: "Pasantía",
-  FULL_TIME: "Full-time",
-  PART_TIME: "Part-time",
-  ZAFRAL: "Zafral",
-};
 
 export function JobReview() {
   const { form } = useCreateJobForm();
@@ -23,6 +24,8 @@ export function JobReview() {
   const contractType = useWatch({ control: form.control, name: "contractType" });
   const modality = useWatch({ control: form.control, name: "modality" });
   const description = useWatch({ control: form.control, name: "description" });
+  const requirements = useWatch({ control: form.control, name: "requirements" });
+  const salaryRange = useWatch({ control: form.control, name: "salaryRange" });
 
   const today = new Date().toLocaleDateString("es-UY", {
     day: "2-digit",
@@ -50,13 +53,19 @@ export function JobReview() {
               {location && modality !== "REMOTO" && (
                 <span className="flex items-center gap-1.5">
                   <MapPinIcon className="size-4" />
-                  {location ? (DEPARTMENT_LABELS[location as keyof typeof DEPARTMENT_LABELS] ?? location) : null}
+                  {DEPARTMENT_LABELS[location as keyof typeof DEPARTMENT_LABELS] ?? location}
                 </span>
               )}
               {contractType && (
                 <span className="flex items-center gap-1.5">
                   <BriefcaseIcon className="size-4" />
-                  {CONTRACT_TYPE_LABELS[contractType] ?? contractType}
+                  {contractType}
+                </span>
+              )}
+              {salaryRange && (
+                <span className="flex items-center gap-1.5">
+                  <BanknoteIcon className="size-4" />
+                  {salaryRange}
                 </span>
               )}
               <span className="flex items-center gap-1.5">
@@ -76,6 +85,18 @@ export function JobReview() {
           </p>
           <p className="whitespace-pre-line text-sm text-muted-foreground">
             {description || "Sin descripción."}
+          </p>
+        </div>
+
+        <Separator />
+
+        <div>
+          <p className="mb-2 flex items-center gap-2 text-sm font-medium">
+            <ClipboardListIcon className="size-4" />
+            Requisitos
+          </p>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">
+            {requirements || "Sin requisitos."}
           </p>
         </div>
       </CardContent>

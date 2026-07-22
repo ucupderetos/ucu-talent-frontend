@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { MapPinIcon, HomeIcon, LaptopIcon } from "lucide-react";
 
-import { useCreateJobForm, MODALITIES } from "@/features/crear-oferta/hooks/use-create-job-form";
+import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/features/crear-oferta/types";
 import { cn } from "@/lib/utils";
 

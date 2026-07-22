@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { CheckIcon, ArrowRightIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { useCreateJobForm } from "../hooks/use-create-job-form";
 
