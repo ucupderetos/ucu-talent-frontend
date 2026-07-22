@@ -6,7 +6,6 @@
 import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/layout/empty-state";
-import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VacancyFeedCard } from "@/features/puestos/components/vacancy-feed-card";
 import { VacancyFeedFilters } from "@/features/puestos/components/vacancy-feed-filters";
@@ -25,11 +24,6 @@ export function VacancyFeedView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Vacantes destacadas"
-        description="Encontrá oportunidades que se ajusten a tu perfil profesional."
-      />
-
       <VacancyFeedFilters
         filters={filters}
         areas={areas}
