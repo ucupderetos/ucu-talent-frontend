@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FilterSection } from "@/features/puestos/components/filter-section";
+import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
 import { MultiSelect } from "@/features/puestos/components/multi-select";
 import { VACANCY_STATUS_LABEL } from "@/features/puestos/components/vacancy-status-badge";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
@@ -115,16 +115,7 @@ export function VacancyFilters({
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">Filtros</p>
-            {activeCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-muted-foreground"
-                onClick={clearAll}
-              >
-                Limpiar todo
-              </Button>
-            )}
+            {activeCount > 0 && <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>}
           </div>
 
           <FilterSection

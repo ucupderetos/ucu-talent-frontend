@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { FilterSection } from "@/features/puestos/components/filter-section";
+import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
 import { MultiSelect } from "@/features/puestos/components/multi-select";
 import type { FeedFilters } from "@/features/puestos/types";
 import type { Area } from "@/types";
@@ -61,16 +61,7 @@ export function VacancyFeedFilters({
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">Filtros</p>
-            {activeCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-muted-foreground"
-                onClick={clearAll}
-              >
-                Limpiar todo
-              </Button>
-            )}
+            {activeCount > 0 && <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>}
           </div>
 
           <FilterSection
