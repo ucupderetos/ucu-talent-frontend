@@ -233,6 +233,18 @@ siempre el mismo layout — dos partes con roles fijos que no se intercambian:
   en el `actions` de `PageHeader` — nunca en la misma fila que los filtros. Estas dos
   posiciones (filtros a la izquierda, acción primaria arriba a la derecha) no se tocan.
 
+⚠️ **`features/puestos/components/multi-select.tsx` es el único `MultiSelect` del
+repo — no `components/filters/`.** Un PR paralelo (#14) había agregado un
+`FilterMultiSelect` genérico en `components/filters/`, sin consumidores en ese momento;
+se eliminó (`filter-multi-select.tsx` sigue sin uso, no volver a agregarlo). Pero
+`ApplyFiltersButton`/`ClearFiltersButton` (mismo directorio) **sí tienen un consumidor
+real**: `features/puestos/components/vacancy-filters.tsx` ("Mis ofertas" de empresa, PR
+#19) los usa para un paradigma de estado "borrador" + aplicar explícito, distinto del
+Popover con aplicado en vivo de esta sección. Es una divergencia puntual de esa pantalla,
+no una migración general — el feed de alumno (`vacancy-feed-filters.tsx`) sigue con
+aplicado en vivo. Si se quiere unificar un solo paradigma para toda la app, es una
+decisión a coordinar entre los tres grupos, no algo a resolver a mano en un archivo.
+
 ```tsx
 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
   <div className="relative w-full sm:w-64">
