@@ -8,6 +8,30 @@
 
 import { Label } from "@/components/ui/label";
 
+/**
+ * Mismo link de texto para los dos niveles de "limpiar" (por sección y
+ * "Limpiar todo") — son la misma acción a distinta escala, así que se ven
+ * igual. No un `Button`: al lado del `Label` de una sección, un botón con
+ * fondo/borde pesa demasiado para una acción secundaria.
+ */
+export function ClearLink({
+  onClick,
+  children = "Limpiar",
+}: {
+  onClick: () => void;
+  children?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+    >
+      {children}
+    </button>
+  );
+}
+
 export function FilterSection({
   label,
   hasSelection,
@@ -23,15 +47,7 @@ export function FilterSection({
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
         <Label>{label}</Label>
-        {hasSelection && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            Limpiar
-          </button>
-        )}
+        {hasSelection && <ClearLink onClick={onClear} />}
       </div>
       {children}
     </div>

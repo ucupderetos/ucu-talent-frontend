@@ -236,22 +236,22 @@ siempre el mismo layout — dos partes con roles fijos que no se intercambian:
   de limpiar suelto en la barra: el badge de conteo en "Filtros" ya avisa que hay algo
   activo, y abrir el popover es donde se decide qué.
   - **Por sección**: cada `Label` de filtro va envuelto en `FilterSection`
-    (`features/puestos/components/filter-section.tsx`), que agrega un link "Limpiar" al
-    lado del label — solo visible si esa sección tiene algo tildado.
+    (`features/puestos/components/filter-section.tsx`), que agrega un `ClearLink` ("Limpiar")
+    al lado del label — solo visible si esa sección tiene algo tildado.
   - **Todos**: una fila `"Filtros" + "Limpiar todo"` arriba de las secciones, con el mismo
-    `activeCount > 0` que ya calcula el badge — el botón resetea todos los campos del
-    popover, PERO NO búsqueda ni orden (esos no son "filtros" en este layout, son sus
-    propios controles — ver el punto de arriba).
+    `activeCount > 0` que ya calcula el badge — resetea todos los campos del popover, PERO
+    NO búsqueda ni orden (esos no son "filtros" en este layout, son sus propios controles
+    — ver el punto de arriba).
+  - **Los dos niveles usan el mismo `ClearLink`** (mismo componente, texto `text-xs
+    text-muted-foreground` con `underline` al hover) — no un `Button`: al lado de un
+    `Label`, un botón con fondo/borde pesa más de lo que la acción amerita. Es la misma
+    acción a distinta escala, así que se ven igual — no dos estilos para "limpiar".
 
   ```tsx
   <PopoverContent align="start" className="flex w-72 flex-col gap-3">
     <div className="flex items-center justify-between gap-2">
       <p className="text-sm font-medium">Filtros</p>
-      {activeCount > 0 && (
-        <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground" onClick={clearAll}>
-          Limpiar todo
-        </Button>
-      )}
+      {activeCount > 0 && <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>}
     </div>
     <FilterSection
       label="Área"
