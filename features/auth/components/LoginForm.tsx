@@ -4,11 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AuthFormSkeleton } from "@/features/auth/components/AuthLayout";
@@ -18,13 +17,8 @@ import { useLogin } from "@/features/auth/hooks/use-login";
  * Sin restricción de dominio (decisión de equipo, ver `RegisterForm`): un
  * alumno puede registrarse y loguearse con email personal + cédula, no solo
  * con `@ucu.edu.uy` (RN-01, vía b).
- *
- * El toggle "Soy empresa" no condiciona ninguna regla hoy — se mantiene a
- * pedido del equipo para la futura validación de RUT (pendiente, referencia
- * a compartir).
  */
 const loginSchema = z.object({
-  isCompany: z.boolean(),
   email: z
     .string()
     .trim()
@@ -40,13 +34,12 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading, error } = useLogin();
   const {
-    control,
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { isCompany: false, email: "", password: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   return (
@@ -55,19 +48,6 @@ export function LoginForm() {
       noValidate
     >
       <FieldGroup>
-        <Field orientation="horizontal">
-          <Controller
-            control={control}
-            name="isCompany"
-            render={({ field }) => (
-              <Checkbox id="isCompany" checked={field.value} onCheckedChange={field.onChange} />
-            )}
-          />
-          <FieldLabel htmlFor="isCompany" className="font-normal">
-            Soy empresa
-          </FieldLabel>
-        </Field>
-
         <Field data-invalid={Boolean(errors.email)}>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
@@ -75,7 +55,7 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             aria-invalid={Boolean(errors.email)}
-            className="h-12 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+            className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
             {...register("email")}
           />
           <FieldError errors={[errors.email]} />
@@ -89,7 +69,7 @@ export function LoginForm() {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               aria-invalid={Boolean(errors.password)}
-              className="h-12 px-4 pr-11 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+              className="h-11 px-4 pr-11 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
               {...register("password")}
             />
             <button
