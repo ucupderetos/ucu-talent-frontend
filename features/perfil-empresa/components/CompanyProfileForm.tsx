@@ -1,309 +1,209 @@
 "use client";
 
-import { LinkIcon } from "lucide-react";
-import { useForm, useWatch, type SubmitHandler, type UseFormReturn } from "react-hook-form";
-import { useRef } from "react";
+import { useWatch, type UseFormReturn } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateCompanyProfile } from "@/features/perfil-empresa/hooks/use-update-company-profile";
 import type { CompanyProfileFormValues } from "@/features/perfil-empresa/hooks/use-company-profile-form";
 import { CompanyProfileReadOnly } from "@/features/perfil-empresa/components/CompanyProfileReadOnly";
 import {
-    DEPARTMENTS,
-    DEPARTMENT_LABELS,
-    DESCRIPTION_MAX,
+  DEPARTMENTS,
+  DEPARTMENT_LABELS,
+  DESCRIPTION_MAX,
 } from "@/features/perfil-empresa/types";
 
-/** Input de red social con ícono a la izquierda. Genérico (LinkIcon), no logos
- *  de marca, para mantener consistencia con el resto de la app (monocromática). */
-function SocialField({
-    id,
-    label,
-    placeholder,
-    ...registerProps
-}: {
-    id: string;
-    label: string;
-    placeholder: string;
-} & ReturnType<ReturnType<typeof useForm>["register"]>) {
-    return (
-        <div className="relative">
-            <LinkIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-                id={id}
-                aria-label={label}
-                className="pl-9"
-                placeholder={placeholder}
-                {...registerProps}
-            />
-        </div>
-    );
-}
-
 export function CompanyProfileForm({
-    form,
-    mode,
-    startEditing,
-    commitSave,
-    cancelEditing,
-    logoPreviewUrl,
-    onLogoChange,
+  form,
+  mode,
+  startEditing,
+  commitSave,
+  cancelEditing,
 }: {
-    form: UseFormReturn<CompanyProfileFormValues>;
-    mode: "view" | "edit";
-    startEditing: () => void;
-    commitSave: (values: CompanyProfileFormValues) => void;
-    cancelEditing: () => void;
-    logoPreviewUrl: string | null;
-    onLogoChange: (file: File) => void;
+  form: UseFormReturn<CompanyProfileFormValues>;
+  mode: "view" | "edit";
+  startEditing: () => void;
+  commitSave: (values: CompanyProfileFormValues) => void;
+  cancelEditing: () => void;
 }) {
-    const { updateProfile, isLoading, error } = useUpdateCompanyProfile();
-    const {
-        register,
-        handleSubmit,
-        control,
-        formState: { errors },
-    } = form;
+  const { updateProfile, isLoading, error } = useUpdateCompanyProfile();
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = form;
 
-    const description = useWatch({ control, name: "description" }) ?? "";
-    const location = useWatch({ control, name: "location" });
-    const fileInputRef = useRef<HTMLInputElement>(null);
+  const description = useWatch({ control, name: "description" }) ?? "";
+  const location = useWatch({ control, name: "location" });
 
-    const onSubmit: SubmitHandler<CompanyProfileFormValues> = async (values) => {
-        await updateProfile(values);
-        commitSave(values);
-    };
-    // Modo lectura: mostramos los datos como texto, con el botón "Editar perfil".
-    if (mode === "view") {
-        return <CompanyProfileReadOnly form={form} onEdit={startEditing} logoPreviewUrl={logoPreviewUrl} />;
-    }
-    // Modo edición: el formulario real, con validación.
-    return (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="lg:col-span-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Información general</CardTitle>
-                    <CardDescription>
-                        Completá los datos principales de tu empresa. Los campos marcados con * son obligatorios.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <FieldGroup>
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            {/* Logo — TODO: sin respaldo en el back */}
-                            {/* Logo — preview local; guardado real pendiente de endpoint de storage */}
-                            <Field>
-                                <FieldLabel>Logo de la empresa</FieldLabel>
-                                <div>
-                                    <div className="flex size-24 items-center justify-center overflow-hidden rounded-md border text-xs text-muted-foreground">
-                                        {logoPreviewUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element -- preview local (blob:), no pasa por el optimizador de imágenes de Next
-                                            <img src={logoPreviewUrl} alt="Logo de la empresa" className="size-full object-cover" />
-                                        ) : (
-                                            "Sin logo"
-                                        )}
-                                    </div>
-                                </div>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/jpeg,image/png"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) onLogoChange(file);
-                                    }}
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-fit"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    Cambiar logo
-                                </Button>
-                                <p className="text-xs text-muted-foreground">JPG o PNG. Máx. 2MB.</p>
-                            </Field>
-                            <div className="flex flex-col gap-6">
-                                <Field data-invalid={Boolean(errors.name)}>
-                                    <FieldLabel htmlFor="name">Nombre de la empresa *</FieldLabel>
-                                    <Input
-                                        id="name"
-                                        placeholder="H-Move"
-                                        aria-invalid={Boolean(errors.name)}
-                                        {...register("name")}
-                                    />
-                                    <FieldError errors={[errors.name]} />
-                                </Field>
-                                <Field data-invalid={Boolean(errors.webUrl)}>
-                                    <FieldLabel htmlFor="webUrl">Sitio web *</FieldLabel>
-                                    <Input
-                                        id="webUrl"
-                                        placeholder="https://hmove.com.uy"
-                                        aria-invalid={Boolean(errors.webUrl)}
-                                        {...register("webUrl")}
-                                    />
-                                    <FieldError errors={[errors.webUrl]} />
-                                </Field>
-                            </div>
-                        </div>
+  const onSubmit = handleSubmit(async (values) => {
+    await updateProfile(values);
+    commitSave(values);
+  });
 
-                        <Field data-invalid={Boolean(errors.description)}>
-                            <FieldLabel htmlFor="description">Descripción de la empresa *</FieldLabel>
-                            <p className="text-sm text-muted-foreground">
-                                Contá qué hace tu empresa, cuál es su propósito y qué la hace única.
-                            </p>
-                            <Textarea
-                                id="description"
-                                maxLength={DESCRIPTION_MAX}
-                                className="min-h-32"
-                                aria-invalid={Boolean(errors.description)}
-                                {...register("description")}
-                            />
-                            <p className="text-right text-xs text-muted-foreground">
-                                {description.length}/{DESCRIPTION_MAX}
-                            </p>
-                            <FieldError errors={[errors.description]} />
-                        </Field>
+  if (mode === "view") {
+    return <CompanyProfileReadOnly form={form} onEdit={startEditing} />;
+  }
 
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            <Field data-invalid={Boolean(errors.industry)}>
-                                <FieldLabel htmlFor="industry">Industria *</FieldLabel>
-                                <Input
-                                    id="industry"
-                                    placeholder="Marketing y Publicidad"
-                                    aria-invalid={Boolean(errors.industry)}
-                                    {...register("industry")}
-                                />
-                                <FieldError errors={[errors.industry]} />
-                            </Field>
+  return (
+    <form onSubmit={onSubmit} noValidate>
+      <Card>
+        <CardHeader>
+          <CardTitle>Información general</CardTitle>
+          <CardDescription>
+            Completá los datos principales de tu empresa. Los campos marcados con * son obligatorios.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            {/* A-11: sin endpoint de upload todavía — campo de texto por ahora */}
+            <Field>
+              <FieldLabel htmlFor="logoUrl">Logo (URL)</FieldLabel>
+              <Input id="logoUrl" placeholder="https://..." {...register("logoUrl")} />
+            </Field>
 
-                            <Field data-invalid={Boolean(errors.location)}>
-                                <FieldLabel htmlFor="location">Ubicación principal *</FieldLabel>
-                                <input type="hidden" {...register("location")} />
-                                <Select
-                                    value={location ?? ""}
-                                    onValueChange={(value) =>
-                                        register("location").onChange({ target: { value, name: "location" } })
-                                    }
-                                >
-                                    <SelectTrigger id="location" className="w-full" aria-invalid={Boolean(errors.location)}>
-                                        <SelectValue placeholder="Seleccioná un departamento" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {DEPARTMENTS.map((dept) => (
-                                            <SelectItem key={dept} value={dept}>
-                                                {DEPARTMENT_LABELS[dept]}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FieldError errors={[errors.location]} />
-                            </Field>
-                        </div>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Field data-invalid={Boolean(errors.razonSocial)}>
+                <FieldLabel htmlFor="razonSocial">Razón social *</FieldLabel>
+                <Input
+                  id="razonSocial"
+                  placeholder="H-Move S.A."
+                  aria-invalid={Boolean(errors.razonSocial)}
+                  {...register("razonSocial")}
+                />
+                <FieldError errors={[errors.razonSocial]} />
+              </Field>
 
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            {/* TODO: sin respaldo en el back */}
-                            <Field>
-                                <FieldLabel htmlFor="companySize">Tamaño de la empresa</FieldLabel>
-                                <Input
-                                    id="companySize"
-                                    placeholder="11 - 50 empleados"
-                                    {...register("companySize")}
-                                />
-                            </Field>
+              <Field data-invalid={Boolean(errors.rut)}>
+                <FieldLabel htmlFor="rut">RUT *</FieldLabel>
+                <Input
+                  id="rut"
+                  placeholder="210000000000"
+                  aria-invalid={Boolean(errors.rut)}
+                  {...register("rut")}
+                />
+                <FieldError errors={[errors.rut]} />
+              </Field>
+            </div>
 
-                            {/* TODO: sin respaldo en el back */}
-                            <Field>
-                                <FieldLabel htmlFor="foundedYear">Año de fundación</FieldLabel>
-                                <Input
-                                    id="foundedYear"
-                                    type="number"
-                                    placeholder="2018"
-                                    {...register("foundedYear")}
-                                />
-                            </Field>
-                        </div>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Field data-invalid={Boolean(errors.phoneNumber)}>
+                <FieldLabel htmlFor="phoneNumber">Teléfono *</FieldLabel>
+                <Input
+                  id="phoneNumber"
+                  placeholder="099123456"
+                  aria-invalid={Boolean(errors.phoneNumber)}
+                  {...register("phoneNumber")}
+                />
+                <FieldError errors={[errors.phoneNumber]} />
+              </Field>
 
-                        <Field>
-                            <FieldLabel>Redes sociales (opcionales)</FieldLabel>
-                            <p className="text-sm text-muted-foreground">
-                                Sumá tus redes para que los estudiantes conozcan más sobre tu empresa.
-                            </p>
-                            <div className="flex flex-col gap-3">
-                                <SocialField
-                                    id="linkedinUrl"
-                                    label="LinkedIn"
-                                    placeholder="https://linkedin.com/company/tuempresa"
-                                    {...register("linkedinUrl")}
-                                />
-                                {/* TODO: sin respaldo en el back */}
-                                <SocialField
-                                    id="instagramUrl"
-                                    label="Instagram"
-                                    placeholder="https://instagram.com/tuempresa"
-                                    {...register("instagramUrl")}
-                                />
-                                {/* TODO: sin respaldo en el back */}
-                                <SocialField
-                                    id="facebookUrl"
-                                    label="Facebook"
-                                    placeholder="https://facebook.com/tuempresa"
-                                    {...register("facebookUrl")}
-                                />
-                            </div>
-                        </Field>
+              <Field data-invalid={Boolean(errors.webUrl)}>
+                <FieldLabel htmlFor="webUrl">Sitio web *</FieldLabel>
+                <Input
+                  id="webUrl"
+                  placeholder="https://hmove.com.uy"
+                  aria-invalid={Boolean(errors.webUrl)}
+                  {...register("webUrl")}
+                />
+                <FieldError errors={[errors.webUrl]} />
+              </Field>
+            </div>
 
-                        {error && <FieldError>{error}</FieldError>}
+            <Field data-invalid={Boolean(errors.description)}>
+              <FieldLabel htmlFor="description">Descripción de la empresa *</FieldLabel>
+              <p className="text-sm text-muted-foreground">
+                Contá qué hace tu empresa, cuál es su propósito y qué la hace única.
+              </p>
+              <Textarea
+                id="description"
+                maxLength={DESCRIPTION_MAX}
+                className="min-h-32"
+                aria-invalid={Boolean(errors.description)}
+                {...register("description")}
+              />
+              <p className="text-right text-xs text-muted-foreground">
+                {description.length}/{DESCRIPTION_MAX}
+              </p>
+              <FieldError errors={[errors.description]} />
+            </Field>
 
-                        <div className="flex gap-2">
-                            <Button type="submit" disabled={isLoading} className="w-fit">
-                                {isLoading ? "Guardando..." : "Guardar cambios"}
-                            </Button>
-                            <Button type="button" variant="outline" onClick={cancelEditing} className="w-fit">
-                                Cancelar
-                            </Button>
-                        </div>
-                    </FieldGroup>
-                </CardContent>
-            </Card>
-        </form>
-    );
-}
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Field data-invalid={Boolean(errors.industry)}>
+                <FieldLabel htmlFor="industry">Industria *</FieldLabel>
+                <Input
+                  id="industry"
+                  placeholder="Marketing y Publicidad"
+                  aria-invalid={Boolean(errors.industry)}
+                  {...register("industry")}
+                />
+                <FieldError errors={[errors.industry]} />
+              </Field>
 
-/** Placeholder de `CompanyProfileForm` mientras se resuelve la carga inicial
- *  del perfil (GET /company?userId=), cuando el back esté conectado. */
-export function CompanyProfileFormSkeleton() {
-    return (
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <Skeleton className="h-6 w-48" />
-                <Skeleton className="h-4 w-72" />
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-10 w-full" />
-            </CardContent>
-        </Card>
-    );
+              <Field data-invalid={Boolean(errors.location)}>
+                <FieldLabel htmlFor="location">Ubicación principal *</FieldLabel>
+                <input type="hidden" {...register("location")} />
+                <Select
+                  value={location ?? ""}
+                  onValueChange={(v) =>
+                    register("location").onChange({ target: { value: v, name: "location" } })
+                  }
+                >
+                  <SelectTrigger id="location" className="w-full" aria-invalid={Boolean(errors.location)}>
+                    <SelectValue placeholder="Seleccioná un departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENTS.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {DEPARTMENT_LABELS[dept]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError errors={[errors.location]} />
+              </Field>
+            </div>
+
+            <Field data-invalid={Boolean(errors.linkedinUrl)}>
+              <FieldLabel htmlFor="linkedinUrl">LinkedIn</FieldLabel>
+              <Input
+                id="linkedinUrl"
+                placeholder="https://linkedin.com/company/tuempresa"
+                {...register("linkedinUrl")}
+              />
+              <FieldError errors={[errors.linkedinUrl]} />
+            </Field>
+
+            {error && <FieldError>{error}</FieldError>}
+
+            <div className="flex gap-2">
+              <Button type="submit" disabled={isLoading} className="w-fit">
+                {isLoading ? "Guardando..." : "Guardar cambios"}
+              </Button>
+              <Button type="button" variant="outline" onClick={cancelEditing} className="w-fit">
+                Cancelar
+              </Button>
+            </div>
+          </FieldGroup>
+        </CardContent>
+      </Card>
+    </form>
+  );
 }

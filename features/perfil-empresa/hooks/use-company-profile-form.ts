@@ -5,15 +5,15 @@
 // ⚠️ Actualizado contra el MER — ver AGENTS.md → "Las tres fuentes y su
 // orden de precedencia". Ya no hay campos "solo UI" sin respaldo: todo lo
 // que se pide acá existe en `Company`. La única pieza pendiente real es la
-// subida de logo (A-11: no hay endpoint de upload todavía).
+// subida de logo (A-11: no hay endpoint de upload todavía, logoUrl es texto).
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { DEPARTMENTS, DESCRIPTION_MAX } from "@/features/perfil-empresa/types";
 
-// Reglas de validación. Reflejan los campos de `Company` en el MER.
 const companyProfileSchema = z.object({
   razonSocial: z.string().trim().min(1, "Ingresá la razón social."),
   rut: z.string().trim().min(1, "Ingresá el RUT."),
@@ -37,19 +37,41 @@ const companyProfileSchema = z.object({
 
 export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
 
+const emptyValues: CompanyProfileFormValues = {
+  razonSocial: "",
+  rut: "",
+  phoneNumber: "",
+  industry: "",
+  description: "",
+  webUrl: "",
+  linkedinUrl: "",
+  location: undefined as unknown as CompanyProfileFormValues["location"],
+  logoUrl: "",
+};
+
 export function useCompanyProfileForm() {
-  return useForm<CompanyProfileFormValues>({
+  const [mode, setMode] = useState<"view" | "edit">("view");
+  const [savedValues, setSavedValues] = useState<CompanyProfileFormValues>(emptyValues);
+
+  const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
-    defaultValues: {
-      razonSocial: "",
-      rut: "",
-      phoneNumber: "",
-      industry: "",
-      description: "",
-      webUrl: "",
-      linkedinUrl: "",
-      location: undefined,
-      logoUrl: "",
-    },
+    defaultValues: emptyValues,
   });
+
+  function startEditing() {
+    setMode("edit");
+  }
+
+  function commitSave(values: CompanyProfileFormValues) {
+    setSavedValues(values);
+    form.reset(values);
+    setMode("view");
+  }
+
+  function cancelEditing() {
+    form.reset(savedValues);
+    setMode("view");
+  }
+
+  return { form, mode, startEditing, commitSave, cancelEditing };
 }

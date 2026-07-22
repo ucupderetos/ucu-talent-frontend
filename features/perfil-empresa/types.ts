@@ -30,10 +30,6 @@ export interface CompanyProfileInput {
   logoUrl: string;
 }
 
-/** Estado completo del formulario. Ya no hay campos "solo UI": todos los
- *  que se muestran en pantalla tienen respaldo en `Company` del MER. */
-export type CompanyProfileFormValues = CompanyProfileInput;
-
 export const DESCRIPTION_MAX = 1000;
 
 /** Enum `Department` del back. */
