@@ -3,7 +3,7 @@
 // La entidad `Vacancy` vive en @/types (la comparten moderacion y postulaciones).
 // Acá va solo lo específico: filtros, orden e inputs de formulario.
 
-import type { Department, Modality, Vacancy, VacancyStatus } from "@/types";
+import type { Company, Department, Modality, Vacancy, VacancyStatus } from "@/types";
 
 /**
  * Orden del feed.
@@ -77,6 +77,20 @@ export interface FeedVacancyRow extends Vacancy {
   areaName: string;
   /** Área padre de `areaName`, si la tiene (jerarquía de `Area`) — la card
    *  muestra ambas como tags. `null` en áreas raíz. */
+  parentAreaName: string | null;
+}
+
+/**
+ * Detalle de una vacante (RF-PUE / vista alumno): la `Vacancy` del MER más la
+ * `Company` dueña y los nombres de `Area` ya resueltos, para no repetir esos
+ * `.find()` en el componente. No es una entidad del MER, por eso vive acá y
+ * no en @/types.
+ */
+export interface VacancyDetail extends Vacancy {
+  company: Company;
+  areaName: string;
+  /** Área padre de `areaName`, si la tiene (jerarquía de `Area`). `null` en
+   *  áreas raíz. */
   parentAreaName: string | null;
 }
 
