@@ -1,13 +1,18 @@
 "use client";
 
-// Barra de filtros del feed (vista alumno): búsqueda + un `MultiSelect` por
-// filtro (carrera, tipo de contrato) — pinta de Select, pero se puede tildar
-// más de una opción. Controlado desde afuera (vacancy-feed-view.tsx) — este
+// Barra de filtros del feed (vista alumno): búsqueda + un botón único
+// "Filtros" que abre un panel con dos MultiSelect (carrera, tipo de
+// contrato) — cada uno con pinta de Select, pero se puede tildar más de una
+// opción adentro. Controlado desde afuera (vacancy-feed-view.tsx) — este
 // componente no sabe de dónde vienen los datos, solo emite el filtro nuevo.
 
-import { BriefcaseIcon, GraduationCapIcon, SearchIcon } from "lucide-react";
+import { FilterIcon, SearchIcon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MultiSelect } from "@/features/puestos/components/multi-select";
 import type { FeedFilters } from "@/features/puestos/types";
 import type { Area } from "@/types";
@@ -23,6 +28,8 @@ export function VacancyFeedFilters({
   contractTypes: string[];
   onChange: (filters: FeedFilters) => void;
 }) {
+  const activeCount = (filters.areaIds?.length ?? 0) + (filters.contractTypes?.length ?? 0);
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -39,23 +46,40 @@ export function VacancyFeedFilters({
         />
       </div>
 
-      <MultiSelect
-        label="Carrera"
-        icon={GraduationCapIcon}
-        placeholder="Por carrera"
-        options={areas.map((area) => ({ value: area.areaId, label: area.name }))}
-        selected={filters.areaIds ?? []}
-        onChange={(areaIds) => onChange({ ...filters, areaIds })}
-      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline">
+            <FilterIcon />
+            Filtros
+            {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label>Carrera</Label>
+            <MultiSelect
+              label="Carrera"
+              placeholder="Todas las áreas"
+              options={areas.map((area) => ({ value: area.areaId, label: area.name }))}
+              selected={filters.areaIds ?? []}
+              onChange={(areaIds) => onChange({ ...filters, areaIds })}
+              className="w-full"
+            />
+          </div>
 
-      <MultiSelect
-        label="Tipo de trabajo"
-        icon={BriefcaseIcon}
-        placeholder="Por trabajos"
-        options={contractTypes.map((type) => ({ value: type, label: type }))}
-        selected={filters.contractTypes ?? []}
-        onChange={(contractTypes) => onChange({ ...filters, contractTypes })}
-      />
+          <div className="flex flex-col gap-1.5">
+            <Label>Tipo de trabajo</Label>
+            <MultiSelect
+              label="Tipo de trabajo"
+              placeholder="Todos los trabajos"
+              options={contractTypes.map((type) => ({ value: type, label: type }))}
+              selected={filters.contractTypes ?? []}
+              onChange={(contractTypes) => onChange({ ...filters, contractTypes })}
+              className="w-full"
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
