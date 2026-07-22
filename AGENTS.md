@@ -232,6 +232,36 @@ siempre el mismo layout — dos partes con roles fijos que no se intercambian:
 - **La acción primaria de la pantalla (crear, publicar) va siempre arriba a la derecha**,
   en el `actions` de `PageHeader` — nunca en la misma fila que los filtros. Estas dos
   posiciones (filtros a la izquierda, acción primaria arriba a la derecha) no se tocan.
+- **Limpiar filtros tiene dos niveles, los dos DENTRO del popover** — no se agrega un botón
+  de limpiar suelto en la barra: el badge de conteo en "Filtros" ya avisa que hay algo
+  activo, y abrir el popover es donde se decide qué.
+  - **Por sección**: cada `Label` de filtro va envuelto en `FilterSection`
+    (`features/puestos/components/filter-section.tsx`), que agrega un link "Limpiar" al
+    lado del label — solo visible si esa sección tiene algo tildado.
+  - **Todos**: una fila `"Filtros" + "Limpiar todo"` arriba de las secciones, con el mismo
+    `activeCount > 0` que ya calcula el badge — el botón resetea todos los campos del
+    popover, PERO NO búsqueda ni orden (esos no son "filtros" en este layout, son sus
+    propios controles — ver el punto de arriba).
+
+  ```tsx
+  <PopoverContent align="start" className="flex w-72 flex-col gap-3">
+    <div className="flex items-center justify-between gap-2">
+      <p className="text-sm font-medium">Filtros</p>
+      {activeCount > 0 && (
+        <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground" onClick={clearAll}>
+          Limpiar todo
+        </Button>
+      )}
+    </div>
+    <FilterSection
+      label="Área"
+      hasSelection={(filters.areaIds?.length ?? 0) > 0}
+      onClear={() => onChange({ ...filters, areaIds: [] })}
+    >
+      <MultiSelect className="w-full" /* ... */ />
+    </FilterSection>
+  </PopoverContent>
+  ```
 
 ⚠️ **`features/puestos/components/multi-select.tsx` es el único `MultiSelect` del
 repo — no `components/filters/`.** Un PR paralelo (#14) había agregado un

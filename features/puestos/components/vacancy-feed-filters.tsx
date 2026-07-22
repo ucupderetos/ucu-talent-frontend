@@ -11,8 +11,8 @@ import { FilterIcon, SearchIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { FilterSection } from "@/features/puestos/components/filter-section";
 import { MultiSelect } from "@/features/puestos/components/multi-select";
 import type { FeedFilters } from "@/features/puestos/types";
 import type { Area } from "@/types";
@@ -29,6 +29,10 @@ export function VacancyFeedFilters({
   onChange: (filters: FeedFilters) => void;
 }) {
   const activeCount = (filters.areaIds?.length ?? 0) + (filters.contractTypes?.length ?? 0);
+
+  function clearAll() {
+    onChange({ ...filters, areaIds: [], contractTypes: [] });
+  }
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -55,8 +59,25 @@ export function VacancyFeedFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Carrera</Label>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">Filtros</p>
+            {activeCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-muted-foreground"
+                onClick={clearAll}
+              >
+                Limpiar todo
+              </Button>
+            )}
+          </div>
+
+          <FilterSection
+            label="Carrera"
+            hasSelection={(filters.areaIds?.length ?? 0) > 0}
+            onClear={() => onChange({ ...filters, areaIds: [] })}
+          >
             <MultiSelect
               label="Carrera"
               placeholder="Todas las áreas"
@@ -65,10 +86,13 @@ export function VacancyFeedFilters({
               onChange={(areaIds) => onChange({ ...filters, areaIds })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Tipo de trabajo</Label>
+          <FilterSection
+            label="Tipo de trabajo"
+            hasSelection={(filters.contractTypes?.length ?? 0) > 0}
+            onClear={() => onChange({ ...filters, contractTypes: [] })}
+          >
             <MultiSelect
               label="Tipo de trabajo"
               placeholder="Todos los trabajos"
@@ -77,7 +101,7 @@ export function VacancyFeedFilters({
               onChange={(contractTypes) => onChange({ ...filters, contractTypes })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
         </PopoverContent>
       </Popover>
     </div>

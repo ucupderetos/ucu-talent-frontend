@@ -23,7 +23,6 @@ import { ClearFiltersButton } from "@/components/filters/clear-filters-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
@@ -32,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FilterSection } from "@/features/puestos/components/filter-section";
 import { MultiSelect } from "@/features/puestos/components/multi-select";
 import { VACANCY_STATUS_LABEL } from "@/features/puestos/components/vacancy-status-badge";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
@@ -68,6 +68,10 @@ export function VacancyFilters({
   canApply: boolean;
   canClear: boolean;
 }) {
+  function clearAll() {
+    onChange({ ...filters, statuses: [], areaIds: [], locations: [], page: 1 });
+  }
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -109,8 +113,25 @@ export function VacancyFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Estado</Label>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium">Filtros</p>
+            {activeCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-muted-foreground"
+                onClick={clearAll}
+              >
+                Limpiar todo
+              </Button>
+            )}
+          </div>
+
+          <FilterSection
+            label="Estado"
+            hasSelection={(filters.statuses?.length ?? 0) > 0}
+            onClear={() => onChange({ ...filters, statuses: [], page: 1 })}
+          >
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
@@ -122,10 +143,13 @@ export function VacancyFilters({
               onChange={(statuses) => onChange({ ...filters, statuses: statuses as VacancyStatus[] })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Área</Label>
+          <FilterSection
+            label="Área"
+            hasSelection={(filters.areaIds?.length ?? 0) > 0}
+            onClear={() => onChange({ ...filters, areaIds: [], page: 1 })}
+          >
             <MultiSelect
               label="Área"
               placeholder="Todas las áreas"
@@ -134,10 +158,13 @@ export function VacancyFilters({
               onChange={(areaIds) => onChange({ ...filters, areaIds })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Ubicación</Label>
+          <FilterSection
+            label="Ubicación"
+            hasSelection={(filters.locations?.length ?? 0) > 0}
+            onClear={() => onChange({ ...filters, locations: [], page: 1 })}
+          >
             <MultiSelect
               label="Ubicación"
               placeholder="Todas las ubicaciones"
@@ -148,7 +175,7 @@ export function VacancyFilters({
               }
               className="w-full"
             />
-          </div>
+          </FilterSection>
         </PopoverContent>
       </Popover>
 
