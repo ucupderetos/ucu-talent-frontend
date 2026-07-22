@@ -1,10 +1,10 @@
 "use client";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { CompanyProfileForm } from "@/features/perfil-empresa/components/CompanyProfileForm";
-import { CompanyProfilePreview } from "@/features/perfil-empresa/components/CompanyProfilePreview";
-import { CompanyProfileTips } from "@/features/perfil-empresa/components/CompanyProfileTips";
-import { useCompanyProfileForm } from "@/features/perfil-empresa/hooks/use-company-profile-form";
+import { CompanyProfileForm } from "@/features/perfil/components/company-profile-form";
+import { CompanyProfilePreview } from "@/features/perfil/components/company-profile-preview";
+import { CompanyProfileTips } from "@/features/perfil/components/company-profile-tips";
+import { useCompanyProfileForm } from "@/features/perfil/hooks/use-company-profile-form";
 
 export default function PerfilEmpresaPage() {
   const { form, mode, startEditing, commitSave, cancelEditing } = useCompanyProfileForm();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useWatch, type UseFormReturn } from "react-hook-form";
+import { Controller, useWatch, type UseFormReturn } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpdateCompanyProfile } from "@/features/perfil-empresa/hooks/use-update-company-profile";
-import type { CompanyProfileFormValues } from "@/features/perfil-empresa/hooks/use-company-profile-form";
-import { CompanyProfileReadOnly } from "@/features/perfil-empresa/components/CompanyProfileReadOnly";
-import {
-  DEPARTMENTS,
-  DEPARTMENT_LABELS,
-  DESCRIPTION_MAX,
-} from "@/features/perfil-empresa/types";
+import { useUpdateCompanyProfile } from "@/features/perfil/hooks/use-update-company-profile";
+import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
+import { CompanyProfileReadOnly } from "@/features/perfil/components/company-profile-read-only";
+import { COMPANY_DESCRIPTION_MAX } from "@/features/perfil/types";
+import { DEPARTMENT_LABELS } from "@/features/perfil/hooks/use-company-profile-form";
 
 export function CompanyProfileForm({
   form,
@@ -51,7 +48,6 @@ export function CompanyProfileForm({
   } = form;
 
   const description = useWatch({ control, name: "description" }) ?? "";
-  const location = useWatch({ control, name: "location" });
 
   const onSubmit = handleSubmit(async (values) => {
     await updateProfile(values);
@@ -80,15 +76,15 @@ export function CompanyProfileForm({
             </Field>
 
             <div className="grid gap-6 sm:grid-cols-2">
-              <Field data-invalid={Boolean(errors.razonSocial)}>
-                <FieldLabel htmlFor="razonSocial">Razón social *</FieldLabel>
+              <Field data-invalid={Boolean(errors.legalName)}>
+                <FieldLabel htmlFor="legalName">Razón social *</FieldLabel>
                 <Input
-                  id="razonSocial"
+                  id="legalName"
                   placeholder="H-Move S.A."
-                  aria-invalid={Boolean(errors.razonSocial)}
-                  {...register("razonSocial")}
+                  aria-invalid={Boolean(errors.legalName)}
+                  {...register("legalName")}
                 />
-                <FieldError errors={[errors.razonSocial]} />
+                <FieldError errors={[errors.legalName]} />
               </Field>
 
               <Field data-invalid={Boolean(errors.rut)}>
@@ -134,13 +130,13 @@ export function CompanyProfileForm({
               </p>
               <Textarea
                 id="description"
-                maxLength={DESCRIPTION_MAX}
+                maxLength={COMPANY_DESCRIPTION_MAX}
                 className="min-h-32"
                 aria-invalid={Boolean(errors.description)}
                 {...register("description")}
               />
               <p className="text-right text-xs text-muted-foreground">
-                {description.length}/{DESCRIPTION_MAX}
+                {description.length}/{COMPANY_DESCRIPTION_MAX}
               </p>
               <FieldError errors={[errors.description]} />
             </Field>
@@ -159,24 +155,28 @@ export function CompanyProfileForm({
 
               <Field data-invalid={Boolean(errors.location)}>
                 <FieldLabel htmlFor="location">Ubicación principal *</FieldLabel>
-                <input type="hidden" {...register("location")} />
-                <Select
-                  value={location ?? ""}
-                  onValueChange={(v) =>
-                    register("location").onChange({ target: { value: v, name: "location" } })
-                  }
-                >
-                  <SelectTrigger id="location" className="w-full" aria-invalid={Boolean(errors.location)}>
-                    <SelectValue placeholder="Seleccioná un departamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DEPARTMENTS.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {DEPARTMENT_LABELS[dept]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="location"
+                  render={({ field }) => (
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="location"
+                        className="w-full"
+                        aria-invalid={Boolean(errors.location)}
+                      >
+                        <SelectValue placeholder="Seleccioná un departamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(DEPARTMENT_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 <FieldError errors={[errors.location]} />
               </Field>
             </div>
