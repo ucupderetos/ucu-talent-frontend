@@ -28,6 +28,7 @@ export function useCurrentCompany(): CurrentCompany {
 
   if (isLoading || !user) return { company: null, isLoading };
 
-  const company = MOCK_COMPANIES.find((c) => c.userId === user.id) ?? null;
+  // PK compartida: `companyId` de `Company` ES el `userId` de la sesión.
+  const company = MOCK_COMPANIES.find((c) => c.companyId === user.userId) ?? null;
   return { company, isLoading: false };
 }

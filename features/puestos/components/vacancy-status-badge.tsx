@@ -1,35 +1,31 @@
-// Traducción visual de `VacancyStatus` (MER, en inglés) al español que ve la
-// empresa. Un solo lugar para no repetir el mapeo en tabla, filtros, etc.
+// Traducción visual de `VacancyStatus` al español que ve la empresa. Un solo
+// lugar para no repetir el mapeo en tabla, filtros, etc.
+//
+// 🔴 El backend real hoy SOLO tiene `PENDIENTE | FINALIZADO` (ver el gap en
+// `types/index.ts`): no existe "publicada"/"pausada"/"rechazada" todavía,
+// aunque el MER de referencia ya los modela. `PENDIENTE` se etiqueta como
+// "Activa" porque es el único estado no-terminal que el enum real permite —
+// revisar esta traducción apenas el backend exponga los estados que faltan
+// (A-14 en AGENTS.md).
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { VacancyStatus } from "@/types";
 
 export const VACANCY_STATUS_LABEL: Record<VacancyStatus, string> = {
-  published: "Publicada",
-  pending: "Pendiente",
-  paused: "Pausada",
-  rejected: "Rechazada",
-  closed: "Cerrada",
+  PENDIENTE: "Activa",
+  FINALIZADO: "Cerrada",
 };
 
 /** Bajada de una línea que acompaña al badge en la tabla. */
 export const VACANCY_STATUS_DESCRIPTION: Record<VacancyStatus, string> = {
-  published: "Activa",
-  pending: "En revisión",
-  paused: "Pausada",
-  rejected: "No aprobada",
-  closed: "Finalizada",
+  PENDIENTE: "Visible para alumnos",
+  FINALIZADO: "Finalizada",
 };
 
 const VACANCY_STATUS_DOT_CLASS: Record<VacancyStatus, string> = {
-  published: "bg-emerald-500",
-  // Naranja de marca (--brand-orange): es el color que usa "Pendiente" en el
-  // diseño de referencia.
-  pending: "bg-(--brand-orange)",
-  paused: "bg-sky-500",
-  rejected: "bg-destructive",
-  closed: "bg-muted-foreground",
+  PENDIENTE: "bg-emerald-500",
+  FINALIZADO: "bg-muted-foreground",
 };
 
 export function VacancyStatusBadge({ status }: { status: VacancyStatus }) {

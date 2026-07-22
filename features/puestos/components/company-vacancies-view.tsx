@@ -27,11 +27,11 @@ export function CompanyVacanciesView() {
   const [filters, setFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading: isLoadingVacancies, isError } = useCompanyVacancies(
-    company?.id,
+    company?.companyId,
     filters,
   );
 
-  const { areas, locations } = useCompanyVacancyOptions(company?.id);
+  const { areas, locations } = useCompanyVacancyOptions(company?.companyId);
 
   const isLoading = isLoadingCompany || isLoadingVacancies;
   const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
@@ -111,7 +111,7 @@ function useCompanyVacancyOptions(companyId: string | undefined) {
     const locations = Array.from(new Set(ownVacancies.map((v) => v.location))).sort();
 
     return {
-      areas: MOCK_AREAS.filter((area) => areaIds.has(area.id)),
+      areas: MOCK_AREAS.filter((area) => areaIds.has(area.areaId)),
       locations,
     };
   }, [companyId]);

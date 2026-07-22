@@ -1,49 +1,57 @@
 // Tipos del dominio: auth.
 //
-// `User` y `Role` viven en @/types. Acá va lo específico: credenciales y
-// payloads de registro.
+// `User`, `Role`, `DocumentType`, `Department` viven en @/types. Acá va lo
+// específico: credenciales y los payloads de las 3 llamadas encadenadas del
+// registro (ver AGENTS.md, "Registro en dos pasos y ProfileGuard"):
+//   1. POST /user            → 201, no loguea
+//   2. POST /auth/login      → 200 + Set-Cookie httpOnly — obligatorio, no opcional
+//   3. POST /student-profile → 201 (o POST /company, según el rol)
 //
-// ⚠️ PROVISORIO: el contrato de la API todavía no está definido. En particular,
-// falta confirmar si el JWT viaja en cookie httpOnly (asunción actual) — de eso
-// depende que el login no devuelva token al cliente.
+// El paso 3 pide los campos mínimos `@NotBlank` de `docs/ENDPOINTS.md`, ni uno
+// más — el resto (teléfono, LinkedIn, skills, descripción, foto) se completa
+// después desde /perfil. Si el paso 3 falla (se cierra la pestaña, error de
+// red), la cuenta queda logueada pero sin perfil — `ProfileGuard`
+// (`features/perfil/components/`) es la red que atrapa ese caso.
 
-import type { DocumentType } from "@/types";
+import type { Department, DocumentType } from "@/types";
 
 export interface Credentials {
   email: string;
   password: string;
 }
 
-/**
- * RF-01: el alumno se valida contra padrón de cédulas o mail @ucu.
- * El MER tiene `documentType` + `documentNumber` en `User`, que es por donde va
- * la validación por cédula. Cuál de los dos exige el backend está sin confirmar.
- */
-export interface StudentRegistration {
-  name: string;
-  surname: string;
+/** `POST /user` — paso 1. Registro público solo admite
+ *  `ALUMNO` | `EMPRESA`. */
+export interface Registration {
   email: string;
   password: string;
-  documentType: DocumentType;
-  documentNumber: string;
-  phoneNumber: string;
+  role: "ALUMNO" | "EMPRESA";
 }
 
 /**
- * RF-13: la empresa se registra y queda con `approved: false` hasta que Admin UCU
- * la apruebe.
- *
- * ⚠️ `Company` no tiene campo de nombre propio en el MER: el nombre de la empresa
- * va en `User.name`. TODO: confirmar.
+ * `POST /student-profile` — paso 3 si el rol es `ALUMNO`. `phoneNumber`,
+ * `linkedinUrl` y `skills` son opcionales en el backend: no bloquean el alta,
+ * se completan después desde `/perfil`.
  */
-export interface CompanyRegistration {
-  /** Va a `User.name` — el MER no tiene `Company.name`. */
-  companyName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
+export interface StudentProfileRegistrationInput {
+  name: string;
+  surname: string;
+  documentType: DocumentType;
+  documentNumber: string;
+  phoneNumber?: string;
+  linkedinUrl?: string;
+  skills?: string[];
+}
+
+/**
+ * `POST /company` — paso 3 si el rol es `EMPRESA`. Todos los campos son
+ * `@NotBlank` en el backend: no hay forma de diferir ninguno.
+ */
+export interface CompanyRegistrationInput {
+  name: string;
   industry: string;
   description: string;
   webUrl: string;
   linkedinUrl: string;
+  location: Department;
 }

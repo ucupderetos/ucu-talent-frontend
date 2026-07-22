@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { VACANCY_STATUS_LABEL } from "@/features/puestos/components/vacancy-status-badge";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
-import type { Area, VacancyStatus } from "@/types";
+import type { Area, Department, VacancyStatus } from "@/types";
 
 const ALL = "all";
 
@@ -89,7 +89,7 @@ export function VacancyFilters({
           <SelectContent>
             <SelectItem value={ALL}>Todas las áreas</SelectItem>
             {areas.map((area) => (
-              <SelectItem key={area.id} value={area.id}>
+              <SelectItem key={area.areaId} value={area.areaId}>
                 {area.name}
               </SelectItem>
             ))}
@@ -99,7 +99,11 @@ export function VacancyFilters({
         <Select
           value={filters.location ?? ALL}
           onValueChange={(value) =>
-            onChange({ ...filters, location: value === ALL ? undefined : value, page: 1 })
+            onChange({
+              ...filters,
+              location: value === ALL ? undefined : (value as Department),
+              page: 1,
+            })
           }
         >
           <SelectTrigger aria-label="Filtrar por ubicación">

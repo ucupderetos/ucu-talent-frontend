@@ -22,14 +22,14 @@ export interface NavItem {
 }
 
 export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
-  student: [
+  ALUMNO: [
     { label: "Feed", href: "/feed", icon: NewspaperIcon },
     { label: "Mis postulaciones", href: "/postulaciones", icon: FileTextIcon },
     { label: "Mi perfil", href: "/perfil", icon: UserIcon },
   ],
-  company: [
+  EMPRESA: [
     // ⚠️ /puestos todavía no tiene page.tsx — lo crea el grupo de empresa.
     { label: "Mis puestos", href: "/puestos", icon: BriefcaseIcon },
   ],
-  admin: [{ label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon }],
+  ADMIN: [{ label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon }],
 };

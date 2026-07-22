@@ -5,7 +5,7 @@
 // TanStack Query.
 
 import Link from "next/link";
-import { EyeIcon, MoreHorizontalIcon, PauseIcon, PlayIcon, XCircleIcon } from "lucide-react";
+import { EyeIcon, MoreHorizontalIcon, XCircleIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -31,9 +31,9 @@ import type { CompanyVacancyRow } from "@/features/puestos/types";
 import type { Modality } from "@/types";
 
 const MODALITY_LABEL: Record<Modality, string> = {
-  onsite: "Presencial",
-  remote: "Remota",
-  hybrid: "Híbrida",
+  PRESENCIAL: "Presencial",
+  REMOTO: "Remota",
+  HIBRIDO: "Híbrida",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
@@ -69,10 +69,10 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
         </TableHeader>
         <TableBody>
           {rows.map((vacancy) => (
-            <TableRow key={vacancy.id}>
+            <TableRow key={vacancy.vacancyId}>
               <TableCell className="max-w-64 whitespace-normal">
                 <Link
-                  href={`/puestos/${vacancy.id}/postulantes`}
+                  href={`/puestos/${vacancy.vacancyId}/postulantes`}
                   className="font-medium hover:underline"
                 >
                   {vacancy.name}
@@ -96,7 +96,7 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {formatDate(vacancy.publishedAt)}
+                {formatDate(vacancy.publicationDate)}
               </TableCell>
               <TableCell>
                 <VacancyRowActions vacancy={vacancy} />
@@ -119,27 +119,16 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
-          <Link href={`/puestos/${vacancy.id}/postulantes`}>
+          <Link href={`/puestos/${vacancy.vacancyId}/postulantes`}>
             <EyeIcon />
             Ver postulantes
           </Link>
         </DropdownMenuItem>
 
-        {vacancy.status === "published" && (
-          <DropdownMenuItem onSelect={() => notImplemented("Pausar oferta")}>
-            <PauseIcon />
-            Pausar
-          </DropdownMenuItem>
-        )}
-
-        {vacancy.status === "paused" && (
-          <DropdownMenuItem onSelect={() => notImplemented("Publicar oferta")}>
-            <PlayIcon />
-            Volver a publicar
-          </DropdownMenuItem>
-        )}
-
-        {(vacancy.status === "published" || vacancy.status === "paused") && (
+        {/* El backend real hoy no tiene "pausada": solo PENDIENTE (activa) y
+            FINALIZADO (terminal). "Pausar"/"Volver a publicar" quedan afuera
+            hasta que ese estado exista (A-14 en AGENTS.md). */}
+        {vacancy.status === "PENDIENTE" && (
           <DropdownMenuItem
             variant="destructive"
             onSelect={() => notImplemented("Cerrar oferta")}

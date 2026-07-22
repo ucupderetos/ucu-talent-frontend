@@ -159,6 +159,11 @@ los errores de RHF.
   capas técnicas.
 - Dominios actuales: `auth`, `perfil`, `puestos`, `postulaciones`, `moderacion`.
 - No usar convenciones de Atomic Design (`atoms/`, `molecules/`, `organisms/`).
+- **Nombre de archivo: `kebab-case` siempre**, incluidos los componentes (`vacancy-table.tsx`,
+  `role-guard.tsx`, `auth-layout.tsx`) — ya era el criterio dominante en el repo antes de
+  este párrafo. El nombre del componente exportado sigue en `PascalCase` de React
+  (`export function VacancyTable`); lo que cambia es solo el nombre de archivo, no el
+  identificador.
 
 ### Roles y control de acceso (RF-AUT-05, RBAC)
 
@@ -299,7 +304,7 @@ Ya no es una asunción: `ENDPOINTS.md` lo define.
 ### Postulaciones: máquina de estados y `selected`
 
 ```
-ApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)
+VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)
 selected: boolean   // default false, independiente del status
 ```
 
@@ -422,7 +427,7 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
   (el padrón — tabla de consulta, sin FK a `User`), `Degree`, `Education`,
   `WorkExperience`, `Modality: enum(PRESENCIAL, HIBRIDO, REMOTO)`,
   `VacancyStatus: enum(PUBLICADO, RECHAZADO, FINALIZADO)`, `Vacancy`,
-  `ApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)`, `VacancyApplication` (con
+  `VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)`, `VacancyApplication` (con
   `selected: boolean`), `Paginated<T>`.
 - **`features/<x>/types.ts` → lo específico del dominio**: filtros, payloads de formulario,
   view models. No cruzan a otro dominio, así que no suben.
@@ -431,7 +436,7 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 > contra ella:
 > - `CompanyStatus` y `StudentProfileStatus` → **se unifican en `AccountStatus`**, que
 >   vive en `User` y llega en `GET /me`.
-> - `ApplicationStatus` deja de tener `ACEPTADO`/`RECHAZADO` → es
+> - `VacancyApplicationStatus` deja de tener `ACEPTADO`/`RECHAZADO` → es
 >   `PENDIENTE, VISTO, FINALIZADO` + el flag `selected`.
 > - **`MailTemplate` se elimina.** Ver *Mails*.
 > - Se agrega `Admin` (perfil con PK compartida, mismo patrón que los otros dos).
@@ -588,20 +593,30 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
 - `lib/auth.ts` + `features/auth/`: sesión vía `GET /me` (`hooks/use-session.ts`) y
   guards de rol (`components/role-guard.tsx`, `components/guest-only.tsx`).
 - `.env.example`, `lib/fixtures.ts` y el modo sesión mock.
+- ✅ **`ProfileGuard`** (`features/perfil/components/ProfileGuard.tsx`) y la ruta
+  **`app/completar-perfil/page.tsx`** — ver *Registro en dos pasos y ProfileGuard*.
+  Montado en `(alumno)/layout.tsx` y `(empresa)/layout.tsx`, adentro de `RoleGuard`.
+- ✅ **El registro real, en 3 llamadas encadenadas** (`use-register.ts`):
+  `POST /user` → `POST /auth/login` → `POST /student-profile`/`POST /company`. El
+  perfil pide los campos mínimos `@NotBlank` de `docs/ENDPOINTS.md` en el mismo
+  formulario de `/registro` (un solo paso visual, sin navegación entre medio).
+  `features/perfil/hooks/use-complete-profile.ts` reintenta solo el paso 3 desde
+  `/completar-perfil`.
 
 **Todavía NO existe:**
 
 - **`proxy.ts`** — no hay ninguna primera línea de defensa. Va en rama `feature/`, no
   `chore/`: es funcionalidad.
-- **`ProfileGuard`** (`features/perfil/components/`) y la ruta **`app/completar-perfil/`**
-  — ver *Registro en dos pasos*. Hasta que existan, una cuenta sin perfil rompe las
-  pantallas de `(alumno)` y `(empresa)`.
-- **`features/<x>/hooks/`** — vacíos salvo `auth`. Ya se pueden escribir contra
-  `ENDPOINTS.md`. `features/auth/hooks/use-session.ts` sirve de plantilla del patrón.
-- **Los endpoints en `lib/api-client.ts`** — el contrato ya está, falta cablearlo.
-- **`app/(empresa)/puestos/page.tsx`** — la ruta `/puestos` está en el nav pero no existe;
-  la crea el grupo de empresa.
-- Las `page.tsx` de cada ruta siguen siendo placeholders.
+- **`features/<x>/hooks/`** — vacíos salvo `auth`, `perfil` (`use-complete-profile.ts`) y
+  `puestos` (`use-company-vacancies.ts`, `use-current-company.ts`, todavía sobre fixtures).
+  Ya se pueden escribir contra `ENDPOINTS.md`. `features/auth/hooks/use-session.ts` sirve
+  de plantilla del patrón.
+- ✅ **`app/(empresa)/puestos/page.tsx`** — ya existe ("Mis ofertas"), construida por el
+  grupo de empresa. ⚠️ Ver el gap de `VacancyStatus` en *Roles y control de acceso*: la
+  pantalla hoy colapsa todo a `PENDIENTE`/`FINALIZADO` porque el backend real no tiene más
+  estados — revisar labels/acciones apenas exista `PUBLICADO`/`RECHAZADO` (A-14).
+- Las `page.tsx` de `/feed`, `/perfil`, `/postulaciones` y
+  `/puestos/[id]/postulantes` siguen siendo placeholders.
 
 ### El backend ya está levantado
 
@@ -631,7 +646,7 @@ otra cosa. Ver `A-13`.
 Sigue existiendo mientras la cookie cross-origin no ande:
 
 ```bash
-NEXT_PUBLIC_MOCK_SESSION=student   # o company | admin
+NEXT_PUBLIC_MOCK_SESSION=ALUMNO   # o EMPRESA | ADMIN
 ```
 
 Saltea el `GET /me` y devuelve un usuario de `lib/fixtures.ts`. **No es seguridad**: solo
@@ -641,11 +656,9 @@ cambia lo que el frontend *cree* que sos, el backend no lo mira.
 funcione contra `api-dev`, se borran `lib/fixtures.ts`, `NEXT_PUBLIC_MOCK_SESSION` y sus
 usos en `lib/auth.ts` y `features/auth/hooks/use-logout.ts`.
 
-⚠️ Los valores siguen siendo `student|company|admin` porque el código todavía no migró al
-enum nuevo. Cuando `Role` pase a `ALUMNO|EMPRESA|ADMIN` (ver *Idioma del código*), hay que
-actualizar `lib/auth.ts`, `lib/fixtures.ts` y `.env.example` en la misma tanda — son tres
-archivos de la zona de conflicto, así que va en una rama propia y coordinada. Si el mock
-se borra antes de esa migración, el problema desaparece solo.
+✅ **La migración a `Role: ALUMNO|EMPRESA|ADMIN` ya se hizo** en `lib/auth.ts`,
+`lib/fixtures.ts` y `.env.example` (ver *Idioma del código*) — ya no queda código usando
+los literales viejos (`student`/`company`/`admin`).
 
 ## Pendiente de aclarar
 
@@ -707,7 +720,7 @@ Además, **descartado por decisión posterior al SRS**:
   contacto empresa → alumno ocurre enteramente fuera del sistema. Ver *Mails*.
 - **La vía de registro por `@ucu.edu.uy`** (RF-AUT-01, RN-01a) — no hay aprobación
   automática por dominio de correo. Toda cuenta nace `PENDIENTE`.
-- **`ApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADO`
+- **`VacancyApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADO`
   más el flag `selected`.
 
 Los correos automáticos son **dos** y los manda el backend: aviso de nueva postulación a

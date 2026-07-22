@@ -2,41 +2,51 @@
 //
 // Las entidades core viven en @/types. Acá van las acciones de moderación.
 //
-// ⚠️ PROVISORIO: el contrato de la API todavía no está definido.
+// 🔴 BLOQUEANTE CONFIRMADO leyendo `docs/ENDPOINTS.md` del backend (rama
+// `dev`): NINGUNA de las dos colas de este dominio tiene un endpoint real
+// todavía. No es una asunción — es la lectura literal del documento:
+//   - Sección 1 (`/user`) no tiene `PUT`: no hay forma de pasar una cuenta de
+//     `PENDIENTE` a `APROBADO`/`RECHAZADO` (`AccountStatus`, ver types/index.ts).
+//   - Sección 10 (`/vacancy`): el único `PUT /vacancy/{id}` es rol `EMPRESA`,
+//     no `ADMIN` — y el enum `VacancyStatus` ni siquiera tiene un valor
+//     "publicado" o "rechazado" hoy (solo `PENDIENTE`/`FINALIZADO`).
+// Los tipos de abajo quedan como CONTRATO DESEADO (lo que RF-12/RF-13 piden),
+// no como algo que ya se pueda enchufar a un endpoint real. Antes de escribir
+// hooks para `(admin)/moderacion`, confirmar con el equipo de backend si estas
+// acciones están en el roadmap y con qué forma van a salir — construir contra
+// esta interfaz hoy sería construir contra un endpoint que no existe.
+
+import type { AccountStatus } from "@/types";
 
 /**
- * RF-13: aprobar una empresa. El gate es sobre la EMPRESA, no sobre cada vacante.
- *
- * ⚠️ `Company.approved` es un BOOLEANO: no hay forma de registrar un rechazo.
- * Rechazar = dejarlo en false = indistinguible de "todavía no revisada". Por eso
- * acá no hay `reject`: no existe tal acción en el modelo actual.
- *
- * Deuda aceptada por el equipo. Si más adelante hace falta rechazo explícito, hay
- * que migrar el campo a enum y agregar la acción.
+ * RF-13: aprobar o rechazar una empresa (o un alumno — `AccountStatus` es
+ * genérico a los 3 roles, no solo a empresa). El campo cambió de forma: antes
+ * era un booleano en `Company.approved` que no podía distinguir "rechazada"
+ * de "todavía no revisada"; ahora `AccountStatus` en `User.status` sí lo
+ * distingue. Buena noticia: la deuda del booleano quedó resuelta por el MER.
+ * Mala noticia: no hay endpoint que la use (ver aviso arriba).
  */
-export interface CompanyApproval {
-  companyId: string;
-  approved: boolean;
+export interface AccountResolution {
+  userId: string;
+  status: Extract<AccountStatus, "APROBADO" | "RECHAZADO">;
 }
 
 /**
- * RF-12: resolver una vacante en `pending`.
+ * RF-12: resolver una vacante en `PENDIENTE`.
  *
- * ⚠️ CAMBIO DE FLUJO respecto de lo que decía el documento v3: la vacante NO se
- * publica sola al crearse. Nace en `pending` y Admin UCU aprueba (`published`) o
- * rechaza (`rejected`) ANTES de que salga. (Confirmado por el equipo; falta
- * actualizar el v3.)
- *
- * TODO: confirmar si Admin puede además despublicar una `published` ya viva, y a
- * qué estado la manda.
+ * `decision: "reject"` no tiene dónde aterrizar hoy: `VacancyStatus` no tiene
+ * `RECHAZADO` (ver el gap en `types/index.ts` y en
+ * `features/puestos/types.ts`). Queda modelado igual porque es lo que pide
+ * RF-12, pero USARLO hoy rompe: no hay valor de `VacancyStatus` ni endpoint
+ * de `ADMIN` para esto.
  */
 export interface VacancyResolution {
   vacancyId: string;
   decision: "approve" | "reject";
-  /** TODO: confirmar si el backend guarda un motivo de rechazo — el MER no tiene
-   *  campo para esto en `Vacancy`. */
+  /** El MER no tiene campo para motivo de rechazo en `Vacancy` — si hace
+   *  falta, hay que pedirlo al backend. */
   reason?: string;
 }
 
 /** Las dos colas del panel de Admin UCU. */
-export type ModerationQueue = "pending-companies" | "pending-vacancies";
+export type ModerationQueue = "pending-accounts" | "pending-vacancies";
