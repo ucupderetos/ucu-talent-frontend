@@ -20,7 +20,9 @@ export function VacancyFeedView() {
   const { data, isLoading, isError } = useFeedVacancies(filters);
   const { areas, contractTypes } = useFeedFilterOptions();
 
-  const hasActiveFilters = Boolean(filters.search || filters.areaId || filters.contractType);
+  const hasActiveFilters = Boolean(
+    filters.search || filters.areaIds?.length || filters.contractTypes?.length,
+  );
 
   return (
     <div className="flex flex-col gap-6">

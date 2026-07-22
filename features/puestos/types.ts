@@ -59,10 +59,12 @@ export interface VacancyInput {
  * `VacancyFilters` de arriba: esos son los query params reales de
  * `GET /vacancy` para cuando exista el contrato de paginación (A-04/A-05).
  */
+/** `areaIds`/`contractTypes`: multi-selección (RF-14 no pide exclusión mutua
+ *  entre carreras o tipos de contrato — un alumno puede cursar varias). */
 export interface FeedFilters {
   search?: string;
-  areaId?: string;
-  contractType?: string;
+  areaIds?: string[];
+  contractTypes?: string[];
 }
 
 /**

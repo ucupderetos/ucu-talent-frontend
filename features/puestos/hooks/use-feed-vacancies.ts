@@ -56,8 +56,10 @@ function filterRows(rows: FeedVacancyRow[], filters: FeedFilters): FeedVacancyRo
   const search = filters.search?.trim().toLowerCase();
 
   return rows.filter((row) => {
-    if (filters.areaId && row.areaId !== filters.areaId) return false;
-    if (filters.contractType && row.contractType !== filters.contractType) return false;
+    if (filters.areaIds?.length && !filters.areaIds.includes(row.areaId)) return false;
+    if (filters.contractTypes?.length && !filters.contractTypes.includes(row.contractType)) {
+      return false;
+    }
     if (search) {
       const haystack = `${row.name} ${row.companyName} ${row.areaName}`.toLowerCase();
       if (!haystack.includes(search)) return false;
