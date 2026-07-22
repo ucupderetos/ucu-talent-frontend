@@ -4,7 +4,7 @@
 // de contrato. Controlado desde afuera (vacancy-feed-view.tsx) — este
 // componente no sabe de dónde vienen los datos, solo emite el filtro nuevo.
 
-import { SearchIcon } from "lucide-react";
+import { BriefcaseIcon, GraduationCapIcon, SearchIcon } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -31,8 +31,8 @@ export function VacancyFeedFilters({
   onChange: (filters: FeedFilters) => void;
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <div className="relative flex-1 sm:max-w-sm">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+      <div className="relative w-full sm:w-64">
         <SearchIcon
           className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
@@ -46,7 +46,11 @@ export function VacancyFeedFilters({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="hidden shrink-0 text-sm text-muted-foreground sm:inline">
+          Filtrar por:
+        </span>
+
         <Select
           value={filters.areaId ?? ALL}
           onValueChange={(value) =>
@@ -54,6 +58,7 @@ export function VacancyFeedFilters({
           }
         >
           <SelectTrigger aria-label="Filtrar por carrera">
+            <GraduationCapIcon className="size-4 text-muted-foreground" aria-hidden />
             <SelectValue placeholder="Por carrera" />
           </SelectTrigger>
           <SelectContent>
@@ -73,6 +78,7 @@ export function VacancyFeedFilters({
           }
         >
           <SelectTrigger aria-label="Filtrar por tipo de trabajo">
+            <BriefcaseIcon className="size-4 text-muted-foreground" aria-hidden />
             <SelectValue placeholder="Por trabajos" />
           </SelectTrigger>
           <SelectContent>
