@@ -1,12 +1,17 @@
 "use client";
 
-// Barra de filtros del feed (vista alumno): búsqueda + carrera (área) + tipo
-// de contrato. Controlado desde afuera (vacancy-feed-view.tsx) — este
-// componente no sabe de dónde vienen los datos, solo emite el filtro nuevo.
+// Barra de filtros del feed (vista alumno): búsqueda + un botón único
+// "Filtros" (carrera + tipo de contrato, en un popover). Controlado desde
+// afuera (vacancy-feed-view.tsx) — este componente no sabe de dónde vienen
+// los datos, solo emite el filtro nuevo.
 
-import { BriefcaseIcon, GraduationCapIcon, SearchIcon } from "lucide-react";
+import { FilterIcon, SearchIcon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -30,8 +35,10 @@ export function VacancyFeedFilters({
   contractTypes: string[];
   onChange: (filters: FeedFilters) => void;
 }) {
+  const activeCount = [filters.areaId, filters.contractType].filter(Boolean).length;
+
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
         <SearchIcon
           className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -46,51 +53,60 @@ export function VacancyFeedFilters({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="hidden shrink-0 text-sm text-muted-foreground sm:inline">
-          Filtrar por:
-        </span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline">
+            <FilterIcon />
+            Filtros
+            {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-72">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="feed-filter-area">Carrera</Label>
+            <Select
+              value={filters.areaId ?? ALL}
+              onValueChange={(value) =>
+                onChange({ ...filters, areaId: value === ALL ? undefined : value })
+              }
+            >
+              <SelectTrigger id="feed-filter-area" className="w-full">
+                <SelectValue placeholder="Todas las áreas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todas las áreas</SelectItem>
+                {areas.map((area) => (
+                  <SelectItem key={area.areaId} value={area.areaId}>
+                    {area.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <Select
-          value={filters.areaId ?? ALL}
-          onValueChange={(value) =>
-            onChange({ ...filters, areaId: value === ALL ? undefined : value })
-          }
-        >
-          <SelectTrigger aria-label="Filtrar por carrera">
-            <GraduationCapIcon className="size-4 text-muted-foreground" aria-hidden />
-            <SelectValue placeholder="Por carrera" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todas las áreas</SelectItem>
-            {areas.map((area) => (
-              <SelectItem key={area.areaId} value={area.areaId}>
-                {area.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={filters.contractType ?? ALL}
-          onValueChange={(value) =>
-            onChange({ ...filters, contractType: value === ALL ? undefined : value })
-          }
-        >
-          <SelectTrigger aria-label="Filtrar por tipo de trabajo">
-            <BriefcaseIcon className="size-4 text-muted-foreground" aria-hidden />
-            <SelectValue placeholder="Por trabajos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos los trabajos</SelectItem>
-            {contractTypes.map((type) => (
-              <SelectItem key={type} value={type}>
-                {type}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="feed-filter-contract-type">Tipo de trabajo</Label>
+            <Select
+              value={filters.contractType ?? ALL}
+              onValueChange={(value) =>
+                onChange({ ...filters, contractType: value === ALL ? undefined : value })
+              }
+            >
+              <SelectTrigger id="feed-filter-contract-type" className="w-full">
+                <SelectValue placeholder="Todos los trabajos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos los trabajos</SelectItem>
+                {contractTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
