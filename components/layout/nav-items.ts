@@ -24,7 +24,7 @@ export interface NavItem {
 
 export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
   ALUMNO: [
-    { label: "Feed", href: "/feed", icon: NewspaperIcon },
+    { label: "Vacantes", href: "/feed", icon: NewspaperIcon },
     { label: "Mis postulaciones", href: "/postulaciones", icon: FileTextIcon },
     { label: "Mi perfil", href: "/perfil", icon: UserIcon },
   ],
