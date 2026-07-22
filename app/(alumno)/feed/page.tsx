@@ -1,5 +1,6 @@
-// Ruta: /feed — feed de puestos para el alumno.
-// Placeholder inicial. Owner: (asignar).
+// Ruta: /feed — feed de vacantes para el alumno (RF-14).
+import { VacancyFeedView } from "@/features/puestos/components/vacancy-feed-view";
+
 export default function FeedPage() {
-  return <h1>Feed</h1>;
+  return <VacancyFeedView />;
 }
