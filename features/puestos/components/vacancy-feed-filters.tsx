@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
 import { MultiSelect } from "@/features/puestos/components/multi-select";
 import type { FeedFilters } from "@/features/puestos/types";
@@ -59,16 +60,9 @@ export function VacancyFeedFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">Filtros</p>
-            {activeCount > 0 && <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>}
-          </div>
+          <p className="text-sm font-medium">Filtros</p>
 
-          <FilterSection
-            label="Carrera"
-            hasSelection={(filters.areaIds?.length ?? 0) > 0}
-            onClear={() => onChange({ ...filters, areaIds: [] })}
-          >
+          <FilterSection label="Carrera">
             <MultiSelect
               label="Carrera"
               placeholder="Todas las áreas"
@@ -79,11 +73,7 @@ export function VacancyFeedFilters({
             />
           </FilterSection>
 
-          <FilterSection
-            label="Tipo de trabajo"
-            hasSelection={(filters.contractTypes?.length ?? 0) > 0}
-            onClear={() => onChange({ ...filters, contractTypes: [] })}
-          >
+          <FilterSection label="Tipo de trabajo">
             <MultiSelect
               label="Tipo de trabajo"
               placeholder="Todos los trabajos"
@@ -93,6 +83,15 @@ export function VacancyFeedFilters({
               className="w-full"
             />
           </FilterSection>
+
+          {activeCount > 0 && (
+            <>
+              <Separator />
+              <div className="flex justify-center">
+                <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>
+              </div>
+            </>
+          )}
         </PopoverContent>
       </Popover>
     </div>

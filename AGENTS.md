@@ -232,34 +232,40 @@ siempre el mismo layout — dos partes con roles fijos que no se intercambian:
 - **La acción primaria de la pantalla (crear, publicar) va siempre arriba a la derecha**,
   en el `actions` de `PageHeader` — nunca en la misma fila que los filtros. Estas dos
   posiciones (filtros a la izquierda, acción primaria arriba a la derecha) no se tocan.
-- **Limpiar filtros tiene dos niveles, los dos DENTRO del popover** — no se agrega un botón
-  de limpiar suelto en la barra: el badge de conteo en "Filtros" ya avisa que hay algo
-  activo, y abrir el popover es donde se decide qué.
-  - **Por sección**: cada `Label` de filtro va envuelto en `FilterSection`
-    (`features/puestos/components/filter-section.tsx`), que agrega un `ClearLink` ("Limpiar")
-    al lado del label — solo visible si esa sección tiene algo tildado.
-  - **Todos**: una fila `"Filtros" + "Limpiar todo"` arriba de las secciones, con el mismo
-    `activeCount > 0` que ya calcula el badge — resetea todos los campos del popover, PERO
-    NO búsqueda ni orden (esos no son "filtros" en este layout, son sus propios controles
-    — ver el punto de arriba).
-  - **Los dos niveles usan el mismo `ClearLink`** (mismo componente, texto `text-xs
-    text-muted-foreground` con `underline` al hover) — no un `Button`: al lado de un
-    `Label`, un botón con fondo/borde pesa más de lo que la acción amerita. Es la misma
-    acción a distinta escala, así que se ven igual — no dos estilos para "limpiar".
+- **Limpiar filtros tiene dos niveles, los dos DENTRO del popover de "Filtros"** — no se
+  agrega ningún botón de limpiar suelto en la barra: el badge de conteo en "Filtros" ya
+  avisa que hay algo activo, y abrir el popover es donde se decide qué.
+  - **Por sección: dentro del propio dropdown de cada `MultiSelect`**, no al lado del
+    `Label`. Cuando esa sección tiene algo tildado, el dropdown agrega un `CommandSeparator`
+    y un `CommandItem` centrado "Limpiar" al pie de sus opciones (ver
+    `features/puestos/components/multi-select.tsx`) — limpiar esa sección es una acción del
+    propio control, no de la sección que lo envuelve. `FilterSection`
+    (`features/puestos/components/filter-section.tsx`) queda solo como el wrapper
+    `Label` + control, sin lógica de limpiar.
+  - **Todas: al pie del popover, debajo de la última sección** — un `Separator` y un
+    `ClearLink` ("Limpiar todo") centrado, visible solo si `activeCount > 0`. Resetea
+    todos los campos del popover, PERO NO búsqueda ni orden (esos no son "filtros" en este
+    layout, son sus propios controles — ver el punto de arriba). No va arriba del todo ni
+    al lado del título "Filtros": es la última acción de la lista, después de haber visto
+    todas las secciones.
 
   ```tsx
   <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-    <div className="flex items-center justify-between gap-2">
-      <p className="text-sm font-medium">Filtros</p>
-      {activeCount > 0 && <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>}
-    </div>
-    <FilterSection
-      label="Área"
-      hasSelection={(filters.areaIds?.length ?? 0) > 0}
-      onClear={() => onChange({ ...filters, areaIds: [] })}
-    >
-      <MultiSelect className="w-full" /* ... */ />
+    <p className="text-sm font-medium">Filtros</p>
+
+    <FilterSection label="Área">
+      <MultiSelect className="w-full" /* trae su propio "Limpiar" interno */ />
     </FilterSection>
+    {/* ...una FilterSection por filtro... */}
+
+    {activeCount > 0 && (
+      <>
+        <Separator />
+        <div className="flex justify-center">
+          <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>
+        </div>
+      </>
+    )}
   </PopoverContent>
   ```
 

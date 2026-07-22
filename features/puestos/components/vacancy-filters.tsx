@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
 import { MultiSelect } from "@/features/puestos/components/multi-select";
 import { VACANCY_STATUS_LABEL } from "@/features/puestos/components/vacancy-status-badge";
@@ -113,16 +114,9 @@ export function VacancyFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium">Filtros</p>
-            {activeCount > 0 && <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>}
-          </div>
+          <p className="text-sm font-medium">Filtros</p>
 
-          <FilterSection
-            label="Estado"
-            hasSelection={(filters.statuses?.length ?? 0) > 0}
-            onClear={() => onChange({ ...filters, statuses: [], page: 1 })}
-          >
+          <FilterSection label="Estado">
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
@@ -136,11 +130,7 @@ export function VacancyFilters({
             />
           </FilterSection>
 
-          <FilterSection
-            label="Área"
-            hasSelection={(filters.areaIds?.length ?? 0) > 0}
-            onClear={() => onChange({ ...filters, areaIds: [], page: 1 })}
-          >
+          <FilterSection label="Área">
             <MultiSelect
               label="Área"
               placeholder="Todas las áreas"
@@ -151,11 +141,7 @@ export function VacancyFilters({
             />
           </FilterSection>
 
-          <FilterSection
-            label="Ubicación"
-            hasSelection={(filters.locations?.length ?? 0) > 0}
-            onClear={() => onChange({ ...filters, locations: [], page: 1 })}
-          >
+          <FilterSection label="Ubicación">
             <MultiSelect
               label="Ubicación"
               placeholder="Todas las ubicaciones"
@@ -167,6 +153,15 @@ export function VacancyFilters({
               className="w-full"
             />
           </FilterSection>
+
+          {activeCount > 0 && (
+            <>
+              <Separator />
+              <div className="flex justify-center">
+                <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>
+              </div>
+            </>
+          )}
         </PopoverContent>
       </Popover>
 
