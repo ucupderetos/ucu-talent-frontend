@@ -226,3 +226,38 @@ export interface ApplicationStatusSummary {
   label: string;
   count: number;
 }
+
+// ---------------------------------------------------------------------------
+// Vista de empresas — Admin
+// ---------------------------------------------------------------------------
+
+/**
+ * View model del listado administrativo de empresas.
+ *
+ * Combina Company con los datos de User necesarios para la vista.
+ * El estado de aprobación pertenece a User.status.
+ *
+ * Pendiente: el backend todavía no permite obtener este estado para
+ * todas las empresas desde el listado administrativo.
+ */
+export interface AdminCompanyRow {
+  id: string;
+  name: string;
+  email: string;
+  industry: string;
+  location: string;
+  registeredAt: string;
+  status: AccountStatus;
+  initials: string;
+}
+
+/**
+ * Estado de búsqueda, filtros y paginación de la vista de empresas.
+ */
+export interface AdminCompanyFilters {
+  search: string;
+  status: AccountStatus | "TODAS";
+  industry: string;
+  page: number;
+  perPage: number;
+}
