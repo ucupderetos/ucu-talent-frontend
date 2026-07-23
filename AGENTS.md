@@ -593,9 +593,13 @@ app/                        # Rutas (App Router) — casi sin lógica de negocio
 ├── completar-perfil/       # ⛔ NO EXISTE. FUERA de los route groups, si no ProfileGuard
 │                           #    la redirige a sí misma en loop
 ├── (alumno)/               # ⚠️ layout.tsx: RoleGuard + ProfileGuard
-│   └── {feed,perfil,postulaciones}/
+│   └── {feed,postulaciones}/
 ├── (empresa)/              # ⚠️ layout.tsx: RoleGuard + ProfileGuard
 │   └── puestos/[id]/postulantes/
+├── (perfil)/               # ⚠️ layout.tsx: RoleGuard ALUMNO+EMPRESA + ProfileGuard.
+│   └── perfil/             #    /perfil COMPARTIDA por los dos roles: la page ramifica
+│                           #    por rol. No puede vivir en (alumno) ni (empresa) — dos
+│                           #    page.tsx de groups distintos no resuelven a la misma URL
 ├── (admin)/                # ⚠️ layout.tsx: RoleGuard (sin ProfileGuard)
 │   └── moderacion/
 ├── layout.tsx              # ⚠️ Layout raíz: fuentes, Providers, Toaster
@@ -759,9 +763,9 @@ había tres tipos incompatibles.
 - `types/index.ts` — las entidades core; las usan los 3 grupos.
 - `components/layout/` — sobre todo `nav-items.ts` (fuente única del nav por rol).
 - `lib/` — `api-client.ts`, `auth.ts`.
-- `app/layout.tsx`, `app/providers.tsx` y los 4 `layout.tsx` de route group — son del
-  equipo, no del grupo del rol correspondiente. Tocar los defaults del `QueryClient`
-  afecta a los tres grupos a la vez.
+- `app/layout.tsx`, `app/providers.tsx` y los 5 `layout.tsx` de route group (incluido el
+  de `(perfil)`, compartido entre alumno y empresa) — son del equipo, no del grupo del rol
+  correspondiente. Tocar los defaults del `QueryClient` afecta a los tres grupos a la vez.
 - `proxy.ts` (cuando exista) — Next solo admite **uno** por proyecto.
 
 ## Nomenclatura de ramas y commits
@@ -814,7 +818,7 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   (el reemplazo de `form`).
 - `components/layout/`: `AppShell`, `Navbar`, `Sidebar`, `PageHeader`, `EmptyState`,
   `nav-items.ts`. Responsive, verificado en mobile y desktop.
-- `layout.tsx` de los 4 route groups, con `RoleGuard` / `GuestOnly`.
+- `layout.tsx` de los 5 route groups, con `RoleGuard` / `GuestOnly`.
 - `app/providers.tsx`: `QueryClient` con los defaults de TanStack Query.
 - `types/index.ts` y los 5 `features/<x>/types.ts`.
 - `lib/api-client.ts`: la **forma** del cliente (verbos, `ApiError`, base URL). Faltan los
@@ -844,8 +848,13 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   grupo de empresa. ⚠️ Ver el gap de `VacancyStatus` en *Roles y control de acceso*: la
   pantalla hoy colapsa todo a `PENDIENTE`/`FINALIZADO` porque el backend real no tiene más
   estados — revisar labels/acciones apenas exista `PUBLICADO`/`RECHAZADO` (A-14).
-- Las `page.tsx` de `/feed`, `/perfil`, `/postulaciones` y
-  `/puestos/[id]/postulantes` siguen siendo placeholders.
+- Las `page.tsx` de `/feed`, `/postulaciones` y `/puestos/[id]/postulantes` siguen siendo
+  placeholders.
+- ✅ **`/perfil` es una ruta COMPARTIDA entre alumno y empresa** (route group `(perfil)`,
+  guardado ALUMNO+EMPRESA): la `page.tsx` ramifica por rol y monta `CompanyProfileView`
+  (empresa, ya construida — `features/perfil/`) o `StudentProfileView` (alumno, todavía
+  placeholder). Reemplazó a `(alumno)/perfil` y `(empresa)/perfil-empresa`, que ya no
+  existen. Ver el porqué del group propio en *Estructura de carpetas*.
 
 ### El backend ya está levantado
 
