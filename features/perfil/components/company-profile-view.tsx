@@ -1,12 +1,16 @@
 "use client";
 
+// Vista de perfil de empresa: formulario editable + preview + tips.
+// Se monta desde /perfil (route group compartido (perfil)) cuando el rol es
+// EMPRESA — ver app/(perfil)/perfil/page.tsx.
+
 import { PageHeader } from "@/components/layout/page-header";
 import { CompanyProfileForm } from "@/features/perfil/components/company-profile-form";
 import { CompanyProfilePreview } from "@/features/perfil/components/company-profile-preview";
 import { CompanyProfileTips } from "@/features/perfil/components/company-profile-tips";
 import { useCompanyProfileForm } from "@/features/perfil/hooks/use-company-profile-form";
 
-export default function PerfilEmpresaPage() {
+export function CompanyProfileView() {
   const { form, mode, startEditing, commitSave, cancelEditing } = useCompanyProfileForm();
 
   return (
