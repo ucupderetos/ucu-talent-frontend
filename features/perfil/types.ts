@@ -10,7 +10,7 @@
 // al que pegarle — quedan documentados como contrato deseado. Confirmar con
 // backend antes de construir la pantalla de "editar perfil".
 
-import type { DegreeLevel, Department } from "@/types";
+import type { Company, DegreeLevel, Department } from "@/types";
 /**
  * Perfil completo del alumno tal como lo editaría él mismo — nombre, apellido,
  * documento, teléfono, LinkedIn y skills viven TODOS en `StudentProfile`
@@ -63,28 +63,15 @@ export type LinkedInImportFormat = "pendiente-de-confirmar";
 // ---------------------------------------------------------------------------
 
 /**
- * Perfil de empresa tal como lo edita ella misma. Espeja `Company` del MER.
+ * Payload de edición de `Company`. Es un subconjunto de la entidad completa
+ * (sin `companyId`, que no se reasigna, y sin `status`/`reviewedAt`/
+ * `adminComment`, que los pone el Admin, no la empresa) — coincide 1:1 con
+ * `UpdateCompanyRequest` de docs/ENDPOINTS.md.
  *
- * ⚠️ `docs/ENDPOINTS.md` todavía no expone `razonSocial`, `rut`, `phoneNumber`
- * ni `logoUrl` en `Company` — están en el MER pero no en el contrato real de
- * la API. Se documentan igual como forma deseada; `toCompanyProfile` rellena
- * los que faltan con datos mock hasta que el back los agregue.
+ * ⚠️ El MER tenía razonSocial/rut/phoneNumber/logoUrl, pero ENDPOINTS.md
+ * (fuente #3, gana sobre el MER) no los expone en `Company` — se sacaron del
+ * formulario. Ver AGENTS.md → "Las tres fuentes y su orden de precedencia".
  */
-export interface CompanyProfile {
-  /** Company.razon_social — nombrado en inglés (AGENTS.md), etiqueta visible
-   *  sigue siendo "Razón social". */
-  legalName: string;
-  rut: string;
-  phoneNumber: string;
-  industry: string;
-  description: string;
-  webUrl: string;
-  linkedinUrl: string;
-  location: Department;
-  /** Company.logo_url — bucket. Sin endpoint de upload todavía. */
-  logoUrl: string;
-}
-
-export type CompanyProfileInput = CompanyProfile;
+export type CompanyProfileInput = Omit<Company, "companyId">;
 
 export const COMPANY_DESCRIPTION_MAX = 1000;

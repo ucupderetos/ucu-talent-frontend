@@ -1,20 +1,21 @@
 "use client";
 
-// Estado del formulario de perfil de empresa (MER: `Company`).
+// Estado del formulario de perfil de empresa (MER/wire: `Company`).
 //
-// ⚠️ Alineado al modelo de vista `CompanyProfile` (features/perfil/types.ts),
-// que ya refleja el MER con `legalName` en inglés (AGENTS.md). Arranca
-// sembrado con useCompanyProfile() en vez de vacío, para que ReadOnly y
-// Preview se puedan revisar con contenido real (ver review del PR).
+// ⚠️ Alineado a docs/ENDPOINTS.md (fuente #3, gana sobre el MER): sin
+// legalName/rut/phoneNumber/logoUrl, que el back real no expone en Company.
+// Se siembra con useCurrentCompany() (GET /company?userId=) — mientras esa
+// query está cargando, `company` es null y el form no tiene defaultValues
+// reales todavía (ver isLoading que expone este hook).
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import type { Department } from "@/types";
 
 import { COMPANY_DESCRIPTION_MAX } from "@/features/perfil/types";
-import { useCompanyProfile } from "@/features/perfil/hooks/use-company-profile";
+import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
 
 const DEPARTMENTS: readonly Department[] = [
   "ARTIGAS", "CANELONES", "CERRO_LARGO", "COLONIA", "DURAZNO", "FLORES",
@@ -34,9 +35,7 @@ const DEPARTMENT_LABELS: Record<Department, string> = {
 export { DEPARTMENTS, DEPARTMENT_LABELS };
 
 const companyProfileSchema = z.object({
-  legalName: z.string().trim().min(1, "Ingresá la razón social."),
-  rut: z.string().trim().min(1, "Ingresá el RUT."),
-  phoneNumber: z.string().trim().min(1, "Ingresá un teléfono."),
+  name: z.string().trim().min(1, "Ingresá la razón social."),
   industry: z.string().trim().min(1, "Ingresá la industria."),
   description: z
     .string()
@@ -50,36 +49,66 @@ const companyProfileSchema = z.object({
     .pipe(z.url("Ingresá una URL válida.")),
   linkedinUrl: z.string().trim(),
   location: z.enum(DEPARTMENTS as [Department, ...Department[]], "Seleccioná un departamento."),
-  // A-11: sin endpoint de upload todavía — string libre por ahora.
-  logoUrl: z.string(),
 });
 
 export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
 
+const emptyValues: CompanyProfileFormValues = {
+  name: "",
+  industry: "",
+  description: "",
+  webUrl: "",
+  linkedinUrl: "",
+  location: undefined as unknown as Department,
+};
+
 export function useCompanyProfileForm() {
-  const seedValues = useCompanyProfile();
+  const { company, isLoading: isCompanyLoading } = useCurrentCompany();
+
   const [mode, setMode] = useState<"view" | "edit">("view");
-  const [savedValues, setSavedValues] = useState<CompanyProfileFormValues>(seedValues);
+  // "Último guardado real" para Cancelar: mientras no se hizo ningún submit
+  // todavía, es lo que trajo el GET; después de guardar, commitSave lo pisa.
+  const [committedValues, setCommittedValues] = useState<CompanyProfileFormValues | null>(null);
+
+  const seedValues = useMemo<CompanyProfileFormValues>(() => {
+    if (committedValues) return committedValues;
+    if (!company) return emptyValues;
+    return {
+      name: company.name,
+      industry: company.industry,
+      description: company.description,
+      webUrl: company.webUrl,
+      linkedinUrl: company.linkedinUrl,
+      location: company.location,
+    };
+  }, [company, committedValues]);
 
   const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
-    defaultValues: seedValues,
+    defaultValues: emptyValues,
   });
+
+  // Sincroniza el form (librería externa) con seedValues cuando cambia —
+  // esto es exactamente lo que useEffect está pensado para hacer (sincronizar
+  // con un sistema externo a React), a diferencia de actualizar estado propio.
+  useEffect(() => {
+    form.reset(seedValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- form es estable (RHF), no hace falta en deps
+  }, [seedValues]);
 
   function startEditing() {
     setMode("edit");
   }
 
   function commitSave(values: CompanyProfileFormValues) {
-    setSavedValues(values);
-    form.reset(values);
+    setCommittedValues(values);
     setMode("view");
   }
 
   function cancelEditing() {
-    form.reset(savedValues);
+    form.reset(seedValues);
     setMode("view");
   }
 
-  return { form, mode, startEditing, commitSave, cancelEditing };
+  return { form, mode, startEditing, commitSave, cancelEditing, isLoading: isCompanyLoading };
 }

@@ -38,29 +38,9 @@ export function CompanyProfileReadOnly({
   form: UseFormReturn<CompanyProfileFormValues>;
   onEdit: () => void;
 }) {
-  const [
-    logoUrl,
-    legalName,
-    rut,
-    phoneNumber,
-    webUrl,
-    description,
-    industry,
-    location,
-    linkedinUrl,
-  ] = useWatch({
+  const [name, webUrl, description, industry, location, linkedinUrl] = useWatch({
     control: form.control,
-    name: [
-      "logoUrl",
-      "legalName",
-      "rut",
-      "phoneNumber",
-      "webUrl",
-      "description",
-      "industry",
-      "location",
-      "linkedinUrl",
-    ],
+    name: ["name", "webUrl", "description", "industry", "location", "linkedinUrl"],
   });
 
   return (
@@ -75,25 +55,8 @@ export function CompanyProfileReadOnly({
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* A-11: sin endpoint de upload todavía */}
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Logo</p>
-          <div className="flex size-24 items-center justify-center overflow-hidden rounded-md border text-xs text-muted-foreground">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- URL de texto, sin endpoint de upload todavía
-              <img src={logoUrl} alt="Logo de la empresa" className="size-full object-cover" />
-            ) : (
-              "Sin logo"
-            )}
-          </div>
-        </div>
         <div className="grid gap-6 sm:grid-cols-2">
-          <ReadOnlyField label="Razón social" value={legalName} />
-          <ReadOnlyField label="RUT" value={rut} />
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2">
-          <ReadOnlyField label="Teléfono" value={phoneNumber} />
+          <ReadOnlyField label="Razón social" value={name} />
           <ReadOnlyField label="Sitio web" value={webUrl} />
         </div>
 
@@ -103,7 +66,7 @@ export function CompanyProfileReadOnly({
           <ReadOnlyField label="Industria" value={industry} />
           <ReadOnlyField
             label="Ubicación principal"
-            value={location ? DEPARTMENT_LABELS[location] : undefined}
+            value={location ? DEPARTMENT_LABELS[location as keyof typeof DEPARTMENT_LABELS] : undefined}
           />
         </div>
 

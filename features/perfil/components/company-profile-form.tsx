@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateCompanyProfile } from "@/features/perfil/hooks/use-update-company-profile";
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
@@ -32,14 +33,18 @@ export function CompanyProfileForm({
   startEditing,
   commitSave,
   cancelEditing,
+  isLoading: isCompanyLoading,
 }: {
   form: UseFormReturn<CompanyProfileFormValues>;
   mode: "view" | "edit";
   startEditing: () => void;
   commitSave: (values: CompanyProfileFormValues) => void;
   cancelEditing: () => void;
+  /** true mientras se carga la Company real (GET /company?userId=) — no
+   *  confundir con isLoading del submit, que expone useUpdateCompanyProfile. */
+  isLoading: boolean;
 }) {
-  const { updateProfile, isLoading, error } = useUpdateCompanyProfile();
+  const { updateProfile, isLoading: isSaving, error } = useUpdateCompanyProfile();
   const {
     register,
     handleSubmit,
@@ -53,6 +58,10 @@ export function CompanyProfileForm({
     await updateProfile(values);
     commitSave(values);
   });
+
+  if (isCompanyLoading) {
+    return <CompanyProfileFormSkeleton />;
+  }
 
   if (mode === "view") {
     return <CompanyProfileReadOnly form={form} onEdit={startEditing} />;
@@ -69,46 +78,16 @@ export function CompanyProfileForm({
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            {/* A-11: sin endpoint de upload todavía — campo de texto por ahora */}
-            <Field>
-              <FieldLabel htmlFor="logoUrl">Logo (URL)</FieldLabel>
-              <Input id="logoUrl" placeholder="https://..." {...register("logoUrl")} />
-            </Field>
-
             <div className="grid gap-6 sm:grid-cols-2">
-              <Field data-invalid={Boolean(errors.legalName)}>
-                <FieldLabel htmlFor="legalName">Razón social *</FieldLabel>
+              <Field data-invalid={Boolean(errors.name)}>
+                <FieldLabel htmlFor="name">Razón social *</FieldLabel>
                 <Input
-                  id="legalName"
-                  placeholder="H-Move S.A."
-                  aria-invalid={Boolean(errors.legalName)}
-                  {...register("legalName")}
+                  id="name"
+                  placeholder="H-Move"
+                  aria-invalid={Boolean(errors.name)}
+                  {...register("name")}
                 />
-                <FieldError errors={[errors.legalName]} />
-              </Field>
-
-              <Field data-invalid={Boolean(errors.rut)}>
-                <FieldLabel htmlFor="rut">RUT *</FieldLabel>
-                <Input
-                  id="rut"
-                  placeholder="210000000000"
-                  aria-invalid={Boolean(errors.rut)}
-                  {...register("rut")}
-                />
-                <FieldError errors={[errors.rut]} />
-              </Field>
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2">
-              <Field data-invalid={Boolean(errors.phoneNumber)}>
-                <FieldLabel htmlFor="phoneNumber">Teléfono *</FieldLabel>
-                <Input
-                  id="phoneNumber"
-                  placeholder="099123456"
-                  aria-invalid={Boolean(errors.phoneNumber)}
-                  {...register("phoneNumber")}
-                />
-                <FieldError errors={[errors.phoneNumber]} />
+                <FieldError errors={[errors.name]} />
               </Field>
 
               <Field data-invalid={Boolean(errors.webUrl)}>
@@ -194,8 +173,8 @@ export function CompanyProfileForm({
             {error && <FieldError>{error}</FieldError>}
 
             <div className="flex gap-2">
-              <Button type="submit" disabled={isLoading} className="w-fit">
-                {isLoading ? "Guardando..." : "Guardar cambios"}
+              <Button type="submit" disabled={isSaving} className="w-fit">
+                {isSaving ? "Guardando..." : "Guardar cambios"}
               </Button>
               <Button type="button" variant="outline" onClick={cancelEditing} className="w-fit">
                 Cancelar
@@ -205,5 +184,21 @@ export function CompanyProfileForm({
         </CardContent>
       </Card>
     </form>
+  );
+}
+
+function CompanyProfileFormSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-4 w-72" />
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </CardContent>
+    </Card>
   );
 }

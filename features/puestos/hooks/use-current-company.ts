@@ -1,22 +1,26 @@
 "use client";
 
-// Resuelve la `Company` del usuario logueado (rol empresa).
+// Resuelve la `Company` del usuario logueado (rol empresa), vía GET /company.
 //
-// ⚠️ ANDAMIO TEMPORAL: el MER separa `User` de `Company` (`Company.userId` es
-// la FK), pero todavía no existe un endpoint tipo `GET /companies/me` — el
-// contrato de la API no está definido (ver AGENTS.md). Mientras tanto, esto
-// resuelve la empresa buscando en fixtures por `userId`.
+// Se apoya en `useSession()` para el `userId` — no dispara el fetch hasta
+// tener sesión resuelta. TanStack Query dedupea por queryKey, así que llamar
+// a este hook desde varios componentes no repite el request.
 //
-// Se apoya en `useSession()`, que ya dedupe el `GET /me` por queryKey, así que
-// llamar a este hook desde varios componentes no dispara requests de más.
-//
-// TODO(api): cuando exista el endpoint real, esto pasa a un `useQuery` propio
-// (o directamente viene incluido en la sesión) y se borra la búsqueda en
-// fixtures.
+// En modo mock (NEXT_PUBLIC_MOCK_SESSION), devuelve la Company de fixtures en
+// vez de pegarle al back real — mismo atajo que getDisplayProfile en
+// lib/auth.ts, para poder trabajar sin depender de la cookie cross-origin
+// (A-13 en AGENTS.md) mientras no esté resuelta.
 
+import { useQuery } from "@tanstack/react-query";
+
+import { apiClient } from "@/lib/api-client";
 import { MOCK_COMPANIES } from "@/lib/fixtures";
 import { useSession } from "@/features/auth/hooks/use-session";
 import type { Company } from "@/types";
+
+export const CURRENT_COMPANY_QUERY_KEY = ["empresa-actual"] as const;
+
+const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 interface CurrentCompany {
   company: Company | null;
@@ -24,11 +28,20 @@ interface CurrentCompany {
 }
 
 export function useCurrentCompany(): CurrentCompany {
-  const { user, isLoading } = useSession();
+  const { user, isLoading: isSessionLoading } = useSession();
 
-  if (isLoading || !user) return { company: null, isLoading };
+  const { data, isPending } = useQuery({
+    queryKey: [...CURRENT_COMPANY_QUERY_KEY, user?.userId],
+    queryFn: ({ signal }) => {
+      if (MOCK_ROLE) {
+        const mock = MOCK_COMPANIES.find((c) => c.companyId === user!.userId);
+        return Promise.resolve(mock ?? null);
+      }
+      return apiClient.get<Company>("/company", { params: { userId: user!.userId }, signal });
+    },
+    enabled: user != null,
+  });
 
-  // PK compartida: `companyId` de `Company` ES el `userId` de la sesión.
-  const company = MOCK_COMPANIES.find((c) => c.companyId === user.userId) ?? null;
-  return { company, isLoading: false };
+  const isLoading = isSessionLoading || (user != null && isPending);
+  return { company: data ?? null, isLoading };
 }

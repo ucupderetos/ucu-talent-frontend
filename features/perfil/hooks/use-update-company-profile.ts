@@ -1,28 +1,46 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { apiClient, ApiError } from "@/lib/api-client";
+import { useCurrentCompany, CURRENT_COMPANY_QUERY_KEY } from "@/features/puestos/hooks/use-current-company";
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
+import type { Company } from "@/types";
 
-// PUT /company/{id} ya existe en docs/ENDPOINTS.md — conectar acá con
-// apiClient.put(). No hace falta un segundo PUT a /user: legalName vive en
-// Company según el MER, no en User. Al conectar: invalidar la query de la
-// empresa (GET /company?userId=) en el onSuccess para que el form refleje
-// lo guardado.
 async function updateCompanyProfileRequest(
+  companyId: string,
   values: CompanyProfileFormValues,
-): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
+): Promise<Company> {
+  return apiClient.put<Company>(`/company/${companyId}`, values);
 }
 
 export function useUpdateCompanyProfile() {
-  const mutation = useMutation({ mutationFn: updateCompanyProfileRequest });
+  const { company } = useCurrentCompany();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (values: CompanyProfileFormValues) => {
+      if (!company) {
+        throw new Error("No se pudo resolver la empresa logueada.");
+      }
+      return updateCompanyProfileRequest(company.companyId, values);
+    },
+    onSuccess: () => {
+      // Refresca la Company en cache — el form vuelve a sembrarse con lo
+      // que el back confirmó que guardó, no con lo que mandamos a ciegas.
+      queryClient.invalidateQueries({ queryKey: CURRENT_COMPANY_QUERY_KEY });
+    },
+  });
+
+  const apiError = mutation.error instanceof ApiError ? mutation.error : null;
 
   return {
     updateProfile: mutation.mutateAsync,
     isLoading: mutation.isPending,
     error: mutation.isError
-      ? "No se pudo guardar el perfil. Intentá nuevamente."
+      ? apiError?.status === 400
+        ? "Revisá los datos ingresados."
+        : "No se pudo guardar el perfil. Intentá nuevamente."
       : null,
   };
 }

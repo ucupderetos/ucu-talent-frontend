@@ -11,8 +11,7 @@ import { CompanyProfileTips } from "@/features/perfil/components/company-profile
 import { useCompanyProfileForm } from "@/features/perfil/hooks/use-company-profile-form";
 
 export function CompanyProfileView() {
-  const { form, mode, startEditing, commitSave, cancelEditing } = useCompanyProfileForm();
-
+  const { form, mode, startEditing, commitSave, cancelEditing, isLoading } = useCompanyProfileForm();
   return (
     <>
       <PageHeader
@@ -28,6 +27,7 @@ export function CompanyProfileView() {
             startEditing={startEditing}
             commitSave={commitSave}
             cancelEditing={cancelEditing}
+            isLoading={isLoading}
           />
         </div>
         <div className="flex flex-col gap-6">
