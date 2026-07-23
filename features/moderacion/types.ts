@@ -16,7 +16,7 @@
 // acciones están en el roadmap y con qué forma van a salir — construir contra
 // esta interfaz hoy sería construir contra un endpoint que no existe.
 
-import type { AccountStatus } from "@/types";
+import type { AccountStatus, StudentProfile } from "@/types";
 
 /**
  * RF-13: aprobar o rechazar una empresa (o un alumno — `AccountStatus` es
@@ -50,3 +50,33 @@ export interface VacancyResolution {
 
 /** Las dos colas del panel de Admin UCU. */
 export type ModerationQueue = "pending-accounts" | "pending-vacancies";
+
+// ---------------------------------------------------------------------------
+// Listado de "Usuarios" (alumnos) — RF-MOD-05 desde el lado del Admin.
+// ---------------------------------------------------------------------------
+
+/**
+ * Fila de la tabla de alumnos: el `StudentProfile` del MER más los datos
+ * derivados que la pantalla necesita mostrar (email/fecha de registro vienen
+ * del `User` con la misma PK, carrera/facultad de `Education` → `Degree` →
+ * `Area`). No es una entidad del MER, por eso vive acá y no en `@/types`.
+ */
+export interface StudentRow extends StudentProfile {
+  email: string;
+  registeredAt: string; // ISO 8601
+  degreeId: string | null;
+  degreeName: string;
+  areaId: string | null;
+  areaName: string;
+}
+
+/** Filtros del listado de alumnos. Se resuelven en el cliente sobre
+ *  fixtures hoy (no hay endpoint — ver aviso arriba); si llega a existir,
+ *  probablemente viajen como query params de un GET paginado. */
+export interface StudentFilters {
+  search?: string;
+  degreeIds?: string[];
+  areaIds?: string[];
+  page?: number;
+  perPage?: number;
+}
