@@ -10,8 +10,7 @@
 // al que pegarle — quedan documentados como contrato deseado. Confirmar con
 // backend antes de construir la pantalla de "editar perfil".
 
-import type { DegreeLevel } from "@/types";
-
+import type { DegreeLevel, Department } from "@/types";
 /**
  * Perfil completo del alumno tal como lo editaría él mismo — nombre, apellido,
  * documento, teléfono, LinkedIn y skills viven TODOS en `StudentProfile`
@@ -59,3 +58,33 @@ export interface WorkExperienceInput {
  * está en el roadmap antes de construir la UI.
  */
 export type LinkedInImportFormat = "pendiente-de-confirmar";
+// ---------------------------------------------------------------------------
+// Empresa (MER/wire: `Company`)
+// ---------------------------------------------------------------------------
+
+/**
+ * Perfil de empresa tal como lo edita ella misma. Espeja `Company` del MER.
+ *
+ * ⚠️ `docs/ENDPOINTS.md` todavía no expone `razonSocial`, `rut`, `phoneNumber`
+ * ni `logoUrl` en `Company` — están en el MER pero no en el contrato real de
+ * la API. Se documentan igual como forma deseada; `toCompanyProfile` rellena
+ * los que faltan con datos mock hasta que el back los agregue.
+ */
+export interface CompanyProfile {
+  /** Company.razon_social — nombrado en inglés (AGENTS.md), etiqueta visible
+   *  sigue siendo "Razón social". */
+  legalName: string;
+  rut: string;
+  phoneNumber: string;
+  industry: string;
+  description: string;
+  webUrl: string;
+  linkedinUrl: string;
+  location: Department;
+  /** Company.logo_url — bucket. Sin endpoint de upload todavía. */
+  logoUrl: string;
+}
+
+export type CompanyProfileInput = CompanyProfile;
+
+export const COMPANY_DESCRIPTION_MAX = 1000;

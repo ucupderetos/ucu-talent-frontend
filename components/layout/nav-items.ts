@@ -5,6 +5,7 @@
 
 import {
   BriefcaseIcon,
+  BuildingIcon,
   FileTextIcon,
   NewspaperIcon,
   ShieldCheckIcon,
@@ -28,8 +29,8 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
     { label: "Mi perfil", href: "/perfil", icon: UserIcon },
   ],
   EMPRESA: [
-    // ⚠️ /puestos todavía no tiene page.tsx — lo crea el grupo de empresa.
     { label: "Mis puestos", href: "/puestos", icon: BriefcaseIcon },
+    { label: "Perfil de empresa", href: "/perfil-empresa", icon: BuildingIcon },
   ],
   ADMIN: [{ label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon }],
 };
