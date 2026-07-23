@@ -43,6 +43,16 @@ export interface MyApplication {
 }
 
 /**
+ * Fila de "mis postulaciones" con los datos derivados que la card necesita
+ * mostrar (nombre de empresa y de área) ya resueltos — mismo criterio que
+ * `FeedVacancyRow` en `features/puestos/types.ts`.
+ */
+export interface MyApplicationRow extends MyApplication {
+  companyName: string;
+  areaName: string;
+}
+
+/**
  * Cambio de estado de una postulación, hecho por la empresa.
  * Wire: `UpdateVacancyApplicationRequest` — `PUT /vacancy-application/{id}`.
  *

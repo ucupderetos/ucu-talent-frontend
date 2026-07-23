@@ -1,5 +1,7 @@
 // Ruta: /postulaciones — postulaciones del alumno.
-// Placeholder inicial. Owner: (asignar).
+
+import { MyApplicationsView } from "@/features/postulaciones/components/my-applications-view";
+
 export default function PostulacionesPage() {
-  return <h1>Postulaciones</h1>;
+  return <MyApplicationsView />;
 }
