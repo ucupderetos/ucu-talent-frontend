@@ -16,7 +16,7 @@
 // acciones están en el roadmap y con qué forma van a salir — construir contra
 // esta interfaz hoy sería construir contra un endpoint que no existe.
 
-import type { AccountStatus, StudentProfile } from "@/types";
+import type { AccountStatus, Company, StudentProfile } from "@/types";
 
 /**
  * RF-13: aprobar o rechazar una empresa (o un alumno — `AccountStatus` es
@@ -77,6 +77,36 @@ export interface StudentFilters {
   search?: string;
   degreeIds?: string[];
   areaIds?: string[];
+  page?: number;
+  perPage?: number;
+}
+
+// tipos de la pantalla de validaciones (cola de empresas y alumnos pendientes)
+
+// fila de la tabla de empresas pendientes. es la Company real + el email y
+// la fecha de registro, que en verdad viven en el User de la misma PK.
+// ojo: Company no tiene contacto/persona de referencia, eso no existe en el
+// modelo, no lo inventamos
+export interface PendingCompanyRow extends Company {
+  email: string;
+  registeredAt: string; // ISO 8601
+}
+
+export interface PendingCompaniesFilters {
+  search?: string;
+  industries?: string[];
+  page?: number;
+  perPage?: number;
+}
+
+// mismo criterio para alumnos: StudentProfile real + email/fecha del User
+export interface PendingStudentRow extends StudentProfile {
+  email: string;
+  registeredAt: string; // ISO 8601
+}
+
+export interface PendingStudentsFilters {
+  search?: string;
   page?: number;
   perPage?: number;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-// la tabla de alumnos pendientes. le pasan las filas ya filtradas.
-// los botones de aprobar y rechazar todavia no hacen nada.
+// tabla de alumnos pendientes. recibe las filas ya filtradas. aprobar y
+// rechazar no hacen nada todavia, no hay endpoint para eso.
 
 import { CheckIcon, MoreVerticalIcon, XCircleIcon } from "lucide-react";
 
@@ -15,84 +15,79 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { AlumnoPendienteRow } from "@/features/moderacion/data/alumnos-pendientes-mock";
+import type { PendingStudentRow } from "@/features/moderacion/types";
+import type { DocumentType } from "@/types";
 
-// colores del avatar, van rotando por fila.
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700",
-  "bg-amber-100 text-amber-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-blue-100 text-blue-700",
-  "bg-rose-100 text-rose-700",
+const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
+  CEDULA_IDENTIDAD: "C.I.",
+  DNI: "DNI",
+  PASAPORTE: "Pasaporte",
+};
+
+const COLOR_CLASSES = [
+  "bg-chart-1/15 text-chart-1",
+  "bg-chart-2/15 text-chart-2",
+  "bg-chart-3/15 text-chart-3",
+  "bg-chart-4/15 text-chart-4",
+  "bg-chart-5/15 text-chart-5",
 ];
+
+function colorFor(id: string): string {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % COLOR_CLASSES.length;
+  return COLOR_CLASSES[hash];
+}
 
 function initials(name: string, surname: string): string {
   return `${name[0]}${surname[0]}`.toUpperCase();
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-UY");
+  return iso ? new Date(iso).toLocaleDateString("es-UY") : "—";
 }
 
-interface AlumnosPendientesTableProps {
-  rows: AlumnoPendienteRow[];
-}
-
-export function AlumnosPendientesTable({ rows }: AlumnosPendientesTableProps) {
+export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
   return (
     <div className="rounded-lg border">
-      <p className="border-b px-4 py-3 font-medium">
-        Estudiantes pendientes ({rows.length})
-      </p>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Alumno</TableHead>
-            <TableHead>Documento</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Fecha de solicitud</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                No hay estudiantes pendientes con estos filtros.
-              </TableCell>
-            </TableRow>
-          )}
-          {rows.map((a, index) => (
-            <TableRow key={a.id}>
+          {rows.map((student) => (
+            <TableRow key={student.studentProfileId}>
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarFallback className={AVATAR_COLORS[index % AVATAR_COLORS.length]}>
-                      {initials(a.name, a.surname)}
+                    <AvatarFallback className={colorFor(student.studentProfileId)}>
+                      {initials(student.name, student.surname)}
                     </AvatarFallback>
                   </Avatar>
-                  <p className="font-medium">
-                    {a.name} {a.surname}
-                  </p>
+                  <div>
+                    <p className="font-medium">
+                      {student.name} {student.surname}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {DOCUMENT_TYPE_LABEL[student.documentType]} {student.documentNumber}
+                    </p>
+                  </div>
                 </div>
               </TableCell>
-              <TableCell>
-                {a.documentType} {a.documentNumber}
-              </TableCell>
-              <TableCell className="text-muted-foreground">{a.email}</TableCell>
-              <TableCell>
-                <p>{formatDate(a.solicitadaAt)}</p>
-                <p className="text-xs text-muted-foreground">{a.hace}</p>
-              </TableCell>
+              <TableCell className="text-muted-foreground">{student.email}</TableCell>
+              <TableCell>{formatDate(student.registeredAt)}</TableCell>
               <TableCell className="text-right">
-                {/* los botones todavia no hacen nada */}
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
                   >
-                    <CheckIcon data-icon="inline-start" />
+                    <CheckIcon />
                     Aprobar
                   </Button>
                   <Button
@@ -100,7 +95,7 @@ export function AlumnosPendientesTable({ rows }: AlumnosPendientesTableProps) {
                     size="sm"
                     className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-600"
                   >
-                    <XCircleIcon data-icon="inline-start" />
+                    <XCircleIcon />
                     Rechazar
                   </Button>
                   <Button variant="ghost" size="icon" aria-label="Más acciones">

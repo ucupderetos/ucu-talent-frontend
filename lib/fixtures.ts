@@ -158,6 +158,55 @@ export const MOCK_COMPANIES: Company[] = [
     linkedinUrl: "",
     location: "CANELONES",
   },
+  // empresas para la cola de validaciones del admin
+  {
+    companyId: "c-3",
+    name: "Agro Sustentable S.A.",
+    industry: "Agroindustria",
+    description: "Producción agropecuaria sustentable.",
+    webUrl: "https://agrosustentable.com.uy",
+    linkedinUrl: "",
+    location: "CANELONES",
+  },
+  {
+    companyId: "c-4",
+    name: "Comercial del Este",
+    industry: "Comercio",
+    description: "Distribución mayorista.",
+    webUrl: "https://comercialeste.com.uy",
+    linkedinUrl: "",
+    location: "MALDONADO",
+  },
+];
+
+// users de estas empresas, para poder mostrar el email y filtrar por status
+// PENDIENTE en la pantalla de validaciones (Company no tiene status propio,
+// vive en el User de la misma PK)
+export const MOCK_COMPANY_USERS: User[] = [
+  {
+    userId: "c-2",
+    email: "contacto@startupnueva.com.uy",
+    role: "EMPRESA",
+    status: "PENDIENTE",
+    registeredAt: "2026-07-13T10:00:00.000Z",
+    name: "Startup Nueva",
+  },
+  {
+    userId: "c-3",
+    email: "rrhh@agrosustentable.com.uy",
+    role: "EMPRESA",
+    status: "PENDIENTE",
+    registeredAt: "2026-07-14T10:00:00.000Z",
+    name: "Agro Sustentable S.A.",
+  },
+  {
+    userId: "c-4",
+    email: "talento@comercialeste.com.uy",
+    role: "EMPRESA",
+    status: "PENDIENTE",
+    registeredAt: "2026-07-12T10:00:00.000Z",
+    name: "Comercial del Este",
+  },
 ];
 
 export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
@@ -181,7 +230,7 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     linkedinUrl: null,
     skills: ["Python", "SQL"],
   },
-  // Perfiles de MOCK_STUDENT_USERS, para el listado de "Usuarios" del admin.
+  // perfiles de MOCK_STUDENT_USERS, para el listado de "Usuarios" del admin
   {
     studentProfileId: "u-10",
     name: "María",
@@ -294,6 +343,37 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     linkedinUrl: null,
     skills: ["Atención al cliente", "Ventas"],
   },
+  // alumnos para la cola de validaciones (cedula no encontrada en el padron)
+  {
+    studentProfileId: "sp-10",
+    name: "Camila",
+    surname: "Suárez",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "49981123",
+    phoneNumber: null,
+    linkedinUrl: null,
+    skills: [],
+  },
+  {
+    studentProfileId: "sp-11",
+    name: "Nicolás",
+    surname: "Ferreira",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "45562219",
+    phoneNumber: null,
+    linkedinUrl: null,
+    skills: [],
+  },
+  {
+    studentProfileId: "sp-12",
+    name: "Brenda",
+    surname: "López",
+    documentType: "DNI",
+    documentNumber: "52238871",
+    phoneNumber: null,
+    linkedinUrl: null,
+    skills: [],
+  },
 ];
 
 /**
@@ -369,6 +449,37 @@ export const MOCK_APPLICANT_USERS: User[] = [
     registeredAt: "2026-03-18T10:00:00.000Z",
     name: "Mateo",
     surname: "Cabrera",
+  },
+];
+
+// users de esos alumnos pendientes, mismo criterio que MOCK_COMPANY_USERS
+export const MOCK_PENDING_STUDENT_USERS: User[] = [
+  {
+    userId: "sp-10",
+    email: "camila.suarez@gmail.com",
+    role: "ALUMNO",
+    status: "PENDIENTE",
+    registeredAt: "2026-07-14T09:00:00.000Z",
+    name: "Camila",
+    surname: "Suárez",
+  },
+  {
+    userId: "sp-11",
+    email: "nico.ferreira@hotmail.com",
+    role: "ALUMNO",
+    status: "PENDIENTE",
+    registeredAt: "2026-07-13T09:00:00.000Z",
+    name: "Nicolás",
+    surname: "Ferreira",
+  },
+  {
+    userId: "sp-12",
+    email: "brenda.lopez@gmail.com",
+    role: "ALUMNO",
+    status: "PENDIENTE",
+    registeredAt: "2026-07-11T09:00:00.000Z",
+    name: "Brenda",
+    surname: "López",
   },
 ];
 
