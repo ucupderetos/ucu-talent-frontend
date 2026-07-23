@@ -122,34 +122,36 @@ Los tokens ya están declarados en `app/globals.css` — un componente no declar
 
 | Rol | Token / utilidad | Cuándo |
 |---|---|---|
-| Acción primaria | `bg-primary` / `text-primary` / `ring-ring` | Botón principal, focus ring, links — es **navy** (`--brand-navy`, `#052E66`). |
+| **Botón de acción principal** | `bg-ucu-blue text-white hover:bg-ucu-blue/90` | El CTA de una pantalla (submit de login/registro, "Aplicar" en el detalle de vacante, etc.) — color de marca **explícito**, no el token `bg-primary`. Ver *nota* abajo. |
+| Focus ring / links | `ring-ring` / `text-primary` | Sigue por el token semántico — es el mismo navy, no hace falta repetirlo a mano fuera del botón principal. |
 | Acción secundaria | `bg-secondary` | Botón secundario, sin protagonismo visual (gris neutro, no de marca). |
 | Texto apagado / ayuda | `text-muted-foreground` | Descripciones, helper text, metadata. |
 | Fondo sutil | `bg-muted` / `bg-accent` | Hover de filas, fondos de sección, superficies de bajo contraste. |
 | Error / destructivo | `bg-destructive` / `text-destructive` | Estados de error, botones destructivos, `aria-invalid`. |
 | Bordes | `border-border` (general) / `border-input` (controles de formulario) | Nunca un gris arbitrario (`border-gray-200`, etc.). |
 
-**Los 3 colores de marca** (`bg-ucu-blue`, `bg-ucu-orange`, `bg-ucu-teal`, y sus
-variantes `text-*`/`border-*`) son para **superficies de marca explícitas** — el panel
-hero de `(auth)`, ilustraciones, acentos puntuales (los puntitos de color de
-`AuthLayout`) — no un reemplazo puntual de `bg-primary` porque "queda lindo". Si el rol es
-"botón principal" o "focus ring", va `bg-primary`/`ring-ring`, no `bg-ucu-blue` a mano:
-como `--primary`/`--ring` ya **son** navy, es exactamente el mismo resultado visual sin
-repetir el color en cada componente.
+**El botón de acción principal de una pantalla escribe el color de marca explícito:
+`bg-ucu-blue text-white hover:bg-ucu-blue/90`** — no `bg-primary`. Es el mismo navy
+(`--primary`/`--brand-navy` resuelven al mismo `#052E66`), pero el CTA principal no
+depende del token: lo escribe literal, como ya hacían los submit de `login-form.tsx` y
+`register-form.tsx` (`bg-ucu-blue text-base font-medium text-white hover:bg-ucu-blue/90`)
+y ahora también el botón "Aplicar" de `vacancy-detail-view.tsx`. Confirmado 2026-07-22 después de
+que un choque de cache entre `next dev` y `next build` corridos a la vez hizo que
+`bg-primary` sirviera un chunk de CSS viejo (teal, de antes de esta guía) — con el color
+de marca escrito a mano en el botón, no importa si el token está mal resuelto en el
+momento. El resto de los usos de "primario" (focus ring, links) se quedan en el token
+(`ring-ring`/`text-primary`) — la explicitud es solo para el botón de acción principal.
 
-`ucu-teal` es el único color de marca con un rol semántico fijo fuera de "acento": es
+Los otros 2 colores de marca (`bg-ucu-orange`, `bg-ucu-teal`, y sus variantes
+`text-*`/`border-*`) siguen siendo para **superficies de marca explícitas** — el panel
+hero de `(auth)`, ilustraciones, acentos puntuales (los puntitos de color de
+`AuthLayout`) — no para pisar `bg-secondary`/`bg-muted`/etc. en cualquier lado.
+
+`ucu-teal` es el único de los dos con un rol semántico fijo fuera de "acento": es
 `--sidebar-primary`/`--sidebar-ring` (el ítem activo del Sidebar), porque el Sidebar ya es
 navy de fondo — un ítem activo navy sobre navy no se vería. `ucu-orange` no tiene token
 semántico propio: es acento puntual (dots, texto destacado), nunca un fondo grande ni un
 botón — es el color más saturado de los tres y compite con el contenido si se usa de más.
-
-⚠️ Herencia de una decisión anterior: hasta hace poco `--primary`/`--ring` eran un teal de
-marca oscurecido (para dar contraste con texto blanco) y `login-form.tsx`/`register-form.tsx`
-pisaban el navy a mano en cada input (`focus-visible:border-ucu-blue
-focus-visible:ring-ucu-blue/20`) porque esa pantalla ya es navy-forward. Ahora que
-`--primary`/`--ring` son navy por default, esos overrides quedaron **redundantes** — no
-hace falta tocarlos para que este ticket cierre, pero si se edita ese archivo por otra
-razón, se pueden borrar sin que cambie nada visualmente.
 
 ### Tipografía
 
@@ -177,8 +179,8 @@ acento visual que `PageHeader` no tiene, se agrega ahí — no se bifurca el com
 ### Tamaño de controles interactivos
 
 Los primitivos de `components/ui/` (`Button`, `Input`, `SelectTrigger`) traen por default
-un tamaño compacto (`h-8`) pensado para UI densa. Conviven dos contextos con necesidades
-distintas, y **ambos son correctos** — no hay que unificarlos a un solo alto:
+un tamaño compacto (`h-8`) pensado para UI densa. Conviven tres contextos con necesidades
+distintas, y **los tres son correctos** — no hay que unificarlos a un solo alto:
 
 - **Formulario de página completa** (login, registro, completar perfil: la persona
   completa el formulario y listo, nada más en pantalla): controles más grandes y
@@ -189,6 +191,11 @@ distintas, y **ambos son correctos** — no hay que unificarlos a un solo alto:
   `vacancy-table.tsx`): se deja el tamaño default de los primitivos (`h-8`). Es una barra de
   herramientas sobre una lista, no un formulario — la densidad ahí es una ventaja, no un
   descuido.
+- **CTA primario suelto en un card de contenido** (no es un formulario ni una toolbar —
+  ej. "Aplicar" en el detalle de vacante, `ApplyAction` en `vacancy-detail-view.tsx`):
+  **`h-12`** con `px-6 text-sm` (mismo alto táctil que el submit de un formulario, pero con
+  el texto en `text-sm` — a `text-base` el label se ve desproporcionado en un botón que no
+  vive dentro de un formulario completo).
 
 ⚠️ **Gotcha de `SelectTrigger`**: su tamaño no es una clase `h-*` común, es
 `data-[size=default]:h-8` / `data-[size=sm]:h-7` (variantes por atributo). Un `className="h-11"`
