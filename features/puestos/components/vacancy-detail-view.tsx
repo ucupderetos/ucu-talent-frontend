@@ -13,20 +13,25 @@ import {
   ArrowLeftIcon,
   BriefcaseIcon,
   CalendarIcon,
+  CircleUserRoundIcon,
+  ClipboardCheckIcon,
   ClipboardListIcon,
+  ExternalLinkIcon,
   FileTextIcon,
+  GlobeIcon,
   MapPinIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/layout/empty-state";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/features/auth/hooks/use-session";
+import { getVacancyDetailPreviewExtras } from "@/features/puestos/components/vacancy-detail-preview-mock";
 import { hasAppliedToVacancy, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
 import type { AccountStatus, Modality } from "@/types";
@@ -86,108 +91,169 @@ export function VacancyDetailView({ vacancyId }: { vacancyId: string }) {
 }
 
 function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
+  // 🔴 preview: ver vacancy-detail-preview-mock.ts — nada de esto es contrato real todavía.
+  const extras = getVacancyDetailPreviewExtras(vacancy);
+
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <div className="flex flex-col gap-4 lg:col-span-2">
-        <Card>
-          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex gap-3">
-              <Avatar size="lg" className="rounded-lg">
-                <AvatarFallback className="rounded-lg font-medium">
-                  {companyInitials(vacancy.company.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <h1 className="text-xl font-semibold tracking-tight">{vacancy.name}</h1>
-                <p className="mt-0.5 text-sm text-muted-foreground">{vacancy.company.name}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPinIcon className="size-4" />
-                    {vacancy.location}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <BriefcaseIcon className="size-4" />
-                    {vacancy.contractType}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <CalendarIcon className="size-4" />
-                    {formatDate(vacancy.publicationDate)}
-                  </span>
+    <div className="flex flex-col gap-4">
+      <Card>
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-3">
+            <Avatar size="lg">
+              <AvatarImage src={extras.logoUrl} alt={vacancy.company.name} />
+              <AvatarFallback className="font-medium">
+                {companyInitials(vacancy.company.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight">{vacancy.name}</h1>
+              <p className="mt-0.5 text-sm text-muted-foreground">{vacancy.company.name}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPinIcon className="size-4" />
+                  {vacancy.location}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <BriefcaseIcon className="size-4" />
+                  {vacancy.contractType}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarIcon className="size-4" />
+                  {formatDate(vacancy.publicationDate)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <ApplyAction vacancy={vacancy} />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="descripcion">
+            <TabsList variant="line">
+              <TabsTrigger value="descripcion" className="after:bg-sidebar">
+                <FileTextIcon />
+                Descripción
+              </TabsTrigger>
+              <TabsTrigger value="requisitos" className="after:bg-sidebar">
+                <ClipboardListIcon />
+                Requisitos
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="descripcion">
+              <Card>
+                <CardContent className="whitespace-pre-line text-sm text-foreground/90">
+                  {vacancy.description}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="requisitos">
+              <Card>
+                <CardContent className="whitespace-pre-line text-sm text-foreground/90">
+                  {vacancy.requirements}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sobre la empresa</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={extras.logoUrl} alt={vacancy.company.name} />
+                  <AvatarFallback className="font-medium">
+                    {companyInitials(vacancy.company.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{vacancy.company.name}</p>
+                  <p className="text-sm text-muted-foreground">{vacancy.company.industry}</p>
                 </div>
               </div>
-            </div>
+              <p className="text-sm text-muted-foreground">{vacancy.company.description}</p>
 
-            <ApplyAction vacancy={vacancy} />
-          </CardContent>
-        </Card>
+              <DetailRow
+                label="Tamaño"
+                value={<span className="inline-flex items-center gap-1"><CircleUserRoundIcon className="size-3.5" />{extras.companySize}</span>}
+              />
+              <DetailRow label="Fundada en" value={extras.foundedYear} />
 
-        <Tabs defaultValue="descripcion">
-          <TabsList variant="line">
-            <TabsTrigger value="descripcion">
-              <FileTextIcon />
-              Descripción
-            </TabsTrigger>
-            <TabsTrigger value="requisitos">
-              <ClipboardListIcon />
-              Requisitos
-            </TabsTrigger>
-          </TabsList>
+              {(vacancy.company.webUrl || vacancy.company.linkedinUrl) && (
+                <div className="flex flex-col gap-1.5 border-t pt-3">
+                  {vacancy.company.webUrl && (
+                    <a
+                      href={vacancy.company.webUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                    >
+                      <GlobeIcon className="size-4" />
+                      Sitio web
+                      <ExternalLinkIcon className="size-3" />
+                    </a>
+                  )}
+                  {vacancy.company.linkedinUrl && (
+                    <a
+                      href={vacancy.company.linkedinUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                    >
+                      <ExternalLinkIcon className="size-4" />
+                      LinkedIn
+                    </a>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          <TabsContent value="descripcion">
-            <Card>
-              <CardContent className="whitespace-pre-line text-sm text-foreground/90">
-                {vacancy.description}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <Card>
+            <CardHeader>
+              <CardTitle>Detalles de la vacante</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm">
+              <DetailRow label="Área" value={vacancy.areaName} />
+              {vacancy.parentAreaName && (
+                <DetailRow label="Área general" value={vacancy.parentAreaName} />
+              )}
+              <DetailRow
+                label="Modalidad"
+                value={<Badge variant="outline">{MODALITY_LABEL[vacancy.modality]}</Badge>}
+              />
+              {vacancy.salaryRange && (
+                <DetailRow label="Rango salarial" value={vacancy.salaryRange} />
+              )}
 
-          <TabsContent value="requisitos">
-            <Card>
-              <CardContent className="whitespace-pre-line text-sm text-foreground/90">
-                {vacancy.requirements}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Sobre la empresa</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <Avatar className="rounded-lg">
-                <AvatarFallback className="rounded-lg font-medium">
-                  {companyInitials(vacancy.company.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate font-medium">{vacancy.company.name}</p>
-                <p className="text-sm text-muted-foreground">{vacancy.company.industry}</p>
+              <div className="flex flex-col gap-1.5 border-t pt-3">
+                <span className="text-muted-foreground">Habilidades requeridas</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {extras.skills.map((skill) => (
+                    <Badge key={skill} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-muted-foreground">{vacancy.company.description}</p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalles de la vacante</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm">
-            <DetailRow label="Área" value={vacancy.areaName} />
-            {vacancy.parentAreaName && (
-              <DetailRow label="Área general" value={vacancy.parentAreaName} />
-            )}
-            <DetailRow
-              label="Modalidad"
-              value={<Badge variant="outline">{MODALITY_LABEL[vacancy.modality]}</Badge>}
-            />
-            {vacancy.salaryRange && <DetailRow label="Rango salarial" value={vacancy.salaryRange} />}
-          </CardContent>
-        </Card>
+              {extras.requiresQuestionnaire && (
+                <div className="flex items-start gap-2 rounded-lg bg-muted p-3 text-muted-foreground">
+                  <ClipboardCheckIcon className="size-4 shrink-0" />
+                  Esta vacante requiere completar un cuestionario adicional al postularte.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
@@ -219,12 +285,12 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
   const { user, isLoading } = useSession();
 
   if (isLoading || !user) {
-    return <Skeleton className="h-11 w-32 shrink-0" />;
+    return <Skeleton className="h-12 w-40 shrink-0" />;
   }
 
   if (vacancy.status === "FINALIZADO") {
     return (
-      <Button size="lg" className="h-11 shrink-0" disabled>
+      <Button size="lg" className="h-12 shrink-0 px-6 text-sm" disabled>
         Vacante finalizada
       </Button>
     );
@@ -232,7 +298,7 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
 
   if (hasAppliedToVacancy(vacancy.vacancyId, user.userId)) {
     return (
-      <Button size="lg" variant="outline" className="h-11 shrink-0" disabled>
+      <Button size="lg" variant="outline" className="h-12 shrink-0 px-6 text-sm" disabled>
         Ya te postulaste
       </Button>
     );
@@ -244,7 +310,7 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
     <div className="flex shrink-0 flex-col items-end gap-1.5">
       <Button
         size="lg"
-        className="h-11"
+        className="h-12 bg-ucu-blue px-6 text-sm text-white hover:bg-ucu-blue/90"
         disabled={Boolean(blockedMessage)}
         onClick={() =>
           toast.info('Postularte todavía no está disponible: falta el contrato de la API.')
@@ -261,23 +327,24 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
 
 function VacancyDetailSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <div className="flex flex-col gap-4 lg:col-span-2">
-        <Card>
-          <CardContent className="flex items-start gap-3">
-            <Skeleton className="size-10 rounded-lg" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-6 w-56" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-72" />
-            </div>
-          </CardContent>
-        </Card>
-        <Skeleton className="h-64 w-full rounded-xl" />
-      </div>
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
+    <div className="flex flex-col gap-4">
+      <Card>
+        <CardContent className="flex items-start gap-3">
+          <Skeleton className="size-10 rounded-lg" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="h-6 w-56" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Skeleton className="h-64 w-full rounded-xl lg:col-span-2" />
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+        </div>
       </div>
     </div>
   );

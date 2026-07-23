@@ -3,6 +3,7 @@
 // Card de una vacante en el feed del alumno (RF-14). Puramente de
 // presentación: recibe la fila ya resuelta por use-feed-vacancies.ts.
 
+import Link from "next/link";
 import { BookmarkIcon, BriefcaseIcon, MapPinIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,50 +48,59 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
 
 export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
   return (
-    <Card className="gap-3">
-      <CardContent className="flex flex-1 flex-col gap-3">
-        <div className="flex items-start justify-between gap-2">
-          <span className="truncate text-sm font-semibold text-primary">
-            {vacancy.companyName}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 shrink-0 text-muted-foreground"
-            aria-label="Guardar vacante"
-            onClick={() => toast.info("Guardar vacantes todavía no está disponible.")}
-          >
-            <BookmarkIcon className="size-4" />
-          </Button>
-        </div>
+    <Link
+      href={`/feed/${vacancy.vacancyId}`}
+      className="block rounded-xl transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <Card className="gap-3">
+        <CardContent className="flex flex-1 flex-col gap-3">
+          <div className="flex items-start justify-between gap-2">
+            <span className="truncate text-sm font-semibold text-primary">
+              {vacancy.companyName}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0 text-muted-foreground"
+              aria-label="Guardar vacante"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toast.info("Guardar vacantes todavía no está disponible.");
+              }}
+            >
+              <BookmarkIcon className="size-4" />
+            </Button>
+          </div>
 
-        <div>
-          <h3 className="font-semibold leading-snug">{vacancy.name}</h3>
-          <p className="text-sm text-muted-foreground">{vacancy.companyName}</p>
-        </div>
+          <div>
+            <h3 className="font-semibold leading-snug">{vacancy.name}</h3>
+            <p className="text-sm text-muted-foreground">{vacancy.companyName}</p>
+          </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          <Badge variant="secondary">{vacancy.areaName}</Badge>
-          {vacancy.parentAreaName && <Badge variant="secondary">{vacancy.parentAreaName}</Badge>}
-        </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Badge variant="secondary">{vacancy.areaName}</Badge>
+            {vacancy.parentAreaName && <Badge variant="secondary">{vacancy.parentAreaName}</Badge>}
+          </div>
 
-        <div className="mt-auto flex flex-col gap-1.5 pt-1 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <MapPinIcon className="size-4 shrink-0" aria-hidden />
-            {DEPARTMENT_LABEL[vacancy.location]}, Uruguay
-          </span>
-          <span className="flex items-center gap-1.5">
-            <BriefcaseIcon className="size-4 shrink-0" aria-hidden />
-            {vacancy.contractType}
-          </span>
-        </div>
+          <div className="mt-auto flex flex-col gap-1.5 pt-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <MapPinIcon className="size-4 shrink-0" aria-hidden />
+              {DEPARTMENT_LABEL[vacancy.location]}, Uruguay
+            </span>
+            <span className="flex items-center gap-1.5">
+              <BriefcaseIcon className="size-4 shrink-0" aria-hidden />
+              {vacancy.contractType}
+            </span>
+          </div>
 
-        <p className="text-xs text-muted-foreground">
-          {vacancy.publicationDate
-            ? `Publicado el ${dateFormatter.format(new Date(vacancy.publicationDate))}`
-            : "Sin fecha de publicación"}
-        </p>
-      </CardContent>
-    </Card>
+          <p className="text-xs text-muted-foreground">
+            {vacancy.publicationDate
+              ? `Publicado el ${dateFormatter.format(new Date(vacancy.publicationDate))}`
+              : "Sin fecha de publicación"}
+          </p>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

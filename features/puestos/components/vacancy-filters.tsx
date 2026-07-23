@@ -114,8 +114,6 @@ export function VacancyFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <p className="text-sm font-medium">Filtros</p>
-
           <FilterSection label="Estado">
             <MultiSelect
               label="Estado"
