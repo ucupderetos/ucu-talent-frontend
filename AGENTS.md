@@ -262,7 +262,7 @@ siempre el mismo layout — dos partes con roles fijos que no se intercambian:
 - **Cada filtro dentro del popover es un `MultiSelect`** (más de un valor a la vez — ej.
   varias carreras, varios tipos de contrato): pinta y comportamiento de `SelectTrigger`
   (Radix `Select` no soporta multi-valor, por eso es un combobox armado con
-  `Popover` + `Command` — ver `features/puestos/components/multi-select.tsx`), con el
+  `Popover` + `Command` — ver `components/filters/multi-select.tsx`), con el
   trigger resumiendo la selección (`"2 seleccionadas"`). No un `Select` de valor único
   suelto en la barra. Dentro de la lista desplegable, **cada opción muestra su propio
   `Checkbox`** (visual, `pointer-events-none` — el click lo maneja el `CommandItem`) para

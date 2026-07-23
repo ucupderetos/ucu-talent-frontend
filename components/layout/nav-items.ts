@@ -11,6 +11,7 @@ import {
   PlusIcon,
   ShieldCheckIcon,
   UserIcon,
+  UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,6 +33,7 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
   EMPRESA: [
     { label: "Mis puestos", href: "/puestos", icon: BriefcaseIcon },
     { label: "Crear oferta", href: "/crear-oferta", icon: PlusIcon },
+    { label: "Postulantes", href: "/postulantes", icon: UsersIcon },
     { label: "Perfil de empresa", href: "/perfil", icon: BuildingIcon },
   ],
   ADMIN: [{ label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon }],

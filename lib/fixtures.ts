@@ -135,8 +135,8 @@ export const MOCK_DEGREES: Degree[] = [
  *
  *  PK compartida (ver AGENTS.md): `companyId` de DataLab tiene que ser el
  *  mismo valor que `MOCK_USERS.EMPRESA.userId` ("u-2") — si no,
- *  `useCurrentCompany()` nunca la encuentra y "Mis ofertas" queda vacío
- *  aunque haya vacantes cargadas. */
+ *  `useCurrentCompany()` nunca la encuentra y "Mis ofertas"/"Postulantes"
+ *  quedan vacíos aunque haya datos cargados. */
 export const MOCK_COMPANIES: Company[] = [
   {
     companyId: "u-2",
@@ -232,6 +232,144 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     linkedinUrl: null,
     skills: ["Contabilidad"],
   },
+  // Perfiles de "otros alumnos" que existen para maquetar una lista de
+  // postulantes con más de una persona (ver MOCK_APPLICANT_USERS abajo).
+  {
+    studentProfileId: "sp-3",
+    name: "María",
+    surname: "Fernández",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "48765432",
+    phoneNumber: "099123456",
+    linkedinUrl: "https://linkedin.com/in/maria-fernandez",
+    skills: ["Marketing Digital", "Redes Sociales", "Canva"],
+  },
+  {
+    studentProfileId: "sp-4",
+    name: "Juan",
+    surname: "Pérez",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "47654321",
+    phoneNumber: null,
+    linkedinUrl: "https://linkedin.com/in/juan-perez",
+    skills: ["Excel", "Atención al cliente"],
+  },
+  {
+    studentProfileId: "sp-5",
+    name: "Sofía",
+    surname: "González",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "46543210",
+    phoneNumber: "098765432",
+    linkedinUrl: null,
+    skills: ["Illustrator", "Photoshop", "Diseño gráfico"],
+  },
+  {
+    studentProfileId: "sp-6",
+    name: "Agustín",
+    surname: "Rodríguez",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "45432109",
+    phoneNumber: "097654321",
+    linkedinUrl: "https://linkedin.com/in/agustin-rodriguez",
+    skills: ["Comunicación", "SEO", "Redacción"],
+  },
+  {
+    studentProfileId: "sp-7",
+    name: "Valentina",
+    surname: "Silveira",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "44321098",
+    phoneNumber: null,
+    linkedinUrl: null,
+    skills: ["Community Management", "Canva"],
+  },
+  {
+    studentProfileId: "sp-8",
+    name: "Mateo",
+    surname: "Cabrera",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "43210987",
+    phoneNumber: "096543210",
+    linkedinUrl: null,
+    skills: ["Atención al cliente", "Ventas"],
+  },
+];
+
+/**
+ * `User` de cada postulante mock de `MOCK_STUDENT_PROFILES` usado en el
+ * dominio `postulaciones` (PK compartida: `userId` = `studentProfileId`).
+ * Nombre distinto de `MOCK_STUDENT_USERS` (arriba, para el listado de
+ * "Usuarios" del admin) para no pisarlo — son dos conjuntos de alumnos mock
+ * con propósitos distintos. Solo `MOCK_USERS.ALUMNO` (u-1) tiene una sesión
+ * mock logueable — el resto son "otros alumnos" que existen para poder
+ * maquetar una lista de postulantes con más de una persona.
+ */
+export const MOCK_APPLICANT_USERS: User[] = [
+  MOCK_USERS.ALUMNO,
+  {
+    userId: "sp-2",
+    email: "martina.pereira@correo.ucu.edu.uy",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-02-20T10:00:00.000Z",
+    name: "Martina",
+    surname: "Pereira",
+  },
+  {
+    userId: "sp-3",
+    email: "maria.fernandez@gmail.com",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-03-05T10:00:00.000Z",
+    name: "María",
+    surname: "Fernández",
+  },
+  {
+    userId: "sp-4",
+    email: "juanperez@gmail.com",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-03-10T10:00:00.000Z",
+    name: "Juan",
+    surname: "Pérez",
+  },
+  {
+    userId: "sp-5",
+    email: "sofiagonzalez@gmail.com",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-03-12T10:00:00.000Z",
+    name: "Sofía",
+    surname: "González",
+  },
+  {
+    userId: "sp-6",
+    email: "agustinrodriguez@gmail.com",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-03-15T10:00:00.000Z",
+    name: "Agustín",
+    surname: "Rodríguez",
+  },
+  {
+    userId: "sp-7",
+    email: "valentina.silveira@gmail.com",
+    role: "ALUMNO",
+    status: "PENDIENTE",
+    registeredAt: "2026-06-01T10:00:00.000Z",
+    name: "Valentina",
+    surname: "Silveira",
+  },
+  {
+    userId: "sp-8",
+    email: "mateocabrera@gmail.com",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-03-18T10:00:00.000Z",
+    name: "Mateo",
+    surname: "Cabrera",
+  },
 ];
 
 export const MOCK_EDUCATION: Education[] = [
@@ -305,8 +443,30 @@ export const MOCK_EDUCATION: Education[] = [
     startDate: "2022-03-01T00:00:00.000Z",
     endDate: null,
   },
+  // Educación de MOCK_APPLICANT_USERS, para el dominio postulaciones.
+  {
+    educationId: "e-2",
+    studentProfileId: "sp-3",
+    degreeLevel: "LICENCIATURA",
+    degreeId: "d-4",
+    description: "Cursando 3º año.",
+    startDate: "2024-03-01T00:00:00.000Z",
+    endDate: null,
+  },
+  {
+    educationId: "e-3",
+    studentProfileId: "sp-4",
+    degreeLevel: "TECNICATURA",
+    degreeId: "d-3",
+    description: null,
+    startDate: "2022-03-01T00:00:00.000Z",
+    endDate: "2025-12-01T00:00:00.000Z",
+  },
 ];
 
+/** Experiencia laboral mock: los dos primeros casos son de `u-1` (para el
+ *  detalle de "Mi perfil"); los siguientes, de los postulantes de la vista de
+ *  empresa (`sp-*`). Todos los campos son opcionales en el wire. */
 export const MOCK_WORK_EXPERIENCE: WorkExperience[] = [
   {
     workExperienceId: "we-1",
@@ -333,6 +493,24 @@ export const MOCK_WORK_EXPERIENCE: WorkExperience[] = [
       "Apoyo a estudiantes de primer año en las clases prácticas de Programación I " +
       "(Java): corrección de entregas, resolución de dudas en el horario de consulta " +
       "semanal y armado de guías de ejercicios junto al docente titular.",
+  },
+  {
+    workExperienceId: "we-3",
+    studentProfileId: "sp-3",
+    company: "Agencia Creativa Sur",
+    position: "Asistente de Marketing",
+    startDate: "2025-02-01T00:00:00.000Z",
+    endDate: "2025-11-30T00:00:00.000Z",
+    description: "Apoyo en campañas para redes sociales de clientes locales.",
+  },
+  {
+    workExperienceId: "we-4",
+    studentProfileId: "sp-6",
+    company: "Radio Universitaria",
+    position: "Redactor/a de contenidos",
+    startDate: "2024-08-01T00:00:00.000Z",
+    endDate: null,
+    description: "Producción de notas y contenido para redes.",
   },
 ];
 
@@ -573,8 +751,12 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
 ];
 
-/** Una postulación por cada estado (y, en FINALIZADO, por cada valor de `selected`),
- *  para poder maquetar todos los casos de la barra de progreso. */
+/**
+ * Postulaciones de prueba. `va-1`–`va-7` cubren un caso por estado (y por valor
+ * de `selected` en FINALIZADO) para maquetar la barra de progreso de "Mis
+ * postulaciones". `va-8`–`va-15` concentran volumen en `v-7` ("Pasante de
+ * Marketing") para la vista de postulantes de la empresa.
+ */
 export const MOCK_APPLICATIONS: VacancyApplication[] = [
   {
     vacancyApplicationId: "va-1",
@@ -631,5 +813,69 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     status: "FINALIZADO",
     selected: false,
     appliedAt: "2026-06-20T09:00:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-8",
+    vacancyId: "v-7",
+    studentProfileId: "sp-3",
+    status: "VISTO",
+    selected: false,
+    appliedAt: "2026-07-14T10:00:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-9",
+    vacancyId: "v-7",
+    studentProfileId: "sp-4",
+    status: "PENDIENTE",
+    selected: false,
+    appliedAt: "2026-07-16T08:30:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-10",
+    vacancyId: "v-7",
+    studentProfileId: "sp-5",
+    status: "VISTO",
+    selected: false,
+    appliedAt: "2026-07-13T09:15:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-11",
+    vacancyId: "v-7",
+    studentProfileId: "sp-6",
+    status: "VISTO",
+    selected: false,
+    appliedAt: "2026-07-13T14:00:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-12",
+    vacancyId: "v-7",
+    studentProfileId: "sp-7",
+    status: "PENDIENTE",
+    selected: false,
+    appliedAt: "2026-07-15T17:20:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-13",
+    vacancyId: "v-7",
+    studentProfileId: "sp-8",
+    status: "FINALIZADO",
+    selected: true,
+    appliedAt: "2026-07-12T09:00:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-14",
+    vacancyId: "v-8",
+    studentProfileId: "sp-4",
+    status: "PENDIENTE",
+    selected: false,
+    appliedAt: "2026-07-17T11:00:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-15",
+    vacancyId: "v-8",
+    studentProfileId: "sp-2",
+    status: "VISTO",
+    selected: false,
+    appliedAt: "2026-07-16T15:00:00.000Z",
   },
 ];

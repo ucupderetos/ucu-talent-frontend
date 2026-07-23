@@ -72,7 +72,7 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
             <TableRow key={vacancy.vacancyId}>
               <TableCell className="max-w-64 whitespace-normal">
                 <Link
-                  href={`/puestos/${vacancy.vacancyId}/postulantes`}
+                  href={`/postulantes?vacancyId=${vacancy.vacancyId}`}
                   // Mismo foco navy que el resto del sitio (`--ring`, ver
                   // "Estados" en AGENTS.md) — un `<Link>` no es un primitivo
                   // de `components/ui/`, así que no trae el ancho de foco
@@ -126,7 +126,7 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
-          <Link href={`/puestos/${vacancy.vacancyId}/postulantes`}>
+          <Link href={`/postulantes?vacancyId=${vacancy.vacancyId}`}>
             <EyeIcon />
             Ver postulantes
           </Link>

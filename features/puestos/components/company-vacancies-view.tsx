@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
+import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
 import { useCompanyVacancies } from "@/features/puestos/hooks/use-company-vacancies";
 import { VacancyFilters } from "@/features/puestos/components/vacancy-filters";
 import { VacancyTable } from "@/features/puestos/components/vacancy-table";
