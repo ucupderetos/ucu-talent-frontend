@@ -9,6 +9,7 @@ import {
   BuildingIcon,
   ClipboardListIcon,
   BanknoteIcon,
+  LaptopIcon,
 } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,12 @@ import { Separator } from "@/components/ui/separator";
 
 import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
 import { DEPARTMENT_LABELS } from "@/features/crear-oferta/types";
+
+const MODALITY_LABELS: Record<string, string> = {
+  PRESENCIAL: "Presencial",
+  HIBRIDO: "Híbrida",
+  REMOTO: "Remota",
+};
 
 export function JobReview() {
   const { form } = useCreateJobForm();
@@ -62,12 +69,18 @@ export function JobReview() {
                   {contractType}
                 </span>
               )}
-              {salaryRange && (
+              {modality && (
                 <span className="flex items-center gap-1.5">
-                  <BanknoteIcon className="size-4" />
-                  {salaryRange}
+                  <LaptopIcon className="size-4" />
+                  {MODALITY_LABELS[modality] ?? modality}
                 </span>
               )}
+              {salaryRange && (
+                  <span className="flex items-center gap-1.5">
+                    <BanknoteIcon className="size-4" />
+                    {salaryRange}
+                  </span>
+                )}
               <span className="flex items-center gap-1.5">
                 <CalendarIcon className="size-4" />
                 {today}

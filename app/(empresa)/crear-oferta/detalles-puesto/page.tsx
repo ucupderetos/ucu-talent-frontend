@@ -13,7 +13,7 @@ export default function DetallesDelPuestoPage() {
     const { form, markStepReached } = useCreateJobForm();
 
     async function handleNext() {
-        const isStepValid = await form.trigger(["description"]);
+        const isStepValid = await form.trigger(["description", "requirements", "salaryRange"]);
         if (isStepValid) {
             markStepReached(3);
             router.push("/crear-oferta/revision");
