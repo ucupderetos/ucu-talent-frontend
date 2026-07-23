@@ -6,9 +6,20 @@
 // opción adentro. Controlado desde afuera (`company-vacancies-view.tsx`) —
 // este componente no sabe de dónde vienen los datos, solo emite el filtro
 // nuevo.
+//
+// Los filtros no se aplican en cada cambio: `filters` es un borrador local
+// que solo se busca cuando se presiona "Aplicar filtros"
+// (`ApplyFiltersButton`, en `components/filters/`). "Limpiar filtros"
+// (`ClearFiltersButton`) resetea borrador y búsqueda a la vez.
+//
+// El orden es la excepción: no es un filtro (AGENTS.md), así que su Select
+// usa `onOrderChange` en vez de `onChange` y el padre lo aplica de inmediato,
+// sin pasar por "Aplicar filtros".
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
+import { ApplyFiltersButton } from "@/components/filters/apply-filters-button";
+import { ClearFiltersButton } from "@/components/filters/clear-filters-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,16 +47,27 @@ export function VacancyFilters({
   filters,
   areas,
   locations,
+  activeCount,
   onChange,
+  onOrderChange,
+  onApply,
+  onClear,
+  canApply,
+  canClear,
 }: {
   filters: CompanyVacancyFilters;
   areas: Area[];
   locations: string[];
+  /** Cantidad de filtros del popover ya APLICADOS (no del borrador) — la
+   *  pasa el padre calculada sobre `appliedFilters`. */
+  activeCount: number;
   onChange: (filters: CompanyVacancyFilters) => void;
+  onOrderChange: (order: CompanyVacancyOrder) => void;
+  onApply: () => void;
+  onClear: () => void;
+  canApply: boolean;
+  canClear: boolean;
 }) {
-  const activeCount =
-    (filters.statuses?.length ?? 0) + (filters.areaIds?.length ?? 0) + (filters.locations?.length ?? 0);
-
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -55,7 +77,7 @@ export function VacancyFilters({
         />
         <Input
           value={filters.search ?? ""}
-          onChange={(e) => onChange({ ...filters, search: e.target.value, page: 1 })}
+          onChange={(e) => onChange({ ...filters, search: e.target.value })}
           placeholder="Buscar por título o área…"
           className="pl-8"
           aria-label="Buscar ofertas"
@@ -64,7 +86,7 @@ export function VacancyFilters({
 
       <Select
         value={filters.order ?? "recent"}
-        onValueChange={(value) => onChange({ ...filters, order: value as CompanyVacancyOrder })}
+        onValueChange={(value) => onOrderChange(value as CompanyVacancyOrder)}
       >
         <SelectTrigger aria-label="Ordenar ofertas">
           <SelectValue placeholder="Orden" />
@@ -97,9 +119,7 @@ export function VacancyFilters({
                 label,
               }))}
               selected={filters.statuses ?? []}
-              onChange={(statuses) =>
-                onChange({ ...filters, statuses: statuses as VacancyStatus[], page: 1 })
-              }
+              onChange={(statuses) => onChange({ ...filters, statuses: statuses as VacancyStatus[] })}
               className="w-full"
             />
           </div>
@@ -111,7 +131,7 @@ export function VacancyFilters({
               placeholder="Todas las áreas"
               options={areas.map((area) => ({ value: area.areaId, label: area.name }))}
               selected={filters.areaIds ?? []}
-              onChange={(areaIds) => onChange({ ...filters, areaIds, page: 1 })}
+              onChange={(areaIds) => onChange({ ...filters, areaIds })}
               className="w-full"
             />
           </div>
@@ -124,13 +144,18 @@ export function VacancyFilters({
               options={locations.map((location) => ({ value: location, label: location }))}
               selected={filters.locations ?? []}
               onChange={(locations) =>
-                onChange({ ...filters, locations: locations as Department[], page: 1 })
+                onChange({ ...filters, locations: locations as Department[] })
               }
               className="w-full"
             />
           </div>
         </PopoverContent>
       </Popover>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <ApplyFiltersButton onClick={onApply} disabled={!canApply} />
+        <ClearFiltersButton onClick={onClear} disabled={!canClear} />
+      </div>
     </div>
   );
 }

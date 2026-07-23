@@ -17,14 +17,12 @@ export function ApplyFiltersButton({
   className?: string;
 }) {
   return (
-    <Button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      // en vez del `bg-primary` (teal) por default del botón — para que
-      // "Aplicar filtros" se distinga como la acción principal de la barra.
-      className={cn("bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent", className)}
-    >
+    // Sin variant/color a mano: el default de `Button` ya es `bg-primary`
+    // (navy), que es exactamente el énfasis que esta acción necesita dentro
+    // de la barra de filtros — repetir el color con `--sidebar` no cambiaba
+    // nada visualmente y pisaba un token que no es el suyo (AGENTS.md,
+    // "Colores").
+    <Button type="button" onClick={onClick} disabled={disabled} className={cn(className)}>
       Aplicar filtros
     </Button>
   );

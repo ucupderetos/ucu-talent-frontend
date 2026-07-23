@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const PER_PAGE_OPTIONS = [5, 10, 20];
 
@@ -50,6 +51,8 @@ export function VacancyPagination({
             value={String(perPage)}
             onValueChange={(value) => onPerPageChange(Number(value))}
           >
+            {/* Sin override de foco: `SelectTrigger` ya trae `border-ring`/
+                `ring-ring` (navy) por default. */}
             <SelectTrigger size="sm" aria-label="Resultados por página">
               <SelectValue />
             </SelectTrigger>
@@ -82,11 +85,14 @@ export function VacancyPagination({
                 <PaginationLink
                   href="#"
                   isActive={pageNumber === page}
-                  className={
-                    pageNumber === page
-                      ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
-                      : undefined
-                  }
+                  // Mismos colores que el default de `Button` `variant="default"`
+                  // (`bg-primary`/`text-primary-foreground`/`hover:bg-primary/80`,
+                  // ya navy) — sin foco a mano, `PaginationLink` ya es un
+                  // `Button` por debajo y trae el suyo.
+                  className={cn(
+                    pageNumber === page &&
+                      "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+                  )}
                   onClick={(e) => {
                     e.preventDefault();
                     onPageChange(pageNumber);

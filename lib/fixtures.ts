@@ -72,10 +72,15 @@ export const MOCK_DEGREES: Degree[] = [
 ];
 
 /** `Company` ya no trae `approved` — la aprobación vive en `User.status`
- *  (ver MOCK_USERS.EMPRESA / el usuario `u-5` de la empresa sin aprobar). */
+ *  (ver MOCK_USERS.EMPRESA / el usuario `u-5` de la empresa sin aprobar).
+ *
+ *  PK compartida (ver AGENTS.md): `companyId` de DataLab tiene que ser el
+ *  mismo valor que `MOCK_USERS.EMPRESA.userId` ("u-2") — si no,
+ *  `useCurrentCompany()` nunca la encuentra y "Mis ofertas" queda vacío
+ *  aunque haya vacantes cargadas. */
 export const MOCK_COMPANIES: Company[] = [
   {
-    companyId: "c-1",
+    companyId: "u-2",
     name: "DataLab",
     industry: "Tecnología",
     description: "Consultora de datos y software.",
@@ -132,8 +137,8 @@ export const MOCK_EDUCATION: Education[] = [
 ];
 
 /**
- * Vacantes de `c-1` (DataLab), para maquetar la tabla de "Mis ofertas" de la
- * empresa con varios casos.
+ * Vacantes de `u-2` (DataLab, PK compartida con su `User`), para maquetar la
+ * tabla de "Mis ofertas" de la empresa con varios casos.
  *
  * ⚠️ El backend real hoy SOLO soporta `VacancyStatus: PENDIENTE | FINALIZADO`
  * (ver el gap documentado en `types/index.ts` — no existe "publicado",
@@ -146,7 +151,7 @@ export const MOCK_EDUCATION: Education[] = [
 export const MOCK_VACANCIES: Vacancy[] = [
   {
     vacancyId: "v-1",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-2",
     name: "Desarrollador/a Frontend Jr",
     description: "React y TypeScript. Pasantía de 20 hs semanales.",
@@ -161,7 +166,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
   {
     vacancyId: "v-2",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-3",
     name: "Analista de Datos",
     description: "SQL y Python.",
@@ -176,7 +181,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
   {
     vacancyId: "v-3",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-6",
     name: "Diseñador/a Gráfico",
     description: "Piezas para campañas digitales de clientes de DataLab.",
@@ -191,7 +196,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
   {
     vacancyId: "v-4",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-5",
     name: "Ejecutivo/a de Cuentas",
     description: "Gestión comercial de la cartera de clientes.",
@@ -206,7 +211,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
   {
     vacancyId: "v-5",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-2",
     name: "Desarrollador/a Backend Senior",
     description: "Java y Spring Boot para el equipo de plataforma.",
@@ -221,7 +226,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
   {
     vacancyId: "v-6",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-4",
     name: "Community Manager",
     description: "Manejo de redes sociales institucionales.",
@@ -236,7 +241,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
   {
     vacancyId: "v-7",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-4",
     name: "Pasante de Marketing",
     description: "Apoyo al equipo de marketing en campañas y contenido.",
@@ -251,7 +256,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
   {
     vacancyId: "v-8",
-    companyId: "c-1",
+    companyId: "u-2",
     areaId: "a-3",
     name: "QA Tester",
     description: "Testing manual y automatizado de productos internos.",
