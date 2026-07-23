@@ -10,7 +10,7 @@
 // al que pegarle — quedan documentados como contrato deseado. Confirmar con
 // backend antes de construir la pantalla de "editar perfil".
 
-import type { Company, DegreeLevel, Department } from "@/types";
+import type { Company, DegreeLevel } from "@/types";
 /**
  * Perfil completo del alumno tal como lo editaría él mismo — nombre, apellido,
  * documento, teléfono, LinkedIn y skills viven TODOS en `StudentProfile`
