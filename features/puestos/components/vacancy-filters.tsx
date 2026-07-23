@@ -11,6 +11,10 @@
 // que solo se busca cuando se presiona "Aplicar filtros"
 // (`ApplyFiltersButton`, en `components/filters/`). "Limpiar filtros"
 // (`ClearFiltersButton`) resetea borrador y búsqueda a la vez.
+//
+// El orden es la excepción: no es un filtro (AGENTS.md), así que su Select
+// usa `onOrderChange` en vez de `onChange` y el padre lo aplica de inmediato,
+// sin pasar por "Aplicar filtros".
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
@@ -43,7 +47,9 @@ export function VacancyFilters({
   filters,
   areas,
   locations,
+  activeCount,
   onChange,
+  onOrderChange,
   onApply,
   onClear,
   canApply,
@@ -52,15 +58,16 @@ export function VacancyFilters({
   filters: CompanyVacancyFilters;
   areas: Area[];
   locations: string[];
+  /** Cantidad de filtros del popover ya APLICADOS (no del borrador) — la
+   *  pasa el padre calculada sobre `appliedFilters`. */
+  activeCount: number;
   onChange: (filters: CompanyVacancyFilters) => void;
+  onOrderChange: (order: CompanyVacancyOrder) => void;
   onApply: () => void;
   onClear: () => void;
   canApply: boolean;
   canClear: boolean;
 }) {
-  const activeCount =
-    (filters.statuses?.length ?? 0) + (filters.areaIds?.length ?? 0) + (filters.locations?.length ?? 0);
-
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -79,7 +86,7 @@ export function VacancyFilters({
 
       <Select
         value={filters.order ?? "recent"}
-        onValueChange={(value) => onChange({ ...filters, order: value as CompanyVacancyOrder })}
+        onValueChange={(value) => onOrderChange(value as CompanyVacancyOrder)}
       >
         <SelectTrigger aria-label="Ordenar ofertas">
           <SelectValue placeholder="Orden" />

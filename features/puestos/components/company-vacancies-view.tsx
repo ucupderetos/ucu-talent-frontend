@@ -5,8 +5,8 @@
 // componentes de presentación. La page.tsx solo renderiza esto.
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { PlusIcon } from "lucide-react";
-import { toast } from "sonner";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
@@ -17,7 +17,7 @@ import { useCompanyVacancies } from "@/features/puestos/hooks/use-company-vacanc
 import { VacancyFilters } from "@/features/puestos/components/vacancy-filters";
 import { VacancyTable } from "@/features/puestos/components/vacancy-table";
 import { VacancyPagination } from "@/features/puestos/components/vacancy-pagination";
-import type { CompanyVacancyFilters } from "@/features/puestos/types";
+import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
 import { MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
 
 const DEFAULT_FILTERS: CompanyVacancyFilters = { order: "recent", page: 1, perPage: 5 };
@@ -27,8 +27,9 @@ export function CompanyVacanciesView() {
 
   // Los filtros solo se buscan al presionar "Aplicar filtros": `draftFilters`
   // es lo que el usuario va tocando en los inputs, `appliedFilters` es lo que
-  // realmente le llega al hook de datos. La paginación es la excepción: sí
-  // actúa de inmediato, no es parte del "borrador".
+  // realmente le llega al hook de datos. La paginación y el orden son la
+  // excepción: ambos actúan de inmediato (ver `changeOrder` y
+  // `VacancyPagination`), no son parte del "borrador".
   const [draftFilters, setDraftFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
 
@@ -41,14 +42,34 @@ export function CompanyVacanciesView() {
 
   const isLoading = isLoadingCompany || isLoadingVacancies;
   const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(appliedFilters);
+  const activeFilterCount = countActiveFilters(appliedFilters);
 
+  // Solo los campos que de verdad pasan por el borrador de "Aplicar filtros"
+  // (`order` se excluye a propósito: se aplica al toque, ver `changeOrder`).
+  // Un spread de `draftFilters` entero pisaba `page`/`perPage` de vuelta a su
+  // valor inicial (nunca se editan en el borrador) y perdía el tamaño de
+  // página que el usuario ya había elegido en la paginación.
   function applyFilters() {
-    setAppliedFilters({ ...draftFilters, page: 1 });
+    setAppliedFilters((current) => ({
+      ...current,
+      search: draftFilters.search,
+      statuses: draftFilters.statuses,
+      areaIds: draftFilters.areaIds,
+      locations: draftFilters.locations,
+      page: 1,
+    }));
   }
 
   function clearFilters() {
     setDraftFilters(DEFAULT_FILTERS);
     setAppliedFilters(DEFAULT_FILTERS);
+  }
+
+  // Ordenar no es lo mismo que filtrar (AGENTS.md): se aplica de inmediato,
+  // sin pasar por "Aplicar filtros".
+  function changeOrder(order: CompanyVacancyOrder) {
+    setDraftFilters((f) => ({ ...f, order }));
+    setAppliedFilters((f) => ({ ...f, order }));
   }
 
   return (
@@ -57,12 +78,13 @@ export function CompanyVacanciesView() {
         title="Ofertas"
         description="Gestioná todas las ofertas de tu empresa. Podés ver su estado, postulantes y rendimiento."
         actions={
-          <Button
-            className="bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent"
-            onClick={() => toast.info("Crear oferta todavía no está disponible.")}
-          >
-            <PlusIcon />
-            Crear nueva oferta
+          // CTA principal de la pantalla: color de marca explícito
+          // (`bg-ucu-blue`), no un token — ver "Colores" en AGENTS.md.
+          <Button asChild className="bg-ucu-blue text-white hover:bg-ucu-blue/90">
+            <Link href="/crear-oferta/informacion-basica">
+              <PlusIcon />
+              Crear nueva oferta
+            </Link>
           </Button>
         }
       />
@@ -71,7 +93,9 @@ export function CompanyVacanciesView() {
         filters={draftFilters}
         areas={areas}
         locations={locations}
+        activeCount={activeFilterCount}
         onChange={setDraftFilters}
+        onOrderChange={changeOrder}
         onApply={applyFilters}
         onClear={clearFilters}
         canApply={hasFilterFieldsChanged(draftFilters, appliedFilters)}
@@ -123,10 +147,25 @@ function hasActiveFilters(filters: CompanyVacancyFilters): boolean {
   );
 }
 
+/** Cuenta los filtros del popover que están realmente aplicados — se llama
+ *  con `appliedFilters`, nunca con el borrador: el badge del botón "Filtros"
+ *  tiene que reflejar lo que filtra la tabla ahora mismo, no lo que el
+ *  usuario tildó y todavía no confirmó con "Aplicar filtros". `search` no
+ *  cuenta porque el input ya está siempre visible en la barra. */
+function countActiveFilters(filters: CompanyVacancyFilters): number {
+  return (
+    (filters.statuses?.length ?? 0) +
+    (filters.areaIds?.length ?? 0) +
+    (filters.locations?.length ?? 0)
+  );
+}
+
 /** Compara borrador vs. aplicado para habilitar "Aplicar filtros" — ignora
- *  `page`/`perPage`, que no son parte del borrador que edita la barra de
- *  filtros. `statuses`/`areaIds`/`locations` son multi-selección, así que se
- *  comparan como conjuntos (el orden en que se van tildando no importa). */
+ *  `page`/`perPage` (no son parte del borrador que edita la barra de
+ *  filtros) y `order` (se aplica de inmediato, ver `changeOrder`, así que
+ *  nunca queda pendiente). `statuses`/`areaIds`/`locations` son
+ *  multi-selección, así que se comparan como conjuntos (el orden en que se
+ *  van tildando no importa). */
 function hasFilterFieldsChanged(
   draft: CompanyVacancyFilters,
   applied: CompanyVacancyFilters,
@@ -135,8 +174,7 @@ function hasFilterFieldsChanged(
     (draft.search ?? "") !== (applied.search ?? "") ||
     !sameValues(draft.statuses, applied.statuses) ||
     !sameValues(draft.areaIds, applied.areaIds) ||
-    !sameValues(draft.locations, applied.locations) ||
-    (draft.order ?? "recent") !== (applied.order ?? "recent")
+    !sameValues(draft.locations, applied.locations)
   );
 }
 

@@ -73,11 +73,11 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
               <TableCell className="max-w-64 whitespace-normal">
                 <Link
                   href={`/puestos/${vacancy.vacancyId}/postulantes`}
-                  // El foco por teclado usa `--ring` (verde agua) por default
-                  // en todo el sitio (ver globals.css, regla `*`); acá lo
-                  // pisamos a `--sidebar` para que combine con el resto de
-                  // los controles de esta vista.
-                  className="rounded-xs font-medium hover:underline focus-visible:outline-sidebar/50"
+                  // Mismo foco navy que el resto del sitio (`--ring`, ver
+                  // "Estados" en AGENTS.md) — un `<Link>` no es un primitivo
+                  // de `components/ui/`, así que no trae el ancho de foco
+                  // solo (`ring-3`) y hay que ponerlo a mano.
+                  className="rounded-sm font-medium outline-none hover:underline focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {vacancy.name}
                 </Link>
@@ -117,12 +117,10 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
-          aria-label={`Acciones de ${vacancy.name}`}
-        >
+        {/* Sin override de foco: `Button` ya trae `border-ring`/`ring-ring`
+            (navy) por default — pisarlo con `--sidebar` no cambiaba nada
+            visualmente (AGENTS.md, "Estados"). */}
+        <Button variant="ghost" size="icon" aria-label={`Acciones de ${vacancy.name}`}>
           <MoreHorizontalIcon className="size-4" />
         </Button>
       </DropdownMenuTrigger>

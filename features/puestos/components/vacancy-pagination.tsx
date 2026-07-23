@@ -51,11 +51,9 @@ export function VacancyPagination({
             value={String(perPage)}
             onValueChange={(value) => onPerPageChange(Number(value))}
           >
-            <SelectTrigger
-              size="sm"
-              aria-label="Resultados por página"
-              className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
-            >
+            {/* Sin override de foco: `SelectTrigger` ya trae `border-ring`/
+                `ring-ring` (navy) por default. */}
+            <SelectTrigger size="sm" aria-label="Resultados por página">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -75,10 +73,6 @@ export function VacancyPagination({
               <Button
                 variant="ghost"
                 size="icon"
-                // Foco por teclado en azul (--sidebar), no el verde agua
-                // (--ring) que usa el resto del sitio — para combinar con
-                // "Crear nueva oferta" / "Aplicar filtros" en esta misma vista.
-                className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
                 aria-label="Página anterior"
                 disabled={page <= 1}
                 onClick={() => onPageChange(page - 1)}
@@ -91,10 +85,13 @@ export function VacancyPagination({
                 <PaginationLink
                   href="#"
                   isActive={pageNumber === page}
+                  // Mismos colores que el default de `Button` `variant="default"`
+                  // (`bg-primary`/`text-primary-foreground`/`hover:bg-primary/80`,
+                  // ya navy) — sin foco a mano, `PaginationLink` ya es un
+                  // `Button` por debajo y trae el suyo.
                   className={cn(
-                    "focus-visible:border-sidebar focus-visible:ring-sidebar/50",
                     pageNumber === page &&
-                      "border-transparent bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent",
+                      "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
                   )}
                   onClick={(e) => {
                     e.preventDefault();
@@ -109,7 +106,6 @@ export function VacancyPagination({
               <Button
                 variant="ghost"
                 size="icon"
-                className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
                 aria-label="Página siguiente"
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(page + 1)}
