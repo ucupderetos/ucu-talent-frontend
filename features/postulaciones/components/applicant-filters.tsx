@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { APPLICANT_STATUS_LABEL } from "@/features/postulaciones/components/applicant-status-badge";
 import type { VacancyApplicationStatus } from "@/types";
 import type { ApplicantFilters, ApplicantOrder } from "@/features/postulaciones/types";
 
@@ -26,12 +27,6 @@ const ORDER_LABEL: Record<ApplicantOrder, string> = {
   recent: "Más recientes",
   oldest: "Más antiguas",
 };
-
-const STATUS_OPTIONS: { value: VacancyApplicationStatus; label: string }[] = [
-  { value: "PENDIENTE", label: "Nuevos" },
-  { value: "VISTO", label: "En revisión" },
-  { value: "FINALIZADO", label: "Finalizados" },
-];
 
 export function ApplicantFiltersBar({
   filters,
@@ -90,7 +85,10 @@ export function ApplicantFiltersBar({
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
-              options={STATUS_OPTIONS}
+              options={Object.entries(APPLICANT_STATUS_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
               selected={filters.statuses ?? []}
               onChange={(statuses) =>
                 onChange({ ...filters, statuses: statuses as VacancyApplicationStatus[], page: 1 })

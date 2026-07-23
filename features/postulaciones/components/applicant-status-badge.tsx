@@ -17,8 +17,8 @@ export const APPLICANT_STATUS_LABEL: Record<VacancyApplicationStatus, string> = 
 };
 
 const APPLICANT_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
-  PENDIENTE: "bg-emerald-500",
-  VISTO: "bg-amber-500",
+  PENDIENTE: "bg-success",
+  VISTO: "bg-warning",
   FINALIZADO: "bg-muted-foreground",
 };
 

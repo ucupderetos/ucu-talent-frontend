@@ -71,8 +71,9 @@ export interface ApplicantRow extends ApplicantListItem {
   vacancyName: string;
 }
 
-/** Igual que `ApplicantRow`, pero con el detalle completo (CV) — para el
- *  panel lateral que se abre al seleccionar un postulante. */
+/** Igual que `ApplicantRow`, pero con el detalle completo (CV) — para la
+ *  página de detalle (`/postulantes/[id]`) a la que se navega al seleccionar
+ *  un postulante (ver `applicant-detail-view.tsx`). */
 export interface ApplicantDetailRow extends ApplicantDetail {
   vacancyId: string;
   vacancyName: string;

@@ -11,7 +11,7 @@
 // oferta puntual (`features/puestos/components/vacancy-table.tsx`) — pre-filtra
 // sin que la empresa tenga que volver a elegirla a mano.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -20,10 +20,10 @@ import { ListPagination } from "@/components/pagination/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
 import { useCompanyApplicants } from "@/features/postulaciones/hooks/use-company-applicants";
+import { useCompanyVacancyOptions } from "@/features/postulaciones/hooks/use-company-vacancy-options";
 import { ApplicantFiltersBar } from "@/features/postulaciones/components/applicant-filters";
 import { ApplicantTable } from "@/features/postulaciones/components/applicant-table";
 import type { ApplicantFilters } from "@/features/postulaciones/types";
-import { MOCK_VACANCIES } from "@/lib/fixtures";
 
 const DEFAULT_FILTERS: ApplicantFilters = { order: "recent", page: 1, perPage: 10 };
 
@@ -103,17 +103,6 @@ export function ApplicantsView() {
 
 function hasActiveFilters(filters: ApplicantFilters): boolean {
   return Boolean(filters.search || filters.vacancyIds?.length || filters.statuses?.length);
-}
-
-/** Opciones del filtro de oferta: todas las ofertas de la empresa, sin
- *  aplicar los filtros activos (mismo criterio que `use-company-vacancies.ts`). */
-function useCompanyVacancyOptions(companyId: string | undefined) {
-  return useMemo(() => {
-    return MOCK_VACANCIES.filter((v) => v.companyId === companyId).map((v) => ({
-      value: v.vacancyId,
-      label: v.name,
-    }));
-  }, [companyId]);
 }
 
 function TableSkeleton() {

@@ -90,13 +90,17 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
   const status = detail?.application.status;
 
   useEffect(() => {
-    if (vacancyApplicationId && status === "PENDIENTE") {
+    // `status` tiene que estar en las deps: en un link directo/refresh el
+    // detalle todavía no cargó cuando este efecto corre por primera vez
+    // (`status` es `undefined`), así que hace falta que vuelva a correr
+    // cuando `useApplicantDetail` resuelve y `status` pasa a "PENDIENTE".
+    // Repetir la mutación no es un problema: `useMarkApplicantViewed` solo
+    // muta si el estado en fixtures sigue siendo "PENDIENTE", así que una
+    // vez que pasa a "VISTO" este efecto no vuelve a disparar nada.
+    if (status === "PENDIENTE") {
       markViewed(vacancyApplicationId);
     }
-    // Solo al llegar a un postulante nuevo: no queremos re-disparar la
-    // mutación en cada render, así que `markViewed`/`status` quedan fuera.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vacancyApplicationId]);
+  }, [vacancyApplicationId, status, markViewed]);
 
   const isLoading = isLoadingCompany || isLoadingDetail;
 

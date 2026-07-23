@@ -41,6 +41,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
 
   /* Marca UCU, alineada con Webasignatura — no cambian con dark mode. */
   --color-ucu-blue: #052e66;
@@ -91,6 +93,12 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  /* Estados de "en curso" que no son ni marca ni error (vacante/postulación
+     activa, en revisión) — sin equivalente en la paleta de marca, por eso son
+     los únicos dos tokens que no derivan de --brand-*. Mismos valores que
+     usa Tailwind para emerald-500/amber-500. */
+  --success: oklch(0.696 0.17 162.48);
+  --warning: oklch(0.769 0.188 70.08);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: var(--brand-navy);
@@ -134,6 +142,10 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  /* emerald-400/amber-400: un punto más claras que en light mode para que el
+     dot siga siendo legible sobre fondo oscuro. */
+  --success: oklch(0.792 0.209 151.711);
+  --warning: oklch(0.828 0.189 84.429);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);

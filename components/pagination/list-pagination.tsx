@@ -8,6 +8,7 @@
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
@@ -22,6 +23,29 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const PER_PAGE_OPTIONS = [5, 10, 20];
+
+/**
+ * Qué botones de página mostrar: siempre primera y última, la página activa
+ * con un vecino de cada lado, y "…" en los huecos. Sin este recorte, un
+ * listado con muchas páginas rendería un botón por cada una y desbordaría el
+ * footer.
+ */
+function getPageNumbers(page: number, totalPages: number): (number | "ellipsis")[] {
+  const items: (number | "ellipsis")[] = [1];
+
+  const left = Math.max(2, page - 1);
+  const right = Math.min(totalPages - 1, page + 1);
+
+  if (left > 2) items.push("ellipsis");
+  for (let pageNumber = left; pageNumber <= right; pageNumber++) {
+    items.push(pageNumber);
+  }
+  if (right < totalPages - 1) items.push("ellipsis");
+
+  if (totalPages > 1) items.push(totalPages);
+
+  return items;
+}
 
 export function ListPagination({
   page,
@@ -88,25 +112,31 @@ export function ListPagination({
                 <span aria-hidden>‹</span>
               </Button>
             </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-              <PaginationItem key={pageNumber}>
-                <PaginationLink
-                  href="#"
-                  isActive={pageNumber === page}
-                  className={cn(
-                    "focus-visible:border-sidebar focus-visible:ring-sidebar/50",
-                    pageNumber === page &&
-                      "border-transparent bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent",
-                  )}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onPageChange(pageNumber);
-                  }}
-                >
-                  {pageNumber}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
+            {getPageNumbers(page, totalPages).map((pageNumber, index) =>
+              pageNumber === "ellipsis" ? (
+                <PaginationItem key={`ellipsis-${index}`}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={pageNumber}>
+                  <PaginationLink
+                    href="#"
+                    isActive={pageNumber === page}
+                    className={cn(
+                      "focus-visible:border-sidebar focus-visible:ring-sidebar/50",
+                      pageNumber === page &&
+                        "border-transparent bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent",
+                    )}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onPageChange(pageNumber);
+                    }}
+                  >
+                    {pageNumber}
+                  </PaginationLink>
+                </PaginationItem>
+              ),
+            )}
             <PaginationItem>
               <Button
                 variant="ghost"
