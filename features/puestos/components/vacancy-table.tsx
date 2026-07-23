@@ -73,7 +73,11 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
               <TableCell className="max-w-64 whitespace-normal">
                 <Link
                   href={`/puestos/${vacancy.vacancyId}/postulantes`}
-                  className="font-medium hover:underline"
+                  // El foco por teclado usa `--ring` (verde agua) por default
+                  // en todo el sitio (ver globals.css, regla `*`); acá lo
+                  // pisamos a `--sidebar` para que combine con el resto de
+                  // los controles de esta vista.
+                  className="rounded-xs font-medium hover:underline focus-visible:outline-sidebar/50"
                 >
                   {vacancy.name}
                 </Link>
@@ -113,7 +117,12 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Acciones de ${vacancy.name}`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
+          aria-label={`Acciones de ${vacancy.name}`}
+        >
           <MoreHorizontalIcon className="size-4" />
         </Button>
       </DropdownMenuTrigger>

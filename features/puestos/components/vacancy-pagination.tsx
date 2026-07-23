@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const PER_PAGE_OPTIONS = [5, 10, 20];
 
@@ -50,7 +51,11 @@ export function VacancyPagination({
             value={String(perPage)}
             onValueChange={(value) => onPerPageChange(Number(value))}
           >
-            <SelectTrigger size="sm" aria-label="Resultados por página">
+            <SelectTrigger
+              size="sm"
+              aria-label="Resultados por página"
+              className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -70,6 +75,10 @@ export function VacancyPagination({
               <Button
                 variant="ghost"
                 size="icon"
+                // Foco por teclado en azul (--sidebar), no el verde agua
+                // (--ring) que usa el resto del sitio — para combinar con
+                // "Crear nueva oferta" / "Aplicar filtros" en esta misma vista.
+                className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
                 aria-label="Página anterior"
                 disabled={page <= 1}
                 onClick={() => onPageChange(page - 1)}
@@ -82,11 +91,11 @@ export function VacancyPagination({
                 <PaginationLink
                   href="#"
                   isActive={pageNumber === page}
-                  className={
-                    pageNumber === page
-                      ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
-                      : undefined
-                  }
+                  className={cn(
+                    "focus-visible:border-sidebar focus-visible:ring-sidebar/50",
+                    pageNumber === page &&
+                      "border-transparent bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent",
+                  )}
                   onClick={(e) => {
                     e.preventDefault();
                     onPageChange(pageNumber);
@@ -100,6 +109,7 @@ export function VacancyPagination({
               <Button
                 variant="ghost"
                 size="icon"
+                className="focus-visible:border-sidebar focus-visible:ring-sidebar/50"
                 aria-label="Página siguiente"
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(page + 1)}
