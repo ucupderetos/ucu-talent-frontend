@@ -56,6 +56,61 @@ export const MOCK_USERS: Record<Role, User> = {
   },
 };
 
+/**
+ * Alumnos para el listado de "Usuarios" del admin (`(admin)/usuarios`). Va
+ * como array — a diferencia de `MOCK_USERS`, que es un solo usuario por rol
+ * para simular la sesión — porque acá la tabla necesita varios alumnos.
+ *
+ * PK compartida con `MOCK_STUDENT_PROFILES` (mismo `userId`/`studentProfileId`).
+ */
+export const MOCK_STUDENT_USERS: User[] = [
+  {
+    userId: "u-10",
+    email: "maria.fernandez@correo.ucu.edu.uy",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-07-14T10:00:00.000Z",
+    name: "María",
+    surname: "Fernández",
+  },
+  {
+    userId: "u-11",
+    email: "juan.perez@correo.ucu.edu.uy",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-07-12T10:00:00.000Z",
+    name: "Juan",
+    surname: "Pérez",
+  },
+  {
+    userId: "u-12",
+    email: "sofia.gonzalez@correo.ucu.edu.uy",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-07-10T10:00:00.000Z",
+    name: "Sofía",
+    surname: "González",
+  },
+  {
+    userId: "u-13",
+    email: "agustin.rodriguez@correo.ucu.edu.uy",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-07-08T10:00:00.000Z",
+    name: "Agustín",
+    surname: "Rodríguez",
+  },
+  {
+    userId: "u-14",
+    email: "valentina.silveira@correo.ucu.edu.uy",
+    role: "ALUMNO",
+    status: "APROBADO",
+    registeredAt: "2026-07-07T10:00:00.000Z",
+    name: "Valentina",
+    surname: "Silveira",
+  },
+];
+
 /** Áreas jerárquicas: son el mecanismo del match del RF-14. */
 export const MOCK_AREAS: Area[] = [
   { areaId: "a-1", name: "Tecnología", parentAreaId: null },
@@ -69,6 +124,9 @@ export const MOCK_AREAS: Area[] = [
 export const MOCK_DEGREES: Degree[] = [
   { degreeId: "d-1", areaId: "a-2", name: "Ingeniería en Informática", isUcu: true },
   { degreeId: "d-2", areaId: "a-3", name: "Analista en Sistemas", isUcu: true },
+  // Para tener variedad de carreras en el listado de alumnos del admin.
+  { degreeId: "d-3", areaId: "a-5", name: "Administración de Empresas", isUcu: true },
+  { degreeId: "d-4", areaId: "a-4", name: "Comunicación", isUcu: true },
 ];
 
 /** `Company` ya no trae `approved` — la aprobación vive en `User.status`
@@ -122,6 +180,57 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     linkedinUrl: null,
     skills: ["Python", "SQL"],
   },
+  // Perfiles de MOCK_STUDENT_USERS, para el listado de "Usuarios" del admin.
+  {
+    studentProfileId: "u-10",
+    name: "María",
+    surname: "Fernández",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "41234567",
+    phoneNumber: "099000010",
+    linkedinUrl: null,
+    skills: ["React", "TypeScript"],
+  },
+  {
+    studentProfileId: "u-11",
+    name: "Juan",
+    surname: "Pérez",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "48765432",
+    phoneNumber: "099000011",
+    linkedinUrl: null,
+    skills: ["Excel", "Contabilidad"],
+  },
+  {
+    studentProfileId: "u-12",
+    name: "Sofía",
+    surname: "González",
+    documentType: "CEDULA_IDENTIDAD",
+    documentNumber: "51122334",
+    phoneNumber: "099000012",
+    linkedinUrl: null,
+    skills: ["Redacción", "Redes sociales"],
+  },
+  {
+    studentProfileId: "u-13",
+    name: "Agustín",
+    surname: "Rodríguez",
+    documentType: "DNI",
+    documentNumber: "45566678",
+    phoneNumber: "099000013",
+    linkedinUrl: null,
+    skills: ["Python", "SQL"],
+  },
+  {
+    studentProfileId: "u-14",
+    name: "Valentina",
+    surname: "Silveira",
+    documentType: "PASAPORTE",
+    documentNumber: "53344556",
+    phoneNumber: "099000014",
+    linkedinUrl: null,
+    skills: ["Contabilidad"],
+  },
 ];
 
 export const MOCK_EDUCATION: Education[] = [
@@ -132,6 +241,52 @@ export const MOCK_EDUCATION: Education[] = [
     degreeId: "d-1",
     description: "Cursando 4º año.",
     startDate: "2023-03-01T00:00:00.000Z",
+    endDate: null,
+  },
+  // Educación de MOCK_STUDENT_USERS, para el listado de "Usuarios" del admin.
+  {
+    educationId: "e-10",
+    studentProfileId: "u-10",
+    degreeLevel: "LICENCIATURA",
+    degreeId: "d-1",
+    description: "Cursando.",
+    startDate: "2023-03-01T00:00:00.000Z",
+    endDate: null,
+  },
+  {
+    educationId: "e-11",
+    studentProfileId: "u-11",
+    degreeLevel: "LICENCIATURA",
+    degreeId: "d-3",
+    description: "Cursando.",
+    startDate: "2022-03-01T00:00:00.000Z",
+    endDate: null,
+  },
+  {
+    educationId: "e-12",
+    studentProfileId: "u-12",
+    degreeLevel: "LICENCIATURA",
+    degreeId: "d-4",
+    description: "Cursando.",
+    startDate: "2023-03-01T00:00:00.000Z",
+    endDate: null,
+  },
+  {
+    educationId: "e-13",
+    studentProfileId: "u-13",
+    degreeLevel: "LICENCIATURA",
+    degreeId: "d-2",
+    description: "Cursando.",
+    startDate: "2021-03-01T00:00:00.000Z",
+    endDate: null,
+  },
+  {
+    educationId: "e-14",
+    studentProfileId: "u-14",
+    degreeLevel: "LICENCIATURA",
+    degreeId: "d-3",
+    description: "Cursando.",
+    startDate: "2022-03-01T00:00:00.000Z",
     endDate: null,
   },
 ];
