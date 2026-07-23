@@ -3,11 +3,11 @@
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { JobWizardHeader } from "@/features/crear-oferta/components/JobWizardHeader";
-import { JobReview } from "@/features/crear-oferta/components/JobReview";
-import { JobReviewCompanyInfo } from "@/features/crear-oferta/components/JobReviewCompanyInfo";
-import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
-import { usePublishJob } from "@/features/crear-oferta/hooks/use-publish-job";
+import { JobWizardHeader } from "@/features/puestos/components/job-wizard-header";
+import { JobReview } from "@/features/puestos/components/job-review";
+import { JobReviewCompanyInfo } from "@/features/puestos/components/job-review-company-info";
+import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
+import { usePublishJob } from "@/features/puestos/hooks/use-publish-job";
 
 export default function RevisionPage() {
   const router = useRouter();
@@ -18,10 +18,16 @@ export default function RevisionPage() {
     const isValid = await form.trigger();
     if (!isValid) return;
 
-    await publish(form.getValues());
-    // TODO: cuando el back esté conectado, redirigir a "Mis ofertas" (/puestos)
-    // y mostrar una confirmación (toast) de que la oferta se publicó.
-    router.push("/puestos");
+    try {
+      await publish(form.getValues());
+      // TODO: cuando el back esté conectado, mostrar una confirmación (toast)
+      // de que la oferta se publicó.
+      router.push("/puestos");
+    } catch {
+      // publish() ya expone el error vía el estado `error` del hook
+      // (useUpdateJob → mutation.isError), que se muestra más abajo en el JSX.
+      // Acá solo evitamos que la excepción quede sin manejar en el submit.
+    }
   }
 
   return (
@@ -37,7 +43,7 @@ export default function RevisionPage() {
           {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
           <div className="mt-auto flex flex-col gap-2 pt-4">
-            <Button type="button" onClick={handlePublish} disabled={isLoading} className="w-full">
+            <Button type="button" onClick={handlePublish} disabled={isLoading} className="h-12 w-full">
               {isLoading ? "Publicando..." : "Publicar oferta"}
             </Button>
             <div className="flex gap-2">
@@ -45,7 +51,7 @@ export default function RevisionPage() {
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/puestos")}
-                className="flex-1"
+                className="h-11 flex-1"
               >
                 Cancelar
               </Button>
@@ -53,7 +59,7 @@ export default function RevisionPage() {
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/crear-oferta/detalles-puesto")}
-                className="flex-1"
+                className="h-11 flex-1"
               >
                 Atrás
               </Button>

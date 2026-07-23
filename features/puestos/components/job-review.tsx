@@ -15,8 +15,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
-import { DEPARTMENT_LABELS } from "@/features/crear-oferta/types";
+import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
+import { DEPARTMENT_LABELS } from "@/features/puestos/types";
+
+import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
 
 const MODALITY_LABELS: Record<string, string> = {
   PRESENCIAL: "Presencial",
@@ -25,6 +27,7 @@ const MODALITY_LABELS: Record<string, string> = {
 };
 
 export function JobReview() {
+  const { company } = useCurrentCompany();
   const { form } = useCreateJobForm();
   const name = useWatch({ control: form.control, name: "name" });
   const location = useWatch({ control: form.control, name: "location" });
@@ -55,7 +58,7 @@ export function JobReview() {
           <div className="min-w-0">
             <p className="text-lg font-semibold">{name || "Título del puesto"}</p>
             {/* TODO: nombre real de la empresa, desde la sesión/Company */}
-            <p className="text-sm text-muted-foreground">H-Move</p>
+            <p className="text-sm text-muted-foreground">{company?.name}</p>
             <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
               {location && modality !== "REMOTO" && (
                 <span className="flex items-center gap-1.5">

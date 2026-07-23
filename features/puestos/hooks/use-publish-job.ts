@@ -4,11 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 
 import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
 import type { VacancyInput } from "@/features/puestos/types";
-import type { JobFormValues } from "@/features/crear-oferta/hooks/use-create-job-form";
+import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
 
 // TODO: reemplazar por apiClient.post("/vacancy", payload) cuando el back
 // esté listo. areaId es un placeholder de AREAS_PLACEHOLDER en
-// JobBasicInfoForm.tsx, falta conectar GET /area.
+// job-basic-info-form.tsx, falta conectar GET /area.
 async function publishJobRequest(payload: VacancyInput): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 600));
   console.log("TODO: integrar con lib/api-client.ts", payload);
@@ -19,10 +19,21 @@ export function usePublishJob() {
   const mutation = useMutation({ mutationFn: publishJobRequest });
 
   /** Arma el VacancyInput real (con companyId de la empresa logueada) a
-   *  partir de los valores del form, y dispara la mutación. */
+   *  partir de los valores del form, y dispara la mutación.
+   *
+   *  A-15: RF-PUE-01 dice que `location` no es obligatorio si la modalidad
+   *  es remota, pero VacancyInput.location no es opcional — el back todavía
+   *  no resolvió ese caso. Frenamos con un error explícito en vez de mandar
+   *  "" silenciosamente, para no ocultar el gap. */
   function publish(values: JobFormValues) {
     if (!company) {
       throw new Error("No se pudo resolver la empresa logueada.");
+    }
+
+    if (!values.location) {
+      throw new Error(
+        "El backend todavía no define qué mandar como ubicación para puestos remotos (A-15). No se puede publicar.",
+      );
     }
 
     const payload: VacancyInput = {
@@ -34,10 +45,7 @@ export function usePublishJob() {
       contractType: values.contractType,
       modality: values.modality,
       salaryRange: values.salaryRange,
-      // TODO: location es obligatorio en VacancyInput, pero opcional en el
-      // form cuando la modalidad es REMOTO (RF-PUE-01). Confirmar con backend
-      // qué mandar en ese caso — hoy se manda el último valor cargado o "".
-      location: (values.location ?? "") as VacancyInput["location"],
+      location: values.location,
     };
 
     return mutation.mutateAsync(payload);

@@ -17,10 +17,14 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
+import { DEPARTMENTS } from "@/features/puestos/types";
+import type { Modality, Department } from "@/types";
+
 const TITLE_MAX = 100;
 
-// Enum Modality real (@/types).
-export const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const;
+// satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto
+// rompe la build en vez de quedar desincronizado en silencio.
+export const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readonly Modality[];
 
 // Reglas de validación. Reflejan `VacancyInput` (features/puestos/types.ts),
 // sin `companyId` (se agrega al armar el payload, no lo carga el usuario).
@@ -33,7 +37,7 @@ const jobFormSchema = z.object({
   areaId: z.string().trim().min(1, "Seleccioná un área."),
   contractType: z.string().trim().min(1, "Ingresá el tipo de contrato."),
   modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
-  location: z.string().optional(),
+  location: z.enum(DEPARTMENTS as [Department, ...Department[]]).optional(),
   description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
   requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
   salaryRange: z.string().trim().min(1, "Ingresá el rango salarial."),
@@ -60,7 +64,7 @@ export function CreateJobFormProvider({ children }: { children: ReactNode }) {
       areaId: "",
       contractType: "",
       modality: undefined,
-      location: "",
+      location: undefined,
       description: "",
       requirements: "",
       salaryRange: "",
@@ -87,6 +91,3 @@ export function useCreateJobForm() {
   }
   return context;
 }
-
-// Re-exportado para los componentes que arman el Select de ubicación —
-// mismo catálogo que usa perfil-empresa.

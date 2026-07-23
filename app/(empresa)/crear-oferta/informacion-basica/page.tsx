@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowRightIcon } from "lucide-react";
 
-import { JobWizardHeader } from "@/features/crear-oferta/components/JobWizardHeader";
-import { JobBasicInfoForm } from "@/features/crear-oferta/components/JobBasicInfoForm";
-import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
+import { JobWizardHeader } from "@/features/puestos/components/job-wizard-header";
+import { JobBasicInfoForm } from "@/features/puestos/components/job-basic-info-form";
+import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 
 export default function InformacionBasicaPage() {
   const router = useRouter();

@@ -7,7 +7,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
+import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 
 const DESCRIPTION_MAX = 2000;
 

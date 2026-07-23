@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/select";
 import { MapPinIcon, HomeIcon, LaptopIcon } from "lucide-react";
 
-import { useCreateJobForm } from "@/features/crear-oferta/hooks/use-create-job-form";
-import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/features/crear-oferta/types";
+import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
+import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/features/puestos/types";
 import { cn } from "@/lib/utils";
 
 const TITLE_MAX = 100;
@@ -48,7 +48,7 @@ export function JobBasicInfoForm() {
   const location = useWatch({ control, name: "location" });
 
   return (
-    <Card className="lg:col-span-2">
+    <Card>
       <CardHeader>
         <CardTitle>Información básica</CardTitle>
         <CardDescription>
@@ -62,6 +62,7 @@ export function JobBasicInfoForm() {
               <FieldLabel htmlFor="name">Título del puesto *</FieldLabel>
               <Input
                 id="name"
+                className="h-11"
                 placeholder="Pasante de Marketing"
                 maxLength={TITLE_MAX}
                 aria-invalid={Boolean(errors.name)}
@@ -76,7 +77,11 @@ export function JobBasicInfoForm() {
             <Field data-invalid={Boolean(errors.areaId)}>
               <FieldLabel htmlFor="areaId">Área *</FieldLabel>
               <Select value={areaId ?? ""} onValueChange={(v) => setValue("areaId", v, { shouldValidate: true })}>
-                <SelectTrigger id="areaId" className="w-full" aria-invalid={Boolean(errors.areaId)}>
+                <SelectTrigger
+                  id="areaId"
+                  className="w-full data-[size=default]:h-11"
+                  aria-invalid={Boolean(errors.areaId)}
+                >
                   <SelectValue placeholder="Seleccioná un área" />
                 </SelectTrigger>
                 <SelectContent>
@@ -95,6 +100,7 @@ export function JobBasicInfoForm() {
             <FieldLabel htmlFor="contractType">Tipo de contrato *</FieldLabel>
             <Input
               id="contractType"
+              className="h-11"
               placeholder="Pasantía, Full-time, Part-time..."
               aria-invalid={Boolean(errors.contractType)}
               {...register("contractType")}
@@ -144,9 +150,13 @@ export function JobBasicInfoForm() {
             </FieldLabel>
             <Select
               value={location ?? ""}
-              onValueChange={(v) => setValue("location", v, { shouldValidate: true })}
+              onValueChange={(v) => setValue("location", v as (typeof DEPARTMENTS)[number], { shouldValidate: true })}
             >
-              <SelectTrigger id="location" className="w-full" aria-invalid={Boolean(errors.location)}>
+              <SelectTrigger
+                id="location"
+                className="w-full data-[size=default]:h-11"
+                aria-invalid={Boolean(errors.location)}
+              >
                 <SelectValue placeholder="Seleccioná un departamento" />
               </SelectTrigger>
               <SelectContent>

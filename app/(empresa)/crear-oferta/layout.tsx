@@ -7,7 +7,7 @@
 // conectados al back — el layout padre (empresa) ya valida el ROL, pero no
 // el estado de aprobación. Agregar acá cuando el back esté listo.
 
-import { CreateJobFormProvider } from "@/features/crear-oferta/hooks/use-create-job-form";
+import { CreateJobFormProvider } from "@/features/puestos/hooks/use-create-job-form";
 
 export default function CrearOfertaLayout({ children }: { children: React.ReactNode }) {
   return <CreateJobFormProvider>{children}</CreateJobFormProvider>;
