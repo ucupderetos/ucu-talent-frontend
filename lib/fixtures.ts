@@ -18,6 +18,7 @@ import type {
   User,
   Vacancy,
   VacancyApplication,
+  WorkExperience,
 } from "@/types";
 
 /**
@@ -288,6 +289,18 @@ export const MOCK_EDUCATION: Education[] = [
     description: "Cursando.",
     startDate: "2022-03-01T00:00:00.000Z",
     endDate: null,
+  },
+];
+
+export const MOCK_WORK_EXPERIENCE: WorkExperience[] = [
+  {
+    workExperienceId: "we-1",
+    studentProfileId: "u-1",
+    company: "DataLab",
+    position: "Practicante de Desarrollo",
+    startDate: "2025-02-01T00:00:00.000Z",
+    endDate: null,
+    description: "Desarrollo de features en React/TypeScript y soporte a QA.",
   },
 ];
 

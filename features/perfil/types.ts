@@ -10,7 +10,7 @@
 // al que pegarle — quedan documentados como contrato deseado. Confirmar con
 // backend antes de construir la pantalla de "editar perfil".
 
-import type { DegreeLevel, Department } from "@/types";
+import type { DegreeLevel, Department, Education, StudentProfile, WorkExperience } from "@/types";
 /**
  * Perfil completo del alumno tal como lo editaría él mismo — nombre, apellido,
  * documento, teléfono, LinkedIn y skills viven TODOS en `StudentProfile`
@@ -23,6 +23,18 @@ export interface StudentProfileInput {
   phoneNumber?: string;
   linkedinUrl?: string;
   skills: string[];
+}
+
+/**
+ * "Mi perfil" (vista alumno): el `StudentProfile` del MER más sus listas de
+ * `Education`/`WorkExperience` — lo que arma `use-student-profile.ts` para
+ * alimentar las pestañas de la pantalla. No es una entidad del MER, por eso
+ * vive acá y no en `@/types`.
+ */
+export interface StudentProfileData {
+  profile: StudentProfile;
+  education: Education[];
+  workExperience: WorkExperience[];
 }
 
 /**
