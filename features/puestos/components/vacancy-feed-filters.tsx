@@ -60,8 +60,6 @@ export function VacancyFeedFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <p className="text-sm font-medium">Filtros</p>
-
           <FilterSection label="Carrera">
             <MultiSelect
               label="Carrera"
