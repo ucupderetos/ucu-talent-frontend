@@ -101,7 +101,7 @@ export function Navbar({ user }: { user: User | null }) {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-auto min-w-0 gap-2 px-2 py-1.5"
+                  className="h-auto min-w-0 gap-2 px-2 py-1.5 hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent"
                   aria-label="Cuenta"
                 >
                   <Avatar size="sm">
