@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CheckIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { PageHeader } from "@/components/layout/page-header";
+import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 
 export const JOB_WIZARD_STEPS = [
@@ -75,18 +75,17 @@ export function JobWizardSteps({ currentStep }: { currentStep: number }) {
   );
 }
 
-/** Header del wizard: título + descripción (reusa PageHeader) con la barra
- *  de pasos debajo. Los botones de acción viven en cada página. */
+/** Header del wizard: solo la barra de pasos. El título de la pantalla lo
+ *  muestra el Navbar como breadcrumb "Crear oferta > <paso actual>" (header
+ *  dinámico) — por AGENTS.md no se repite como `<h1>`/bajada en el contenido,
+ *  así que ya no se usa `PageHeader` con `title`/`description`. */
 export function JobWizardHeader({ currentStep }: { currentStep: number }) {
+  const step = JOB_WIZARD_STEPS.find((s) => s.number === currentStep);
+  usePageBreadcrumb(step?.label ?? null);
+
   return (
-    <>
-      <PageHeader
-        title="Crear nueva oferta"
-        description="Completá la información del puesto. Podrás revisarla antes de publicarla."
-      />
-      <div className="mb-6">
-        <JobWizardSteps currentStep={currentStep} />
-      </div>
-    </>
+    <div className="mb-6">
+      <JobWizardSteps currentStep={currentStep} />
+    </div>
   );
 }
