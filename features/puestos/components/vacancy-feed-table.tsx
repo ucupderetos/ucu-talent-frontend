@@ -9,6 +9,7 @@ import Link from "next/link";
 import { BookmarkIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -62,10 +63,19 @@ export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
               </TableCell>
               <TableCell className="text-muted-foreground">{vacancy.companyName}</TableCell>
               <TableCell>
-                {vacancy.areaName}
-                {vacancy.parentAreaName && (
-                  <p className="text-xs text-muted-foreground">{vacancy.parentAreaName}</p>
-                )}
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge variant="secondary" className="bg-secondary-blue text-secondary-blue-foreground">
+                    {vacancy.areaName}
+                  </Badge>
+                  {vacancy.parentAreaName && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-secondary-blue text-secondary-blue-foreground"
+                    >
+                      {vacancy.parentAreaName}
+                    </Badge>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {DEPARTMENT_LABEL[vacancy.location]}
