@@ -1,9 +1,11 @@
-import Link from "next/link";
+"use client";
 
-import type {
-  RecentVacancy,
-  VacancyStatus,
-} from "../../types";
+// Tabla de ofertas más recientes del dashboard.
+//
+// La fila linkea al listado de Ofertas y no a un detalle por oferta: esa
+// pantalla no existe todavía.
+
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EmptyState } from "@/components/layout/empty-state";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -23,116 +26,105 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import type { RecentVacancy } from "@/features/moderacion/types";
+import type { VacancyStatus } from "@/types";
 
-type RecentVacanciesTableProps = {
-  vacancies: RecentVacancy[];
+// Badge con punto de color, igual que `vacancy-status-badge.tsx` y
+// `application-status-badge.tsx` — no una pastilla con fondo de color propio.
+//
+// Las etiquetas son las mismas que usa `features/puestos/components/
+// vacancy-status-badge.tsx` para el mismo enum: se repiten acá y no se importan
+// porque moderacion no importa de otro dominio (AGENTS.md). Si divergen, es que
+// hay que subir ese badge a `components/`.
+const STATUS_LABEL: Record<VacancyStatus, string> = {
+  PENDIENTE: "Activa",
+  FINALIZADO: "Cerrada",
 };
 
-const statusConfig: Record<
-  VacancyStatus,
-  {
-    label: string;
-    className: string;
-  }
-> = {
-  published: {
-    label: "Publicada",
-    className:
-      "border-transparent bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
-  },
-  finalized: {
-    label: "Finalizada",
-    className:
-      "border-transparent bg-amber-100 text-amber-700 hover:bg-amber-100",
-  },
-  
-  rejected: {
-    label: "Rechazada",
-    className:
-      "border-transparent bg-red-100 text-red-700 hover:bg-red-100",
-  },
+const STATUS_DOT_CLASS: Record<VacancyStatus, string> = {
+  PENDIENTE: "bg-success",
+  FINALIZADO: "bg-muted-foreground",
 };
 
-export function RecentVacanciesTable({
-  vacancies,
-}: RecentVacanciesTableProps) {
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-UY");
+}
+
+export function RecentVacanciesTable({ vacancies }: { vacancies: RecentVacancy[] }) {
   return (
     <Card className="flex h-full flex-col overflow-hidden py-0">
-      <CardHeader className="px-5 py-2">
-        <CardTitle className="text-base font-semibold text-slate-950">
-          Ofertas más recientes
-        </CardTitle>
+      <CardHeader className="px-5 py-3">
+        <CardTitle>Ofertas más recientes</CardTitle>
       </CardHeader>
 
       <Separator />
 
       <CardContent className="min-h-0 flex-1 p-0">
-        <div className="max-h-[220px] overflow-y-auto">
-          <Table>
-            <TableHeader className="sticky top-0 z-10 bg-white">
-              <TableRow>
-                <TableHead className="px-5">Puesto</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead>Publicación</TableHead>
-                <TableHead>Postulaciones</TableHead>
-                <TableHead className="pr-5">Estado</TableHead>
-              </TableRow>
-            </TableHeader>
+        {vacancies.length === 0 ? (
+          <div className="p-5">
+            <EmptyState
+              title="Todavía no hay ofertas"
+              description="Las ofertas publicadas van a aparecer acá."
+            />
+          </div>
+        ) : (
+          <div className="max-h-[220px] overflow-y-auto">
+            <Table>
+              <TableHeader className="sticky top-0 z-10 bg-card">
+                <TableRow>
+                  <TableHead className="px-5">Puesto</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Publicación</TableHead>
+                  <TableHead>Postulaciones</TableHead>
+                  <TableHead className="pr-5">Estado</TableHead>
+                </TableRow>
+              </TableHeader>
 
-            <TableBody>
-              {vacancies.map((vacancy) => {
-                const status = statusConfig[vacancy.status];
-
-                return (
+              <TableBody>
+                {vacancies.map((vacancy) => (
                   <TableRow key={vacancy.id}>
-                    <TableCell className="px-5 font-medium text-slate-950">
-                      <Link
-                        href={`/ofertas/${vacancy.id}`}
-                        className="hover:text-blue-600 hover:underline"
-                      >
+                    <TableCell className="px-5 font-medium">
+                      <Link href="/moderacion/ofertas" className="hover:text-primary hover:underline">
                         {vacancy.position}
                       </Link>
                     </TableCell>
 
-                    <TableCell className="text-slate-600">
-                      {vacancy.company}
+                    <TableCell className="text-muted-foreground">{vacancy.company}</TableCell>
+
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(vacancy.publishedAt)}
                     </TableCell>
 
-                    <TableCell className="text-slate-600">
-                      {vacancy.publishedAt}
-                    </TableCell>
-
-                    <TableCell className="text-slate-600">
+                    <TableCell className="text-muted-foreground">
                       {vacancy.applications ?? "—"}
                     </TableCell>
 
                     <TableCell className="pr-5">
-                      <Badge
-                        variant="outline"
-                        className={status.className}
-                      >
-                        {status.label}
+                      <Badge variant="outline" className="gap-1.5">
+                        <span
+                          className={cn(
+                            "size-1.5 shrink-0 rounded-full",
+                            STATUS_DOT_CLASS[vacancy.status],
+                          )}
+                          aria-hidden
+                        />
+                        {STATUS_LABEL[vacancy.status]}
                       </Badge>
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
 
       <Separator />
 
       <CardFooter className="mt-auto px-5 py-3">
-        <Button
-          asChild
-          variant="link"
-          className="h-auto p-0 text-blue-600"
-        >
-          <Link href="/ofertas">
-            Ver todas las ofertas
-          </Link>
+        <Button asChild variant="link" className="h-auto p-0 text-primary">
+          <Link href="/moderacion/ofertas">Ver todas las ofertas</Link>
         </Button>
       </CardFooter>
     </Card>
