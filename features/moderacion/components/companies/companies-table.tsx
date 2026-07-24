@@ -1,9 +1,14 @@
+"use client";
+
+// Tabla de "Empresas": de presentación, recibe las filas ya resueltas por el
+// hook. La fila entera linkea al detalle.
+//
+// El estado se pinta con `CompanyStatusBadge`, no con un mapa propio: antes
+// había dos `statusConfig` para el mismo enum, con estilos distintos.
+
 import Link from "next/link";
 
-import type { AccountStatus } from "@/types";
-
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -12,40 +17,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CompanyStatusBadge } from "@/features/moderacion/components/companies/company-status-badge";
 import type { AdminCompanyRow } from "@/features/moderacion/types";
 
-type CompaniesTableProps = {
-  companies: AdminCompanyRow[];
-};
-
-const statusConfig = {
-  APROBADO: {
-    label: "Aprobada",
-    className: "bg-emerald-50 text-emerald-700",
-  },
-  PENDIENTE: {
-    label: "Pendiente",
-    className: "bg-amber-50 text-amber-700",
-  },
-  RECHAZADO: {
-    label: "Rechazada",
-    className: "bg-destructive/10 text-destructive",
-  },
-} satisfies Record<
-  AccountStatus,
-  {
-    label: string;
-    className: string;
-  }
->;
-
-function formatDate(date: string): string {
-  return new Intl.DateTimeFormat("es-UY").format(new Date(date));
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-UY");
 }
 
-export function CompaniesTable({ companies }: CompaniesTableProps) {
+export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl bg-card">
+    <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -58,50 +39,36 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
         </TableHeader>
 
         <TableBody>
-          {companies.map((company) => {
-            const status = statusConfig[company.status];
+          {companies.map((company) => (
+            <TableRow key={company.id} className="transition-colors hover:bg-muted/30">
+              <TableCell className="p-0">
+                <Link
+                  href={`/moderacion/empresas/${company.id}`}
+                  aria-label={`Ver información de ${company.name}`}
+                  className="flex items-center gap-3 px-5 py-4 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50"
+                >
+                  <Avatar className="size-10 rounded-lg">
+                    <AvatarFallback className="rounded-lg bg-chart-1/15 text-chart-1">
+                      {company.initials}
+                    </AvatarFallback>
+                  </Avatar>
 
-            return (
-              <TableRow
-                key={company.id}
-                className="transition-colors hover:bg-muted/30"
-              >
-                <TableCell className="p-0">
-                  <Link
-                    href={`/moderacion/empresas/${company.id}`}
-                    aria-label={`Ver información de ${company.name}`}
-                    className="flex items-center gap-3 px-5 py-4 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50"
-                  >
-                    <Avatar className="size-10 rounded-lg">
-                      <AvatarFallback className="rounded-lg bg-blue-50 text-blue-700">
-                        {company.initials}
-                      </AvatarFallback>
-                    </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{company.name}</p>
+                    <p className="truncate text-sm text-muted-foreground">{company.email}</p>
+                  </div>
+                </Link>
+              </TableCell>
 
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{company.name}</p>
+              <TableCell>{company.industry}</TableCell>
+              <TableCell>{company.location}</TableCell>
+              <TableCell>{formatDate(company.registeredAt)}</TableCell>
 
-                      <p className="truncate text-sm text-muted-foreground">
-                        {company.email}
-                      </p>
-                    </div>
-                  </Link>
-                </TableCell>
-
-                <TableCell>{company.industry}</TableCell>
-
-                <TableCell>{company.location}</TableCell>
-
-                <TableCell>{formatDate(company.registeredAt)}</TableCell>
-
-                <TableCell>
-                  <Badge variant="secondary" className={status.className}>
-                    {status.label}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+              <TableCell>
+                <CompanyStatusBadge status={company.status} />
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
