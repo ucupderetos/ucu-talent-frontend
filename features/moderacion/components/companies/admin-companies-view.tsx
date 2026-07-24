@@ -7,7 +7,6 @@
 import { useState } from "react";
 
 import { EmptyState } from "@/components/layout/empty-state";
-import { PageHeader } from "@/components/layout/page-header";
 import { TablePagination } from "@/components/filters/table-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompaniesFilters } from "@/features/moderacion/components/companies/companies-filters";
@@ -47,11 +46,6 @@ export function AdminCompaniesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Empresas"
-        description="Gestioná todas las empresas registradas en la plataforma."
-      />
-
       <CompaniesFilters
         filters={draftFilters}
         industries={industries}

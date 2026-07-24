@@ -4,7 +4,6 @@
 // reparte a los componentes de presentación, que son tontos y reciben props.
 // La page.tsx solo renderiza esto. Mismo patrón que `applications-view.tsx`.
 
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard } from "@/features/moderacion/hooks/use-dashboard";
@@ -19,11 +18,6 @@ export function AdminDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Centro de Gestión"
-        description="Resumen general de la plataforma y su actividad."
-      />
-
       {isLoading && <DashboardSkeleton />}
 
       {!isLoading && isError && (

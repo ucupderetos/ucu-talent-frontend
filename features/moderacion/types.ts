@@ -17,7 +17,9 @@
 import type {
   AccountStatus,
   Company,
+  Modality,
   StudentProfile,
+  Vacancy,
   VacancyApplication,
   VacancyApplicationStatus,
   VacancyStatus,
@@ -274,6 +276,33 @@ export interface AdminCompanyFilters {
   search?: string;
   statuses?: AccountStatus[];
   industries?: string[];
+  page?: number;
+  perPage?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Vista de ofertas — Admin
+// ---------------------------------------------------------------------------
+
+/**
+ * Fila del listado administrativo de ofertas.
+ *
+ * Conserva todos los campos de `Vacancy` y agrega únicamente datos derivados
+ * que necesita la tabla para mostrar la empresa y el total de postulaciones.
+ */
+export interface AdminVacancyRow extends Vacancy {
+  companyName: string;
+  companyInitials: string;
+  applicationCount: number;
+}
+
+/** Filtros del listado de ofertas. Se resuelven sobre fixtures mientras se
+ * integra el contrato administrativo vigente. */
+export interface AdminVacancyFilters {
+  search?: string;
+  companyIds?: string[];
+  statuses?: VacancyStatus[];
+  modalities?: Modality[];
   page?: number;
   perPage?: number;
 }

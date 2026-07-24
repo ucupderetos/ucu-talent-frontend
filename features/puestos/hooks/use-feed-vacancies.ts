@@ -8,12 +8,13 @@
 // keyword ni orden por match). Esto resuelve todo en memoria sobre
 // lib/fixtures.ts.
 //
-// Solo muestra vacantes `PENDIENTE`: es el único estado no-terminal que el
-// backend real expone hoy (ver el gap de VacancyStatus en types/index.ts) —
-// "visible para alumnos", tal como lo etiqueta VACANCY_STATUS_DESCRIPTION.
+// Solo muestra vacantes `PUBLICADO`: es el estado en el que la vacante nace y
+// el único visible para el alumno (ver `VacancyStatus` en types/index.ts).
+// `PENDIENTE` significa que el Admin la retiró para revisarla, así que
+// mostrarla acá sería filtrar una vacante que no debería estar viva.
 //
 // TODO(api): cuando exista el contrato, `fetchFeedVacancies` pasa a llamar
-// `apiClient.get<Paginated<Vacancy>>("/vacancy", { params: { status: "PENDIENTE", ... } })`
+// `apiClient.get<Paginated<Vacancy>>("/vacancy", { params: { status: "PUBLICADO", ... } })`
 // y se borra el filtrado/orden de acá abajo.
 
 import { useQuery } from "@tanstack/react-query";
@@ -34,7 +35,7 @@ export function useFeedVacancies(filters: FeedFilters) {
 }
 
 async function fetchFeedVacancies(filters: FeedFilters): Promise<FeedVacancyRow[]> {
-  const rows = MOCK_VACANCIES.filter((vacancy) => vacancy.status === "PENDIENTE").map(toRow);
+  const rows = MOCK_VACANCIES.filter((vacancy) => vacancy.status === "PUBLICADO").map(toRow);
   return sortByRecent(filterRows(rows, filters));
 }
 

@@ -236,19 +236,26 @@ export interface UniversityRegistry {
 export type Modality = "PRESENCIAL" | "HIBRIDO" | "REMOTO";
 
 /**
- * Wire: `VacancyStatus`.
+ * Wire: `VacancyStatus`. Post-moderación (DEC-01): la vacante **nace
+ * `PUBLICADO`**, sin aprobación previa. No existe `RECHAZADO`.
  *
- * 🔴 GAP CONFIRMADO EN `docs/ENDPOINTS.md` (roadmap #3): el backend hoy SOLO
- * tiene estos dos valores. No existe `RECHAZADO`, ni ningún estado
- * "publicado"/"pausado" — la vacante nace `PENDIENTE` y el único otro estado
- * es `FINALIZADO`. Esto contradice el flujo de moderación que se había
- * documentado (Admin aprueba → `published`): tal como está el backend hoy,
- * **no hay forma de que una vacante pase a un estado "visible/publicado"**.
- * No inventar esos estados en el frontend — están fuera del contrato real
- * hasta que el backend los agregue. Ver también el gap de moderación en
- * `AccountStatus` de más arriba.
+ * | Estado | Significa | Quién puede ponerlo |
+ * |---|---|---|
+ * | `PUBLICADO` | Viva y visible en el feed del alumno. Es el default al crearla | Admin |
+ * | `PENDIENTE` | Retirada por el Admin para revisar o corregir algo. NO visible | Admin |
+ * | `FINALIZADO` | Terminal. Cierre de la búsqueda | Admin, y la empresa dueña (solo `PUBLICADO → FINALIZADO`, RF-PUE-03) |
+ *
+ * El Admin es el único que puede mover una vacante a cualquiera de los tres.
+ * La empresa dueña únicamente la cierra.
+ *
+ * 🔄 **Confirmado por backend, todavía no en `api-dev`**, que hoy expone solo
+ * `PENDIENTE | FINALIZADO` (A-14 en AGENTS.md). Se programa contra estos tres
+ * valores —es el contrato vigente— y se verifica al integrar. Antes este tipo
+ * decía lo contrario ("no inventar esos estados"), y eso llevó a que el feed
+ * filtrara por `PENDIENTE` y a que la empresa viera `PENDIENTE` como "Activa":
+ * al no existir `PUBLICADO`, se usó `PENDIENTE` como si lo fuera.
  */
-export type VacancyStatus = "PENDIENTE" | "FINALIZADO";
+export type VacancyStatus = "PENDIENTE" | "PUBLICADO" | "FINALIZADO";
 
 /** Wire: `VacancyResponse`. */
 export interface Vacancy {

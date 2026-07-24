@@ -56,9 +56,10 @@ export function ApplicationsView() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Sin `title`/`description`: el nombre de la sección ya lo muestra el
+          Navbar (AGENTS.md, "Header dinámico"). `PageHeader` queda por el slot
+          de acciones. */}
       <PageHeader
-        title="Postulaciones"
-        description="Visualizá todas las postulaciones realizadas a las ofertas publicadas."
         actions={
           <Button variant="outline">
             <DownloadIcon />
