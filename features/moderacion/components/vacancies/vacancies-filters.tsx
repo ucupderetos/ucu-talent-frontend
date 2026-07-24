@@ -17,10 +17,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import {
-  VACANCY_MODALITY_LABEL,
-  VACANCY_STATUS_LABEL,
-} from "@/features/moderacion/components/vacancies/vacancy-labels";
+import { VACANCY_STATUS_LABEL } from "@/components/vacancies/vacancy-status-badge";
+import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
 import type { AdminVacancyFilters } from "@/features/moderacion/types";
 import type { Company, Modality, VacancyStatus } from "@/types";
 
