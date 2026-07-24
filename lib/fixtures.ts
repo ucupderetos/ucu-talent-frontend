@@ -240,9 +240,24 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-1",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-1",
-    description: "Cursando 4º año.",
+    description:
+      "Cursando el 4º año de la carrera, con foco en desarrollo de software y bases de " +
+      "datos. Participé en el equipo de programación competitiva de la facultad y cursé " +
+      "como electivas Inteligencia Artificial y Diseño de Sistemas Distribuidos.",
     startDate: "2023-03-01T00:00:00.000Z",
     endDate: null,
+  },
+  {
+    educationId: "e-2",
+    studentProfileId: "u-1",
+    degreeLevel: "TECNICATURA",
+    degreeId: "d-2",
+    description:
+      "Tecnicatura completa como primer paso antes de continuar con la Licenciatura en " +
+      "Ingeniería en Informática. Trabajo final sobre optimización de consultas SQL en " +
+      "bases de datos de gran volumen.",
+    startDate: "2020-03-01T00:00:00.000Z",
+    endDate: "2022-12-15T00:00:00.000Z",
   },
   // Educación de MOCK_STUDENT_USERS, para el listado de "Usuarios" del admin.
   {
@@ -300,7 +315,24 @@ export const MOCK_WORK_EXPERIENCE: WorkExperience[] = [
     position: "Practicante de Desarrollo",
     startDate: "2025-02-01T00:00:00.000Z",
     endDate: null,
-    description: "Desarrollo de features en React/TypeScript y soporte a QA.",
+    description:
+      "Desarrollo de features en React y TypeScript para el producto principal de la " +
+      "empresa, con foco en la capa de UI y su integración con la API interna. Participo " +
+      "activamente en code reviews y en la definición de componentes reutilizables para " +
+      "el equipo de frontend. También colaboro con el equipo de QA reportando y " +
+      "corrigiendo bugs antes de cada release.",
+  },
+  {
+    workExperienceId: "we-2",
+    studentProfileId: "u-1",
+    company: "Universidad Católica del Uruguay",
+    position: "Ayudante de cátedra — Programación I",
+    startDate: "2024-03-01T00:00:00.000Z",
+    endDate: "2024-12-15T00:00:00.000Z",
+    description:
+      "Apoyo a estudiantes de primer año en las clases prácticas de Programación I " +
+      "(Java): corrección de entregas, resolución de dudas en el horario de consulta " +
+      "semanal y armado de guías de ejercicios junto al docente titular.",
   },
 ];
 
@@ -322,8 +354,24 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-2",
     name: "Desarrollador/a Frontend Jr",
-    description: "React y TypeScript. Pasantía de 20 hs semanales.",
-    requirements: "Estudiante avanzado. React, Git.",
+    description:
+      "En DataLab buscamos a alguien que esté dando sus primeros pasos como " +
+      "desarrollador/a frontend para sumarse a nuestro equipo de producto. Vas a " +
+      "trabajar codo a codo con desarrolladores senior en el mantenimiento y la " +
+      "evolución de nuestras aplicaciones internas, construidas con React y " +
+      "TypeScript.\n\nEl día a día incluye implementar componentes de UI a partir de " +
+      "diseños en Figma, conectar esos componentes a la capa de datos con TanStack " +
+      "Query, y colaborar con el equipo de QA para detectar y corregir bugs antes de " +
+      "cada release. Es una pasantía pensada para acompañar tu crecimiento: vas a " +
+      "tener un mentor asignado y instancias semanales de code review.",
+    requirements:
+      "- Estudiante avanzado de Ingeniería en Informática, Analista en Sistemas o " +
+      "carreras afines.\n" +
+      "- Conocimientos de React y TypeScript (proyectos personales o de la facultad " +
+      "cuentan).\n" +
+      "- Manejo básico de Git y flujos de trabajo con Pull Requests.\n" +
+      "- Ganas de aprender y de recibir feedback técnico de forma constante.\n" +
+      "- Disponibilidad de 20 horas semanales, modalidad híbrida (2 días en oficina).",
     contractType: "Pasantía",
     salaryRange: "$35.000 - $45.000",
     modality: "HIBRIDO",
@@ -337,8 +385,20 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-3",
     name: "Analista de Datos",
-    description: "SQL y Python.",
-    requirements: "SQL intermedio, Python básico.",
+    description:
+      "Sumate al equipo de datos de DataLab para dar soporte a los análisis que " +
+      "alimentan las decisiones de nuestros clientes. Vas a trabajar extrayendo, " +
+      "limpiando y transformando datos de distintas fuentes, y armando reportes y " +
+      "dashboards que el equipo comercial y de producto usa todas las semanas.\n\nEs " +
+      "una posición part-time, 100% remota, pensada para alguien que ya tiene una " +
+      "base sólida en SQL y quiere seguir profundizando en Python para automatizar " +
+      "procesos que hoy se hacen a mano.",
+    requirements:
+      "- SQL a nivel intermedio: joins, agregaciones, subconsultas.\n" +
+      "- Python básico (pandas es un plus, no excluyente).\n" +
+      "- Comodidad trabajando con planillas grandes y prolijitud en el armado de " +
+      "reportes.\n" +
+      "- Buena comunicación escrita: gran parte del trabajo es remoto y asincrónico.",
     contractType: "Part-time",
     salaryRange: "$40.000 - $55.000",
     modality: "REMOTO",
@@ -352,8 +412,21 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-6",
     name: "Diseñador/a Gráfico",
-    description: "Piezas para campañas digitales de clientes de DataLab.",
-    requirements: "Figma, Adobe Suite.",
+    description:
+      "Buscamos un/a diseñador/a gráfico para sumarse al equipo creativo que arma " +
+      "las piezas digitales de los clientes de DataLab: desde posteos para redes " +
+      "sociales hasta banners publicitarios y presentaciones comerciales.\n\nVas a " +
+      "trabajar en conjunto con el equipo de marketing para entender el brief de " +
+      "cada campaña, proponer conceptos visuales y llevarlos a piezas terminadas, " +
+      "cuidando la consistencia de marca de cada cliente. Buscamos a alguien " +
+      "prolijo/a, con buen ojo para la tipografía y el color, y que sepa trabajar " +
+      "con tiempos de entrega ajustados.",
+    requirements:
+      "- Manejo avanzado de Figma y Adobe Suite (Illustrator, Photoshop).\n" +
+      "- Portfolio con piezas de diseño digital (posteos, banners, presentaciones).\n" +
+      "- Conocimientos básicos de identidad de marca y sistemas de diseño.\n" +
+      "- Capacidad de trabajar en paralelo en varios proyectos de distintos " +
+      "clientes.",
     contractType: "Full-time",
     modality: "HIBRIDO",
     status: "PENDIENTE",
@@ -367,8 +440,21 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-5",
     name: "Ejecutivo/a de Cuentas",
-    description: "Gestión comercial de la cartera de clientes.",
-    requirements: "Experiencia en ventas B2B.",
+    description:
+      "DataLab busca un/a ejecutivo/a de cuentas para gestionar la relación " +
+      "comercial con una cartera de clientes activos. Vas a ser el punto de " +
+      "contacto principal entre el cliente y los equipos internos, asegurando que " +
+      "los proyectos avancen según lo acordado y detectando oportunidades para " +
+      "ampliar el alcance de cada cuenta.\n\nEl rol combina seguimiento comercial " +
+      "(reuniones periódicas, reportes de avance) con una cuota de venta " +
+      "consultiva: entender la necesidad del cliente y proponerle soluciones que ya " +
+      "ofrecemos o que podemos armar a medida.",
+    requirements:
+      "- Experiencia previa en ventas B2B o atención a cuentas corporativas.\n" +
+      "- Buena comunicación oral y escrita, cómodo/a llevando reuniones con " +
+      "clientes.\n" +
+      "- Organización para hacer seguimiento de varias cuentas en simultáneo.\n" +
+      "- Se valora experiencia en el rubro tecnológico o de consultoría.",
     contractType: "Full-time",
     modality: "HIBRIDO",
     status: "PENDIENTE",
@@ -382,8 +468,21 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-2",
     name: "Desarrollador/a Backend Senior",
-    description: "Java y Spring Boot para el equipo de plataforma.",
-    requirements: "5+ años con Java/Spring.",
+    description:
+      "Buscamos un/a desarrollador/a backend senior para liderar técnicamente el " +
+      "equipo de plataforma, la base sobre la que corren todos los productos de " +
+      "DataLab. Vas a participar en decisiones de arquitectura, revisar el código " +
+      "del equipo y ser referente técnico en Java y Spring Boot.\n\nEs un rol con " +
+      "alto grado de autonomía: vas a proponer mejoras de performance y " +
+      "escalabilidad, mentorear a desarrolladores más junior, y trabajar en " +
+      "estrecha coordinación con el equipo de infraestructura para mantener los " +
+      "servicios corriendo de forma confiable.",
+    requirements:
+      "- 5+ años de experiencia con Java y Spring Boot en producción.\n" +
+      "- Experiencia diseñando APIs REST y trabajando con bases de datos " +
+      "relacionales.\n" +
+      "- Conocimientos de buenas prácticas de testing y CI/CD.\n" +
+      "- Se valora experiencia liderando o mentoreando equipos técnicos.",
     contractType: "Full-time",
     modality: "REMOTO",
     status: "FINALIZADO",
@@ -397,8 +496,20 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-4",
     name: "Community Manager",
-    description: "Manejo de redes sociales institucionales.",
-    requirements: "Portfolio de redes gestionadas.",
+    description:
+      "Sumate al equipo de marketing de DataLab para manejar la comunicación en " +
+      "redes sociales institucionales de la empresa. Vas a planificar el " +
+      "calendario de contenidos, redactar copies, coordinar con diseño las piezas " +
+      "gráficas y hacer seguimiento de las métricas de cada canal.\n\nBuscamos a " +
+      "alguien con criterio propio para proponer contenido, que entienda el tono " +
+      "de cada red social y que pueda responder consultas de la comunidad con " +
+      "rapidez y buena onda.",
+    requirements:
+      "- Portfolio o ejemplos de redes sociales gestionadas previamente.\n" +
+      "- Buena redacción y ortografía impecable.\n" +
+      "- Manejo de herramientas de programación de contenido (Meta Business Suite, " +
+      "Buffer o similares).\n" +
+      "- Disponibilidad para trabajar de forma presencial en nuestras oficinas.",
     contractType: "Part-time",
     modality: "PRESENCIAL",
     status: "PENDIENTE",
@@ -412,8 +523,19 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-4",
     name: "Pasante de Marketing",
-    description: "Apoyo al equipo de marketing en campañas y contenido.",
-    requirements: "Estudiante de Marketing o Comunicación.",
+    description:
+      "Buscamos un/a estudiante de Marketing o Comunicación para sumarse como " +
+      "pasante al equipo de marketing de DataLab. Vas a colaborar en la " +
+      "planificación y ejecución de campañas para nuestros clientes, desde la " +
+      "investigación inicial hasta el armado de reportes de resultados.\n\nEs una " +
+      "oportunidad para aprender de punta a punta cómo se arma una campaña " +
+      "digital: brief, estrategia, piezas, pauta y medición. Vas a trabajar en " +
+      "equipo con perfiles de diseño, contenido y datos.",
+    requirements:
+      "- Estudiante de Marketing, Comunicación o carreras afines.\n" +
+      "- Interés en marketing digital y redes sociales.\n" +
+      "- Manejo de herramientas de oficina (planillas, presentaciones).\n" +
+      "- Proactividad y ganas de aprender en un equipo chico.",
     contractType: "Pasantía",
     modality: "PRESENCIAL",
     status: "PENDIENTE",
@@ -427,8 +549,20 @@ export const MOCK_VACANCIES: Vacancy[] = [
     companyId: "u-2",
     areaId: "a-3",
     name: "QA Tester",
-    description: "Testing manual y automatizado de productos internos.",
-    requirements: "Experiencia con casos de prueba y bugs.",
+    description:
+      "DataLab busca un/a QA tester para sumarse al equipo de calidad y asegurar " +
+      "que los productos internos lleguen a producción sin sorpresas. Vas a " +
+      "diseñar casos de prueba a partir de los requerimientos de cada feature, " +
+      "ejecutarlos manualmente y colaborar en la construcción de una suite de " +
+      "tests automatizados.\n\nTrabajás en estrecha coordinación con el equipo de " +
+      "desarrollo: participás de la planificación de cada sprint, reportás bugs de " +
+      "forma clara y priorizada, y validás las correcciones antes de cada release.",
+    requirements:
+      "- Experiencia diseñando y ejecutando casos de prueba manuales.\n" +
+      "- Conocimientos básicos de testing automatizado (Selenium, Cypress o " +
+      "similar es un plus).\n" +
+      "- Capacidad de reportar bugs de forma clara, con pasos para reproducir.\n" +
+      "- Se valora experiencia trabajando en equipos ágiles (Scrum/Kanban).",
     contractType: "Full-time",
     modality: "REMOTO",
     status: "PENDIENTE",
@@ -439,13 +573,15 @@ export const MOCK_VACANCIES: Vacancy[] = [
   },
 ];
 
-/** Una postulación por cada estado, para poder maquetar los 3 casos. */
+/** Una postulación por cada estado (y, en FINALIZADO, por cada valor de `selected`),
+ *  para poder maquetar todos los casos de la barra de progreso. */
 export const MOCK_APPLICATIONS: VacancyApplication[] = [
   {
     vacancyApplicationId: "va-1",
     vacancyId: "v-1",
     studentProfileId: "u-1",
     status: "PENDIENTE",
+    selected: false,
     appliedAt: "2026-07-12T11:00:00.000Z",
   },
   {
@@ -453,6 +589,7 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-1",
     studentProfileId: "sp-2",
     status: "VISTO",
+    selected: false,
     appliedAt: "2026-07-11T16:45:00.000Z",
   },
   {
@@ -460,6 +597,7 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-2",
     studentProfileId: "u-1",
     status: "FINALIZADO",
+    selected: true,
     appliedAt: "2026-07-01T08:15:00.000Z",
   },
   {
@@ -467,6 +605,7 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-3",
     studentProfileId: "u-1",
     status: "PENDIENTE",
+    selected: false,
     appliedAt: "2026-07-15T10:00:00.000Z",
   },
   {
@@ -474,6 +613,7 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-3",
     studentProfileId: "sp-2",
     status: "VISTO",
+    selected: false,
     appliedAt: "2026-07-09T12:00:00.000Z",
   },
   {
@@ -481,6 +621,15 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-7",
     studentProfileId: "sp-2",
     status: "PENDIENTE",
+    selected: false,
     appliedAt: "2026-07-16T09:00:00.000Z",
+  },
+  {
+    vacancyApplicationId: "va-7",
+    vacancyId: "v-8",
+    studentProfileId: "u-1",
+    status: "FINALIZADO",
+    selected: false,
+    appliedAt: "2026-06-20T09:00:00.000Z",
   },
 ];

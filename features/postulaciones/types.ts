@@ -52,6 +52,15 @@ export interface MyApplicationRow extends MyApplication {
   areaName: string;
 }
 
+/** Filtros de la barra de "Mis postulaciones" (vista alumno): búsqueda +
+ *  estado + carrera. Resuelto en memoria sobre `MyApplicationRow[]`, mismo
+ *  criterio que `FeedFilters` en `features/puestos/types.ts`. */
+export interface MyApplicationFilters {
+  search?: string;
+  statuses?: VacancyApplicationStatus[];
+  areaIds?: string[];
+}
+
 /**
  * Cambio de estado de una postulación, hecho por la empresa.
  * Wire: `UpdateVacancyApplicationRequest` — `PUT /vacancy-application/{id}`.

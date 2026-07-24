@@ -97,7 +97,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
   return (
     <div className="flex flex-col gap-4">
       <Card>
-        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <CardContent className="flex flex-col gap-4">
           <div className="flex gap-3">
             <Avatar size="lg">
               <AvatarImage src={extras.logoUrl} alt={vacancy.company.name} />
@@ -108,24 +108,27 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
             <div className="min-w-0">
               <h1 className="text-xl font-semibold tracking-tight">{vacancy.name}</h1>
               <p className="mt-0.5 text-sm text-muted-foreground">{vacancy.company.name}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPinIcon className="size-4" />
-                  {vacancy.location}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <BriefcaseIcon className="size-4" />
-                  {vacancy.contractType}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarIcon className="size-4" />
-                  {formatDate(vacancy.publicationDate)}
-                </span>
-              </div>
             </div>
           </div>
 
-          <ApplyAction vacancy={vacancy} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <MapPinIcon className="size-4" />
+                {vacancy.location}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <BriefcaseIcon className="size-4" />
+                {vacancy.contractType}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarIcon className="size-4" />
+                {formatDate(vacancy.publicationDate)}
+              </span>
+            </div>
+
+            <ApplyAction vacancy={vacancy} />
+          </div>
         </CardContent>
       </Card>
 
@@ -133,11 +136,11 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
         <div className="lg:col-span-2">
           <Tabs defaultValue="descripcion">
             <TabsList variant="line">
-              <TabsTrigger value="descripcion" className="after:bg-sidebar">
+              <TabsTrigger value="descripcion" className="after:bg-secondary-blue">
                 <FileTextIcon />
                 Descripción
               </TabsTrigger>
-              <TabsTrigger value="requisitos" className="after:bg-sidebar">
+              <TabsTrigger value="requisitos" className="after:bg-secondary-blue">
                 <ClipboardListIcon />
                 Requisitos
               </TabsTrigger>
@@ -238,7 +241,11 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
                 <span className="text-muted-foreground">Habilidades requeridas</span>
                 <div className="flex flex-wrap gap-1.5">
                   {extras.skills.map((skill) => (
-                    <Badge key={skill} variant="secondary">
+                    <Badge
+                      key={skill}
+                      variant="secondary"
+                      className="bg-secondary-blue text-secondary-blue-foreground"
+                    >
                       {skill}
                     </Badge>
                   ))}
@@ -285,12 +292,12 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
   const { user, isLoading } = useSession();
 
   if (isLoading || !user) {
-    return <Skeleton className="h-12 w-40 shrink-0" />;
+    return <Skeleton className="h-10 w-32 shrink-0" />;
   }
 
   if (vacancy.status === "FINALIZADO") {
     return (
-      <Button size="lg" className="h-12 shrink-0 px-6 text-sm" disabled>
+      <Button className="h-10 shrink-0 px-6" disabled>
         Vacante finalizada
       </Button>
     );
@@ -298,7 +305,7 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
 
   if (hasAppliedToVacancy(vacancy.vacancyId, user.userId)) {
     return (
-      <Button size="lg" variant="outline" className="h-12 shrink-0 px-6 text-sm" disabled>
+      <Button variant="outline" className="h-10 shrink-0 px-6" disabled>
         Ya te postulaste
       </Button>
     );
@@ -309,8 +316,7 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
   return (
     <div className="flex shrink-0 flex-col items-end gap-1.5">
       <Button
-        size="lg"
-        className="h-12 bg-ucu-blue px-6 text-sm text-white hover:bg-ucu-blue/90"
+        className="h-10 bg-ucu-blue px-6 text-white hover:bg-ucu-blue/90"
         disabled={Boolean(blockedMessage)}
         onClick={() =>
           toast.info('Postularte todavía no está disponible: falta el contrato de la API.')

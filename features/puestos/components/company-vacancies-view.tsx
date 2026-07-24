@@ -75,8 +75,6 @@ export function CompanyVacanciesView() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Ofertas"
-        description="Gestioná todas las ofertas de tu empresa. Podés ver su estado, postulantes y rendimiento."
         actions={
           // CTA principal de la pantalla: color de marca explícito
           // (`bg-ucu-blue`), no un token — ver "Colores" en AGENTS.md.

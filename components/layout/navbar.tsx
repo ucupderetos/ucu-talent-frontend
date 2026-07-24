@@ -78,7 +78,7 @@ export function Navbar({ user }: { user: User | null }) {
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm",
                       pathname.startsWith(item.href)
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                        ? "bg-secondary-blue font-medium text-secondary-blue-foreground"
                         : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                     )}
                   >

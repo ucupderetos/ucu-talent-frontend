@@ -15,7 +15,6 @@
 import { BriefcaseIcon, GraduationCapIcon, SparklesIcon, UserIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/layout/empty-state";
-import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,11 +34,6 @@ export function StudentProfileView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Mi perfil"
-        description="Completá tu información personal y profesional para que las empresas puedan conocerte mejor."
-      />
-
       {isLoading && <ProfileSkeleton />}
 
       {!isLoading && (isError || !data || !user) && (
@@ -55,25 +49,25 @@ export function StudentProfileView() {
 
           <Tabs defaultValue="personal">
             <TabsList variant="line">
-              <TabsTrigger value="personal" className="after:bg-sidebar">
+              <TabsTrigger value="personal" className="after:bg-secondary-blue">
                 <UserIcon />
                 Información personal
               </TabsTrigger>
-              <TabsTrigger value="experiencia" className="after:bg-sidebar">
+              <TabsTrigger value="experiencia" className="after:bg-secondary-blue">
                 <BriefcaseIcon />
                 Experiencia laboral
               </TabsTrigger>
-              <TabsTrigger value="formacion" className="after:bg-sidebar">
+              <TabsTrigger value="formacion" className="after:bg-secondary-blue">
                 <GraduationCapIcon />
                 Formación académica
               </TabsTrigger>
-              <TabsTrigger value="habilidades" className="after:bg-sidebar">
+              <TabsTrigger value="habilidades" className="after:bg-secondary-blue">
                 <SparklesIcon />
                 Habilidades
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="personal">
+            <TabsContent value="personal" className="mt-4">
               <PersonalInfoTab profile={data.profile} />
             </TabsContent>
 
@@ -91,7 +85,7 @@ export function StudentProfileView() {
               />
             </TabsContent>
 
-            <TabsContent value="habilidades">
+            <TabsContent value="habilidades" className="mt-4">
               <SkillsTab skills={data.profile.skills} />
             </TabsContent>
           </Tabs>
