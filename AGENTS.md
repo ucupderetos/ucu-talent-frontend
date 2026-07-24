@@ -58,7 +58,7 @@ API — **no se traducen ni se mapean**:
 ```ts
 type Role = "ALUMNO" | "EMPRESA" | "ADMIN";           // no "student" | "company" | "admin"
 type AccountStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
-type VacancyStatus = "PUBLICADO" | "RECHAZADO" | "FINALIZADO";
+type VacancyStatus = "PENDIENTE" | "PUBLICADO" | "FINALIZADO";
 type Modality = "PRESENCIAL" | "HIBRIDO" | "REMOTO";
 type DocumentType = "CEDULA_IDENTIDAD" | "DNI" | "PASAPORTE";
 ```
@@ -491,10 +491,12 @@ los errores de RHF.
   `GET /me`**. Esto reemplaza a los dos enums separados que había antes
   (`CompanyStatus` / `StudentProfileStatus`) y también al booleano `Company.approved` del
   MER viejo.
-- **Toda cuenta nace `PENDIENTE`.** No hay aprobación automática: la vía
-  `@ucu.edu.uy` que preveía el SRS (RF-AUT-01, RN-01) **se descartó**. Todo alumno se
-  registra igual, con documento, y queda `PENDIENTE` hasta que se resuelva su validación
-  contra el padrón (ver *Pendiente de aclarar* — el mecanismo todavía no está definido).
+- **Toda cuenta nace `PENDIENTE`** (alumno y empresa). No hay aprobación automática: la
+  vía `@ucu.edu.uy` que preveía el SRS (RF-AUT-01, RN-01) **se descartó**. Todo alumno se
+  registra igual, con documento, y queda `PENDIENTE` hasta que un **Admin lo apruebe a
+  mano** contra el padrón (`UniversityRegistry`) → `APROBADO` o `RECHAZADO`, vía
+  `PATCH /user/{id}`. 🔄 **Confirmado, pero `api-dev` hoy hace nacer al alumno `APROBADO`
+  en `POST /user`** — falta el cambio de backend (ver A-01).
 - **El estado no restringe el acceso, restringe la acción.** Es el mismo criterio para
   los dos roles:
   - Alumno `PENDIENTE` o `RECHAZADO`: entra, arma su perfil, navega el feed y ve el
@@ -506,15 +508,18 @@ los errores de RHF.
 - Los `layout.tsx` de `(alumno)` y `(empresa)` validan **rol**, no estado. El estado se
   chequea en el punto de acción (el botón de postularse, el de publicar), porque bloquear
   la ruta entera contradiría RN-16 y RN-02.
-- Vacante (`Vacancy`): **post-moderación (DEC-01)** — nace ya `PUBLICADO` al crearse, sin
-  aprobación previa por puesto (RN-03). Admin UCU revisa periódicamente lo ya publicado y
-  puede darlo de baja (→ `RECHAZADO`, terminal, RF-MOD-02). La empresa dueña lo puede
-  cerrar cuando termina la búsqueda (→ `FINALIZADO`, terminal, RF-PUE-03). Ambos son
-  terminales y cada uno solo lo puede disparar su actor (RN-07). Estados:
-  `enum(PUBLICADO, RECHAZADO, FINALIZADO)` — **sin `pending` ni `paused`**.
-  Impacto: el panel de admin es una **bandeja de revisión de lo ya publicado** (para dar
-  de baja si corresponde, con las últimas 24h destacadas — RF-MOD-01), no una cola de
-  aprobación previa. La empresa ve su vacante viva apenas la crea, si ya está aprobada.
+- Vacante (`Vacancy`): **post-moderación (DEC-01)** — nace ya `PUBLICADO` **por default**
+  al crearse, sin aprobación previa por puesto (RN-03). Estados **confirmados**:
+  `enum(PENDIENTE, PUBLICADO, FINALIZADO)` — **sin `RECHAZADO`** (se descartó) **ni
+  `paused`**. La empresa dueña lo puede cerrar cuando termina la búsqueda
+  (→ `FINALIZADO`, terminal, RF-PUE-03). El Admin UCU revisa periódicamente lo ya
+  publicado: puede pasarla a **`PENDIENTE`** (para revisar/editar algo) o, si la **da de
+  baja, a `FINALIZADO`** (terminal, RF-MOD-02) — mismo estado terminal que el cierre de la
+  empresa. Impacto: el panel de admin es una **bandeja de revisión de lo ya publicado**
+  (últimas 24h destacadas — RF-MOD-01), no una cola de aprobación previa. La empresa ve su
+  vacante viva apenas la crea. 🔄 **Confirmado por backend, todavía no en
+  `api-dev`/`ENDPOINTS.md`** (que aún muestra `PENDIENTE, FINALIZADO`) — tratar como el
+  contrato vigente y verificar al integrar (A-14).
 - Cada route group (`(auth)`, `(alumno)`, `(empresa)`, `(admin)`) lleva su propio
   `layout.tsx` que valida el rol antes de renderizar. Ya existen: son de 3 líneas y
   delegan en `RoleGuard` (`features/auth/components/role-guard.tsx`).
@@ -638,6 +643,10 @@ selected: boolean   // default false, independiente del status
 - El estado **nunca retrocede** (RN-08).
 - Un alumno no puede postularse dos veces al mismo puesto: `UNIQUE (vacancy_id,
   student_profile_id)` (RN-05). El segundo intento devuelve `409`.
+- 🔄 **`selected` y la cascada `VISTO → FINALIZADO` están confirmados por backend pero
+  todavía no en `api-dev`** (no aparecen en `VacancyApplicationResponse` /
+  `UpdateVacancyApplicationRequest`) — tratar como parte del contrato y verificar al
+  integrar (A-17).
 
 ### Mails: los dos son del backend, el frontend no manda ninguno
 
@@ -747,7 +756,7 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
   `Area` (jerárquica: `parentAreaId`), `Company`, `StudentProfile`, `UniversityRegistry`
   (el padrón — tabla de consulta, sin FK a `User`), `Degree`, `Education`,
   `WorkExperience`, `Modality: enum(PRESENCIAL, HIBRIDO, REMOTO)`,
-  `VacancyStatus: enum(PUBLICADO, RECHAZADO, FINALIZADO)`, `Vacancy`,
+  `VacancyStatus: enum(PENDIENTE, PUBLICADO, FINALIZADO)`, `Vacancy`,
   `VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)`, `VacancyApplication` (con
   `selected: boolean`), `Paginated<T>`.
 - **`features/<x>/types.ts` → lo específico del dominio**: filtros, payloads de formulario,
@@ -933,9 +942,10 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   Ya se pueden escribir contra `ENDPOINTS.md`. `features/auth/hooks/use-session.ts` sirve
   de plantilla del patrón.
 - ✅ **`app/(empresa)/puestos/page.tsx`** — ya existe ("Mis ofertas"), construida por el
-  grupo de empresa. ⚠️ Ver el gap de `VacancyStatus` en *Roles y control de acceso*: la
-  pantalla hoy colapsa todo a `PENDIENTE`/`FINALIZADO` porque el backend real no tiene más
-  estados — revisar labels/acciones apenas exista `PUBLICADO`/`RECHAZADO` (A-14).
+  grupo de empresa. 🔄 Ver `VacancyStatus` en *Roles y control de acceso*: el enum
+  confirmado es `PENDIENTE, PUBLICADO, FINALIZADO` (default `PUBLICADO`), pero `api-dev`
+  todavía expone solo `PENDIENTE, FINALIZADO` — la pantalla los colapsa por ahora; revisar
+  labels/acciones cuando el backend publique el estado `PUBLICADO` (A-14).
 - Las `page.tsx` de `/feed`, `/postulaciones` y `/puestos/[id]/postulantes` siguen siendo
   placeholders.
 - ✅ **`/perfil` es una ruta COMPARTIDA entre alumno y empresa** (route group `(perfil)`,
@@ -986,51 +996,52 @@ usos en `lib/auth.ts` y `features/auth/hooks/use-logout.ts`.
 `lib/fixtures.ts` y `.env.example` (ver *Idioma del código*) — ya no queda código usando
 los literales viejos (`student`/`company`/`admin`).
 
-## Pendiente de aclarar
+## Pendiente de aclarar / estado de definición
 
-> 🚧 **Nada de esta sección se implementa todavía.** Está acá justamente porque falta
-> definirlo. Si una tarea depende de alguno de estos puntos, se frena y se pregunta —
-> no se elige una interpretación y se sigue.
+> **Actualizado 2026-07-24** contra `ENDPOINTS.md` (rama `dev`) + confirmaciones del
+> backend. Leyenda:
+> - **✅ Resuelto** — definido y verificable hoy; se programa contra esto.
+> - **🔄 Confirmado, aún no en `api-dev`** — el backend confirmó la decisión pero
+>   `ENDPOINTS.md`/`api-dev` todavía no la reflejan. **Se trata como el contrato vigente
+>   (se programa contra ella), pero se verifica al integrar** — no asumir que `api-dev` ya
+>   lo tiene.
+> - **🔴 / 🟡 Abierto** — sigue sin definirse. Si una tarea depende de uno, se frena y se
+>   pregunta.
 
-### 🔴 Bloquean código del front
+### ✅ Resuelto o confirmado (contrato vigente)
 
-| # | Qué falta | Impacto |
+| # | Estado | Qué aplica |
 |---|---|---|
-| **A-01** | **Cómo se aprueba a un alumno.** Dos opciones sobre la mesa: endpoint de la UCU que valida cédula (aprobación automática) o revisión manual del Admin contra el padrón. | Define si el grupo de admin construye la cola de solicitudes (RF-MOD-05/06) y si `UniversityRegistry` sigue existiendo en el modelo. |
-| **A-02** | **Endpoints de moderación.** Hoy no hay forma de cambiar el `status` de `User`/`Company`/`Vacancy`, ni de registrar `admin_comment`/`reviewed_at`. Backend está trabajando en ellos. | El dominio `moderacion` no puede escribir un solo hook. |
-| **A-03** | **Formato de `skills` en el wire.** ¿`string[]` JSON (como hoy en `/student-profile`) o string separado por comas (DEC-03)? ¿Y quién normaliza (RN-11), backend o front? Además `Vacancy` hoy **no tiene** `skills`, sin lo cual RF-FEED-01 (orden por coincidencia) no se puede calcular. | Tipo en `types/index.ts` + el feed entero. |
-| **A-04** | **Contrato de paginación.** Confirmado que el feed va paginado, pero no la forma: nombres de parámetros y envoltorio de respuesta. | `Paginated<T>` está tipado pero sin contrato real detrás. |
-| **A-05** | **Contrato de filtros del feed.** El SRS pide filtros combinables (área con subáreas, carrera, contrato, modalidad, localidad, keyword) + orden configurable. La API de hoy acepta **un query param por vez** y no tiene keyword, `contractType`, carrera ni ordenamiento. | Sin un endpoint de feed real, el feed del SRS no se puede construir. |
-| **A-13** | **Cookie cross-origin contra `api-dev`.** Confirmar que el backend manda `SameSite=None; Secure` y tiene CORS con `Allow-Credentials: true` + origin explícito para `http://localhost:3000`. | Sin esto no hay sesión real y el modo mock no se puede retirar. Es lo primero a probar. |
-| **A-14** | **`VacancyStatus` del backend no es el acordado.** Hoy expone `PENDIENTE, FINALIZADO` y el `POST` fuerza `PENDIENTE` — o sea, **pre-moderación**. Lo acordado es post-moderación: `PUBLICADO, RECHAZADO, FINALIZADO`, publicando al crear (DEC-01, RN-03). | Todo lo que este documento dice sobre moderación es falso contra la API actual: el feed, la bandeja de admin y el alta de puesto. |
-| **A-15** | **Campos finales de `Vacancy`.** Hoy `contractType` es string libre (vs. enum `PASANTIA/FULL_TIME/PART_TIME/ZAFRAL`), el salario es un `salaryRange` string único (vs. `salaryMin`/`salaryMax`/`currency`) y `location` es `@NotNull` (vs. nullable cuando la modalidad es `REMOTO`, RF-PUE-01). | El formulario de alta de puesto no se puede construir: cambia la cantidad de inputs, los tipos y las validaciones de Zod. |
-| **A-16** | **Nombre de la cookie de sesión.** `ENDPOINTS.md` dice que el login setea una cookie httpOnly, pero no cómo se llama. | `proxy.ts` solo puede leer la cookie por nombre — sin ese dato no se puede escribir el guard optimista. |
+| **A-01** | 🔄 | **Confirmado: el alumno nace `PENDIENTE`** (igual que la empresa). Hace todo lo normal (perfil, feed, detalle) **excepto postularse**; un **Admin lo aprueba a mano** contra el padrón (`UniversityRegistry`) → `APROBADO` o `RECHAZADO`, vía `PATCH /user/{id}`. Solo `APROBADO` puede postularse. Implica que el admin construye la **cola de aprobación de alumnos** (RF-MOD-05/06). ⚠️ `api-dev` hoy hace nacer al alumno `APROBADO` en `POST /user` — **falta el cambio de backend**. El RBAC de arriba queda **correcto**. |
+| **A-02** | ✅ | Moderación **existe**: `PATCH /user/{id}` (status + `adminComment`, se guarda en `StudentProfile`/`Company`), `PUT /vacancy/status/{id}` (admin), `reviewedAt`, y `*/status-summary`. El dominio `moderacion` ya puede escribir hooks. |
+| **A-03** | ✅ | `skills` es `string[]` (solo en `StudentProfile`). El orden por coincidencia (RF-FEED-01) **se descarta** — `Vacancy` no lleva `skills`. |
+| **A-04** | 🔄 | El feed **va a ir paginado** (backend lo está implementando). Tratar `Paginated<T>` como contrato futuro; revisar nombres de params/envoltorio al salir. |
+| **A-05** | ✅ | El **filtrado del feed queda en el front** por ahora (fetch-all + en memoria, ver *Barras de filtros*). No esperar endpoint de filtros del backend. |
+| **A-08** | ✅ | `PUT /student-profile/{id}` existe (dueño): edita `phoneNumber`, `linkedinUrl`, `skills`, `description`. `name`/`surname`/documento **no** se editan por ahí. |
+| **A-09** | 🔄 | `hasProfile: boolean` **se agrega** a `MeResponse` (tratar como existente; hoy se deriva del `404` del perfil en `use-session.ts`). `name` **no** se agrega — el navbar sigue con el 2º fetch al perfil, es el diseño definitivo. |
+| **A-10** | ✅ | Documento **único por el par `(documentType, documentNumber)`**. La **validez** del documento (dígito verificador, etc.) la valida el **backend**; el front solo valida superficie (cantidad y tipo de caracteres). |
+| **A-12** | 🔄 | Gaps de autorización **corregidos en backend** — falta actualizar `ENDPOINTS.md`. Asumir ownership/roles aplicados. |
+| **A-14** | 🔄 | `VacancyStatus = PENDIENTE, PUBLICADO, FINALIZADO`, default **`PUBLICADO`** (post-moderación). **Sin `RECHAZADO`.** El admin puede pasarla a **`PENDIENTE`** (para revisar/editar algo) y, si la **da de baja, a `FINALIZADO`** (terminal, mismo estado que el cierre de la empresa). `api-dev` todavía muestra solo `PENDIENTE, FINALIZADO`. |
+| **A-15** | 🔄 | `contractType` pasa a **enum** (valores los define backend, pendientes de pasar). `salaryRange` → **`salary`** (un solo campo string, nada más). `location` pasa a **nullable si `modality` es `REMOTO`**. Sin orden por skills. |
+| **A-17** | 🔄 | `selected` + cascada `VISTO → FINALIZADO` **se van a implementar**. Tratar como parte del contrato (ver *Postulaciones*); todavía no en `api-dev`. |
+| **A-18** | ✅ | `CompanyResponse` ahora expone `status`, `reviewedAt`, `adminComment`. El admin ve/filtra por estado. |
+| **A-19** | ✅ | Error `application/problem+json` con mapa por campo bajo la key **`errores`**: `{ detail, title, status, instance, errores: { campo: mensaje } }`. Mapear `errores` a `setError` de RHF y tipar así `ApiError`. |
 
-### 🟠 Contrato incompleto
-
-| # | Qué falta | Impacto |
-|---|---|---|
-| **A-17** | **`selected` no existe en el backend.** No está en `VacancyApplicationResponse` ni en `UpdateVacancyApplicationRequest`. Tampoco está claro si la cascada `VISTO → FINALIZADO` al cerrar el puesto está implementada. | La empresa no puede marcar su elección — ver *Postulaciones*. |
-| **A-18** | **`CompanyResponse` no expone `status`.** El `AccountStatus` llega en `GET /me`, que es el propio usuario. Pero el Admin necesita ver el estado de **cada** empresa en su listado (RF-MOD-03). | El listado de empresas del admin no puede mostrar ni filtrar por estado. |
-| **A-19** | **Formato de error de la API.** ¿Qué devuelve un `400` de validación? Para cumplir RNF-05 ("el error se muestra junto al campo") hace falta un error por campo, no un string suelto. | Define la forma de `ApiError` en `lib/api-client.ts` y cómo se mapea a `setError` de RHF. |
-
-### 🟡 Definiciones de UI
+### 🔴 Todavía abierto
 
 | # | Qué falta |
 |---|---|
-| **A-06** | **Qué campos de un puesto quedan editables** antes de la primera postulación (RN-06). El SRS lo deja abierto (`"Description, requirements,..."`). Hace falta la lista para deshabilitar los inputs. |
-| **A-07** | **¿Se exige ≥1 registro de educación para postularse?** Lo pide RF-FEED-04, el backend no lo valida. Si se mantiene, se chequea antes de habilitar el botón. |
-| **A-08** | **`PUT`/`PATCH` de `StudentProfile`.** `ENDPOINTS.md` dice explícitamente que no existe. Sin él, el alumno **no puede editar su perfil** — el dominio `perfil` no puede escribir nada. `Company` sí tiene `PUT`. |
+| **A-11** | **Subida de archivos** — **queda confirmar** el mecanismo (multipart vs. URL prefirmada) y los límites. Sin endpoint todavía. |
+| **A-13** | **Cookie cross-origin.** CORS del servidor **confirmado OK** (origin explícito + `Allow-Credentials`); faltan los atributos del `Set-Cookie` (`SameSite=None; Secure`), que se ven con un login. Prueba definitiva: front real contra `api-dev` (que `GET /me` no dé 401 tras el login). |
+| **A-16** | **Nombre de la cookie de sesión** — se confirma leyendo el `Set-Cookie` de un login (necesario para `proxy.ts`). |
+| **A-20** | **Semilla de `Area`/`Degree` en `api-dev`** — se confirma con `GET /area`/`GET /degree` logueado. |
 
-### 🟢 Menores
+### 🟡 Definiciones de UI (sin bloqueo de backend)
 
 | # | Qué falta |
 |---|---|
-| **A-09** | **`GET /me` no devuelve `name`.** Pedido a backend: agregarlo a `MeResponse` (y de paso un `hasProfile: boolean`, que le ahorra a `ProfileGuard` un fetch por carga). Mientras tanto, el navbar hace un segundo fetch al perfil. |
-| **A-20** | **Datos semilla de `Area` y `Degree` en `api-dev`.** ¿Están cargados? Sin ellos, los selects de área (alta de puesto, filtros del feed) y de carrera (educación del perfil) quedan vacíos y no se puede probar nada de punta a punta. Es el riesgo R-06 del SRS. |
-| **A-10** | **Contrato del documento.** Confirmados los tres tipos (`CEDULA_IDENTIDAD`, `DNI`, `PASAPORTE`) + número. Falta: si el número es único global o por tipo, y las reglas de validación por tipo. |
-| **A-11** | **Contrato de subida de archivos.** El MER tiene `profileImageUrl`, `logoUrl` y `cvUrl`, pero no hay endpoint de upload. Falta el mecanismo (multipart al backend vs. URL prefirmada) y los límites. |
-| **A-12** | **Gaps de autorización del backend.** `ENDPOINTS.md` marca varios `⚠️ Sin restricción` (education, degree, area, university-registry) y `PUT`/`DELETE /vacancy` sin ownership. Este documento afirma que "la autorización real la hace Spring Boot" — hoy no se cumple del todo. Es transitorio, pero conviene no asumirlo resuelto. |
+| **A-06** | **Qué campos del puesto quedan editables** antes de la 1ª postulación (RN-06). El backend **no** bloquea; es decisión de front. |
+| **A-07** | **¿Se exige ≥1 educación para postularse?** (RF-FEED-04). El backend **no** lo valida; decisión de front. |
 
 ## Fuera de alcance del proyecto
 
