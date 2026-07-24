@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
-import { MultiSelect } from "@/features/puestos/components/multi-select";
+import { MultiSelect } from "@/components/filters/multi-select";
 import { VACANCY_STATUS_LABEL } from "@/features/puestos/components/vacancy-status-badge";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
 import type { Area, Department, VacancyStatus } from "@/types";

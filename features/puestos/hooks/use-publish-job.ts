@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
+import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
 import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
 

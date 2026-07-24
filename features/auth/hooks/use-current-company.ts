@@ -2,6 +2,12 @@
 
 // Resuelve la `Company` del usuario logueado (rol empresa).
 //
+// Vive en features/auth/ (no en features/puestos/) porque no es un concepto
+// del dominio "puestos": lo necesitan por igual "Mis ofertas" (puestos) y
+// "Postulantes" (postulaciones), y la regla del equipo es no importar
+// features/ de otro dominio — por eso este accesor sube a la capa de sesión,
+// junto a use-session.ts.
+//
 // ⚠️ ANDAMIO TEMPORAL: el MER separa `User` de `Company` (`Company.userId` es
 // la FK), pero todavía no existe un endpoint tipo `GET /companies/me` — el
 // contrato de la API no está definido (ver AGENTS.md). Mientras tanto, esto

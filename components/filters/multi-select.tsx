@@ -1,12 +1,8 @@
 "use client";
 
-// Select con pinta de shadcn (`SelectTrigger`) pero multi-selección — Radix
-// `Select` no la soporta, así que esto es un combobox (`Popover` + `Command`)
-// que se ve y se comporta como un select. El trigger resume la selección
-// ("2 seleccionadas") en vez de mostrar todas las opciones tildadas.
-//
-// Usado por los filtros de `puestos` (feed y "Mis ofertas"). Si otro dominio
-// necesita lo mismo, este es candidato a subir a `components/ui/`.
+// Select con pinta de shadcn (`SelectTrigger`) pero multi-selección. Radix
+// `Select` no soporta varios valores, así que se arma con `Popover` + `Command`
+// y el trigger resume la selección.
 
 import { ChevronDownIcon, type LucideIcon } from "lucide-react";
 import { useState } from "react";
@@ -37,7 +33,6 @@ export function MultiSelect({
   onChange,
   className,
 }: {
-  /** Usado como `aria-label` del trigger ("Filtrar por carrera"). */
   label: string;
   icon?: LucideIcon;
   placeholder: string;

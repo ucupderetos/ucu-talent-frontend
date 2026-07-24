@@ -10,13 +10,13 @@ import { PlusIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
+import { ListPagination } from "@/components/pagination/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
+import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
 import { useCompanyVacancies } from "@/features/puestos/hooks/use-company-vacancies";
 import { VacancyFilters } from "@/features/puestos/components/vacancy-filters";
 import { VacancyTable } from "@/features/puestos/components/vacancy-table";
-import { VacancyPagination } from "@/features/puestos/components/vacancy-pagination";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
 import { MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
 
@@ -29,7 +29,7 @@ export function CompanyVacanciesView() {
   // es lo que el usuario va tocando en los inputs, `appliedFilters` es lo que
   // realmente le llega al hook de datos. La paginación y el orden son la
   // excepción: ambos actúan de inmediato (ver `changeOrder` y
-  // `VacancyPagination`), no son parte del "borrador".
+  // `ListPagination`), no son parte del "borrador".
   const [draftFilters, setDraftFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
 
@@ -123,10 +123,11 @@ export function CompanyVacanciesView() {
       {!isLoading && !isError && data && data.items.length > 0 && (
         <>
           <VacancyTable rows={data.items} />
-          <VacancyPagination
+          <ListPagination
             page={data.page}
             perPage={data.perPage}
             total={data.total}
+            itemLabel="ofertas"
             onPageChange={(page) => setAppliedFilters((f) => ({ ...f, page }))}
             onPerPageChange={(perPage) => setAppliedFilters((f) => ({ ...f, perPage, page: 1 }))}
           />

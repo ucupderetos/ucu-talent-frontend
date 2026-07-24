@@ -24,7 +24,7 @@ export const VACANCY_STATUS_DESCRIPTION: Record<VacancyStatus, string> = {
 };
 
 const VACANCY_STATUS_DOT_CLASS: Record<VacancyStatus, string> = {
-  PENDIENTE: "bg-emerald-500",
+  PENDIENTE: "bg-success",
   FINALIZADO: "bg-muted-foreground",
 };
 
