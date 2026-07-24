@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import {
   VACANCY_STATUS_DESCRIPTION,
   VacancyStatusBadge,
-} from "@/features/puestos/components/vacancy-status-badge";
+} from "@/components/vacancies/vacancy-status-badge";
 import type { CompanyVacancyRow } from "@/features/puestos/types";
 import type { Modality } from "@/types";
 
@@ -132,10 +132,10 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
           </Link>
         </DropdownMenuItem>
 
-        {/* El backend real hoy no tiene "pausada": solo PENDIENTE (activa) y
-            FINALIZADO (terminal). "Pausar"/"Volver a publicar" quedan afuera
-            hasta que ese estado exista (A-14 en AGENTS.md). */}
-        {vacancy.status === "PENDIENTE" && (
+        {/* La empresa dueña solo puede cerrar, y solo desde `PUBLICADO`
+            (RF-PUE-03). Retirar una vacante a `PENDIENTE` es potestad del
+            Admin, no de la empresa — ver `VacancyStatus` en types/index.ts. */}
+        {vacancy.status === "PUBLICADO" && (
           <DropdownMenuItem
             variant="destructive"
             onSelect={() => notImplemented("Cerrar oferta")}

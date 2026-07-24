@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
+import { VacancyStatusBadge } from "@/components/vacancies/vacancy-status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,26 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import type { RecentVacancy } from "@/features/moderacion/types";
-import type { VacancyStatus } from "@/types";
-
-// Badge con punto de color, igual que `vacancy-status-badge.tsx` y
-// `application-status-badge.tsx` — no una pastilla con fondo de color propio.
-//
-// Las etiquetas son las mismas que usa `features/puestos/components/
-// vacancy-status-badge.tsx` para el mismo enum: se repiten acá y no se importan
-// porque moderacion no importa de otro dominio (AGENTS.md). Si divergen, es que
-// hay que subir ese badge a `components/`.
-const STATUS_LABEL: Record<VacancyStatus, string> = {
-  PENDIENTE: "Activa",
-  FINALIZADO: "Cerrada",
-};
-
-const STATUS_DOT_CLASS: Record<VacancyStatus, string> = {
-  PENDIENTE: "bg-success",
-  FINALIZADO: "bg-muted-foreground",
-};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-UY");
@@ -101,16 +82,7 @@ export function RecentVacanciesTable({ vacancies }: { vacancies: RecentVacancy[]
                     </TableCell>
 
                     <TableCell className="pr-5">
-                      <Badge variant="outline" className="gap-1.5">
-                        <span
-                          className={cn(
-                            "size-1.5 shrink-0 rounded-full",
-                            STATUS_DOT_CLASS[vacancy.status],
-                          )}
-                          aria-hidden
-                        />
-                        {STATUS_LABEL[vacancy.status]}
-                      </Badge>
+                      <VacancyStatusBadge status={vacancy.status} />
                     </TableCell>
                   </TableRow>
                 ))}
