@@ -243,7 +243,7 @@ function EducationDialog({
                     <SelectTrigger id="ed-degree" className="w-full">
                       <SelectValue placeholder="Seleccioná una carrera" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {MOCK_DEGREES.map((degree) => (
                         <SelectItem key={degree.degreeId} value={degree.degreeId}>
                           {degree.name}
@@ -267,7 +267,7 @@ function EducationDialog({
                     <SelectTrigger id="ed-level" className="w-full">
                       <SelectValue placeholder="Seleccioná un nivel" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {Object.entries(DEGREE_LEVEL_LABEL).map(([value, label]) => (
                         <SelectItem key={value} value={value}>
                           {label}
