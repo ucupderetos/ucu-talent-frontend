@@ -554,6 +554,18 @@ campos `@NotBlank` que ya exige `ENDPOINTS.md` — ni uno más:
 Todo lo demás (teléfono, LinkedIn del alumno, skills, descripción, foto) es opcional y se
 completa después desde `/perfil`.
 
+**El documento del alumno son dos campos, no uno.** `documentType` es un `Select`
+(`CEDULA_IDENTIDAD` / `PASAPORTE` / `DNI` — labels en español, default
+`CEDULA_IDENTIDAD`) y `documentNumber` un input de texto libre. El número **se valida de
+formato en el front, según el tipo elegido** (ver A-10): cédula/DNI solo dígitos, exactamente 8;
+pasaporte alfanumérico 6–9. La validez real (dígito verificador, padrón) la hace el
+backend — el front solo chequea superficie y **bloquea el avance** con un mensaje inline
+genérico ("Ingresá un número de documento válido.") igual que la contraseña. El backend
+limpia separadores (puntos, comas) antes de guardar, así que el número puede tipearse con
+o sin ellos; la lógica pura vive en `lib/validators.ts`
+(`cleanDocumentNumber`/`isValidDocumentNumber`), compartida por `register-form.tsx` y
+`complete-profile-form.tsx` (los dos formularios montan el mismo paso 2).
+
 **Se implementa en dos capas, y hacen falta las dos:**
 
 1. **El wizard** — `/registro` es un formulario multi-paso en una sola pantalla, sin
@@ -1026,7 +1038,7 @@ los literales viejos (`student`/`company`/`admin`).
 | **A-05** | ✅ | El **filtrado del feed queda en el front** por ahora (fetch-all + en memoria, ver *Barras de filtros*). No esperar endpoint de filtros del backend. |
 | **A-08** | ✅ | `PUT /student-profile/{id}` existe (dueño): edita `phoneNumber`, `linkedinUrl`, `skills`, `description`. `name`/`surname`/documento **no** se editan por ahí. |
 | **A-09** | 🔄 | `hasProfile: boolean` **se agrega** a `MeResponse` (tratar como existente; hoy se deriva del `404` del perfil en `use-session.ts`). `name` **no** se agrega — el navbar sigue con el 2º fetch al perfil, es el diseño definitivo. |
-| **A-10** | ✅ | Documento **único por el par `(documentType, documentNumber)`**. La **validez** del documento (dígito verificador, etc.) la valida el **backend**; el front solo valida superficie (cantidad y tipo de caracteres). |
+| **A-10** | ✅ | Documento **único por el par `(documentType, documentNumber)`**. La **validez** del documento (dígito verificador, etc.) la valida el **backend**; el front solo valida superficie (cantidad y tipo de caracteres). **Implementado**: `lib/validators.ts` (`isValidDocumentNumber`) — cédula/DNI solo dígitos, exactamente 8; pasaporte alfanumérico 6–9, limpiando puntos/comas/guiones/espacios antes de medir. Lo consumen los dos formularios del paso 2 (`register-form.tsx`, `complete-profile-form.tsx`), que muestran el tipo como `Select` y bloquean el avance con mensaje inline. |
 | **A-12** | 🔄 | Gaps de autorización **corregidos en backend** — falta actualizar `ENDPOINTS.md`. Asumir ownership/roles aplicados. |
 | **A-14** | 🔄 | `VacancyStatus = PENDIENTE, PUBLICADO, FINALIZADO`, default **`PUBLICADO`** (post-moderación). **Sin `RECHAZADO`.** El admin puede pasarla a **`PENDIENTE`** (para revisar/editar algo) y, si la **da de baja, a `FINALIZADO`** (terminal, mismo estado que el cierre de la empresa). `api-dev` todavía muestra solo `PENDIENTE, FINALIZADO`. |
 | **A-15** | 🔄 | `contractType` pasa a **enum** (valores los define backend, pendientes de pasar). `salaryRange` → **`salary`** (un solo campo string, nada más). `location` pasa a **nullable si `modality` es `REMOTO`**. Sin orden por skills. |

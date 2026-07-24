@@ -26,9 +26,15 @@ import {
 } from "@/components/ui/select";
 import { useCompleteProfile } from "@/features/perfil/hooks/use-complete-profile";
 import { homeRouteFor } from "@/lib/auth";
-import type { Department, Role } from "@/types";
+import { isValidDocumentNumber } from "@/lib/validators";
+import type { Department, DocumentType, Role } from "@/types";
 
-const CEDULA_REGEX = /^\d{7,8}$/;
+/** Wire: `common.DocumentType`. Labels en español para UI. */
+const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
+  { value: "CEDULA_IDENTIDAD", label: "Cédula de identidad" },
+  { value: "PASAPORTE", label: "Pasaporte" },
+  { value: "DNI", label: "DNI" },
+];
 
 const DEPARTMENTS: { value: Department; label: string }[] = [
   { value: "ARTIGAS", label: "Artigas" },
@@ -52,15 +58,24 @@ const DEPARTMENTS: { value: Department; label: string }[] = [
   { value: "TREINTA_Y_TRES", label: "Treinta y Tres" },
 ];
 
-const studentSchema = z.object({
-  name: z.string().trim().min(1, "Ingresá tu nombre."),
-  surname: z.string().trim().min(1, "Ingresá tu apellido."),
-  documentNumber: z
-    .string()
-    .trim()
-    .transform((value) => value.replace(/[.\-\s]/g, ""))
-    .refine((value) => CEDULA_REGEX.test(value), "Ingresá una cédula válida."),
-});
+const studentSchema = z
+  .object({
+    name: z.string().trim().min(1, "Ingresá tu nombre."),
+    surname: z.string().trim().min(1, "Ingresá tu apellido."),
+    documentType: z.enum(["CEDULA_IDENTIDAD", "PASAPORTE", "DNI"]),
+    // El número se manda tal cual; el backend limpia los separadores. El
+    // formato (por tipo) se valida en el `superRefine`.
+    documentNumber: z.string().trim().min(1, "Ingresá tu número de documento."),
+  })
+  .superRefine((values, ctx) => {
+    if (!isValidDocumentNumber(values.documentType, values.documentNumber)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["documentNumber"],
+        message: "Ingresá un número de documento válido.",
+      });
+    }
+  });
 
 const companySchema = z.object({
   name: z.string().trim().min(1, "Ingresá la razón social."),
@@ -82,16 +97,17 @@ function StudentForm() {
   const router = useRouter();
   const { complete, isLoading, error } = useCompleteProfile();
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<StudentValues>({
     resolver: zodResolver(studentSchema),
-    defaultValues: { name: "", surname: "", documentNumber: "" },
+    defaultValues: { name: "", surname: "", documentType: "CEDULA_IDENTIDAD", documentNumber: "" },
   });
 
   async function onSubmit(values: StudentValues) {
-    await complete("ALUMNO", { ...values, documentType: "CEDULA_IDENTIDAD" });
+    await complete("ALUMNO", values);
     router.replace(homeRouteFor("ALUMNO"));
   }
 
@@ -110,14 +126,36 @@ function StudentForm() {
           <FieldError errors={[errors.surname]} />
         </Field>
 
-        <Field data-invalid={Boolean(errors.documentNumber)}>
-          <FieldLabel htmlFor="documentNumber">Cédula</FieldLabel>
-          <Input
-            id="documentNumber"
-            inputMode="numeric"
-            autoComplete="off"
-            {...register("documentNumber")}
+        <Field data-invalid={Boolean(errors.documentType)}>
+          <FieldLabel htmlFor="documentType">Tipo de documento</FieldLabel>
+          <Controller
+            control={control}
+            name="documentType"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger
+                  id="documentType"
+                  className="w-full"
+                  aria-invalid={Boolean(errors.documentType)}
+                >
+                  <SelectValue placeholder="Elegí una opción" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOCUMENT_TYPES.map((documentType) => (
+                    <SelectItem key={documentType.value} value={documentType.value}>
+                      {documentType.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           />
+          <FieldError errors={[errors.documentType]} />
+        </Field>
+
+        <Field data-invalid={Boolean(errors.documentNumber)}>
+          <FieldLabel htmlFor="documentNumber">Número de documento</FieldLabel>
+          <Input id="documentNumber" autoComplete="off" {...register("documentNumber")} />
           <FieldError errors={[errors.documentNumber]} />
         </Field>
 

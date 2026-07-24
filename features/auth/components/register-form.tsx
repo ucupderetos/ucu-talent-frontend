@@ -31,9 +31,16 @@ import { useRegister, type RegistrationProfile } from "@/features/auth/hooks/use
 import type { Registration } from "@/features/auth/types";
 import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import type { Department } from "@/types";
+import { isValidDocumentNumber } from "@/lib/validators";
+import type { Department, DocumentType } from "@/types";
 
-const CEDULA_REGEX = /^\d{7,8}$/;
+/** Wire: `common.DocumentType`. Labels en español para UI — son cara al
+ *  usuario. */
+const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
+  { value: "CEDULA_IDENTIDAD", label: "Cédula de identidad" },
+  { value: "PASAPORTE", label: "Pasaporte" },
+  { value: "DNI", label: "DNI" },
+];
 
 /** Wire: `Department` (19 valores, ver `docs/ENDPOINTS.md`). Labels en
  *  español para UI — son cara al usuario. */
@@ -111,11 +118,11 @@ const registerSchema = z
     // Alumno — StudentProfileRegistrationInput (campos mínimos)
     name: z.string().trim().optional(),
     surname: z.string().trim().optional(),
-    documentNumber: z
-      .string()
-      .trim()
-      .transform((value) => value.replace(/[.\-\s]/g, ""))
-      .optional(),
+    documentType: z.enum(["CEDULA_IDENTIDAD", "PASAPORTE", "DNI"]),
+    // El número se manda tal cual lo tipea el usuario; el backend limpia los
+    // separadores. La validación de formato (por tipo) se hace en el
+    // `superRefine`, que conoce el `documentType` elegido.
+    documentNumber: z.string().trim().optional(),
     // Empresa — CompanyRegistrationInput (todos obligatorios en el backend)
     industry: z.string().trim().optional(),
     description: z.string().trim().optional(),
@@ -179,11 +186,11 @@ const registerSchema = z
       if (!values.surname) {
         ctx.addIssue({ code: "custom", path: ["surname"], message: "Ingresá tu apellido." });
       }
-      if (!values.documentNumber || !CEDULA_REGEX.test(values.documentNumber)) {
+      if (!values.documentNumber || !isValidDocumentNumber(values.documentType, values.documentNumber)) {
         ctx.addIssue({
           code: "custom",
           path: ["documentNumber"],
-          message: "Ingresá una cédula válida.",
+          message: "Ingresá un número de documento válido.",
         });
       }
     }
@@ -217,9 +224,7 @@ function toProfile(values: RegisterValues): RegistrationProfile {
   return {
     name: values.name!,
     surname: values.surname!,
-    // RN-01: se descartó la vía de aprobación automática por dominio
-    // @ucu.edu.uy — todo alumno se registra con cédula.
-    documentType: "CEDULA_IDENTIDAD",
+    documentType: values.documentType,
     documentNumber: values.documentNumber!,
   };
 }
@@ -247,6 +252,7 @@ export function RegisterForm() {
       role: undefined,
       name: "",
       surname: "",
+      documentType: "CEDULA_IDENTIDAD",
       documentNumber: "",
       industry: "",
       description: "",
@@ -546,12 +552,42 @@ export function RegisterForm() {
               <FieldError errors={[errors.surname]} />
             </Field>
 
+            <Field data-invalid={Boolean(errors.documentType)}>
+              <FieldLabel htmlFor="documentType">Tipo de documento</FieldLabel>
+              <Controller
+                control={control}
+                name="documentType"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id="documentType"
+                      className="data-[size=default]:h-11 w-full px-4 text-base"
+                      aria-invalid={Boolean(errors.documentType)}
+                    >
+                      <SelectValue placeholder="Elegí una opción" />
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      {DOCUMENT_TYPES.map((documentType) => (
+                        <SelectItem
+                          key={documentType.value}
+                          value={documentType.value}
+                          className="py-2 text-base"
+                        >
+                          {documentType.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <FieldError errors={[errors.documentType]} />
+            </Field>
+
             <Field data-invalid={Boolean(errors.documentNumber)}>
-              <FieldLabel htmlFor="documentNumber">Cédula</FieldLabel>
+              <FieldLabel htmlFor="documentNumber">Número de documento</FieldLabel>
               <Input
                 id="documentNumber"
                 type="text"
-                inputMode="numeric"
                 autoComplete="off"
                 aria-invalid={Boolean(errors.documentNumber)}
                 className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
