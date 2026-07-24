@@ -14,7 +14,13 @@
 //     `VacancyResolution` queda como CONTRATO DESEADO (RF-12), NO enchufable
 //     aún — confirmar con backend antes de construir hooks contra él.
 
-import type { AccountStatus, Company, StudentProfile } from "@/types";
+import type {
+  AccountStatus,
+  Company,
+  StudentProfile,
+  VacancyApplication,
+  VacancyApplicationStatus,
+} from "@/types";
 
 /**
  * RF-13: aprobar o rechazar una empresa (o un alumno — `AccountStatus` es
@@ -108,6 +114,45 @@ export interface PendingStudentRow extends StudentProfile {
 
 export interface PendingStudentsFilters {
   search?: string;
+  page?: number;
+  perPage?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Listado de "Postulaciones" — vista admin, cruza todas las empresas.
+// ---------------------------------------------------------------------------
+
+/**
+ * Fila de la tabla de postulaciones del admin: la `VacancyApplication` del
+ * MER más los datos derivados que la pantalla necesita mostrar (postulante,
+ * oferta, empresa). No es una entidad del MER, por eso vive acá y no en
+ * `@/types`.
+ *
+ * A diferencia de `ApplicantListItem` (`features/postulaciones/types.ts`,
+ * vista empresa — ya sabe de qué empresa/puesto es porque está adentro de
+ * ese contexto), esta fila necesita el nombre de la oferta y de la empresa
+ * explícitos porque cruza TODAS las empresas en una sola tabla.
+ */
+export interface AdminApplicationRow extends VacancyApplication {
+  studentName: string;
+  studentSurname: string;
+  studentEmail: string;
+  vacancyName: string;
+  companyId: string | null;
+  companyName: string;
+}
+
+/** Orden de la tabla de postulaciones del admin, por fecha de postulación. */
+export type AdminApplicationOrder = "recent" | "oldest";
+
+/** Filtros del listado de postulaciones. Se resuelven en el cliente sobre
+ *  fixtures hoy (no hay endpoint — ver aviso arriba). */
+export interface AdminApplicationFilters {
+  search?: string;
+  vacancyIds?: string[];
+  companyIds?: string[];
+  statuses?: VacancyApplicationStatus[];
+  order?: AdminApplicationOrder;
   page?: number;
   perPage?: number;
 }
