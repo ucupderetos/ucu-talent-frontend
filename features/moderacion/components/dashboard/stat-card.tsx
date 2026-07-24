@@ -1,37 +1,39 @@
+"use client";
+
+// Una métrica de la fila superior del dashboard. Usa `Card` como el resto de
+// los bloques de la pantalla, en vez de armar la caja a mano.
+
 import type { LucideIcon } from "lucide-react";
 
-type StatCardProps = {
-  title: string;
-  value: string;
-  weeklyChange: string;
-  icon: LucideIcon;
-};
+import { Card, CardContent } from "@/components/ui/card";
 
 export function StatCard({
   title,
   value,
   weeklyChange,
   icon: Icon,
-}: StatCardProps) {
+}: {
+  title: string;
+  value: string;
+  weeklyChange: string;
+  icon: LucideIcon;
+}) {
   return (
-    <article className="rounded-xl border bg-white p-5 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="flex size-11 items-center justify-center rounded-full bg-slate-100">
-          <Icon className="size-5 text-slate-700" />
+    <Card>
+      <CardContent>
+        <div className="flex items-start gap-4">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted">
+            <Icon className="size-5 text-muted-foreground" aria-hidden />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="mt-1 truncate text-3xl font-semibold tracking-tight">{value}</p>
+          </div>
         </div>
 
-        <div>
-          <p className="text-sm text-slate-600">{title}</p>
-
-          <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
-            {value}
-          </p>
-        </div>
-      </div>
-
-      <p className="mt-5 text-sm font-medium text-emerald-600">
-        {weeklyChange}
-      </p>
-    </article>
+        <p className="mt-5 text-sm font-medium text-success">{weeklyChange}</p>
+      </CardContent>
+    </Card>
   );
 }

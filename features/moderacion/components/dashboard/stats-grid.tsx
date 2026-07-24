@@ -1,79 +1,34 @@
-import {
+"use client";
 
-  BriefcaseBusiness,
+// Fila de métricas del dashboard. Los valores vienen del hook; acá solo se
+// resuelve el ícono, que es decisión de presentación y no un dato que vaya a
+// mandar el backend.
 
-  Building2,
+import { BriefcaseBusinessIcon, Building2Icon, FileUserIcon, UsersIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-  FileUser,
+import { StatCard } from "@/features/moderacion/components/dashboard/stat-card";
+import type { DashboardStat } from "@/features/moderacion/types";
 
-  Users,
+const STAT_ICON: Record<string, LucideIcon> = {
+  companies: Building2Icon,
+  vacancies: BriefcaseBusinessIcon,
+  applications: FileUserIcon,
+  users: UsersIcon,
+};
 
-} from "lucide-react";
-
-import { StatCard } from "./stat-card";
-
-export function StatsGrid() {
-
+export function StatsGrid({ stats }: { stats: DashboardStat[] }) {
   return (
-
-    <section
-
-      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-
-      aria-label="Resumen general"
-
-    >
-
-      <StatCard
-
-        title="Empresas registradas"
-
-        value="126"
-
-        weeklyChange="+8 esta semana"
-
-        icon={Building2}
-
-      />
-
-      <StatCard
-
-        title="Ofertas publicadas"
-
-        value="248"
-
-        weeklyChange="+15 esta semana"
-
-        icon={BriefcaseBusiness}
-
-      />
-
-      <StatCard
-
-        title="Postulaciones"
-
-        value="1.842"
-
-        weeklyChange="+120 esta semana"
-
-        icon={FileUser}
-
-      />
-
-      <StatCard
-
-        title="Usuarios registrados"
-
-        value="2.356"
-
-        weeklyChange="+95 esta semana"
-
-        icon={Users}
-
-      />
-
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen general">
+      {stats.map((stat) => (
+        <StatCard
+          key={stat.id}
+          title={stat.title}
+          value={stat.value}
+          weeklyChange={stat.weeklyChange}
+          icon={STAT_ICON[stat.id] ?? FileUserIcon}
+        />
+      ))}
     </section>
-
   );
-
 }
