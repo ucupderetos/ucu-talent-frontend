@@ -2,16 +2,18 @@
 
 import { useMutation } from "@tanstack/react-query";
 
+import { apiClient } from "@/lib/api-client";
 import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
 import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
 
-// TODO: reemplazar por apiClient.post("/vacancy", payload) cuando el back
-// esté listo. areaId es un placeholder de AREAS_PLACEHOLDER en
-// job-basic-info-form.tsx, falta conectar GET /area.
-async function publishJobRequest(payload: VacancyInput): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  console.log("TODO: integrar con lib/api-client.ts", payload);
+// POST /vacancy real. El backend fuerza el status inicial, no lo mandamos.
+// ⚠️ TODO(areaId): hoy `areaId` sale de AREAS_PLACEHOLDER en
+// job-basic-info-form.tsx — hasta conectar GET /area (A-20) el back va a
+// rechazar el valor. Se pega al endpoint real igual, para no simular un éxito
+// falso: si falla, el error se surfacea en la pantalla de revisión (toast).
+function publishJobRequest(payload: VacancyInput): Promise<void> {
+  return apiClient.post<void>("/vacancy", payload);
 }
 
 export function usePublishJob() {
@@ -54,8 +56,5 @@ export function usePublishJob() {
   return {
     publish,
     isLoading: mutation.isPending,
-    error: mutation.isError
-      ? "No se pudo publicar la oferta. Intentá nuevamente."
-      : null,
   };
 }

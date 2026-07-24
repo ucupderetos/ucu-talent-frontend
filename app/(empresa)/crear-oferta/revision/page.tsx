@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { JobWizardHeader } from "@/features/puestos/components/job-wizard-header";
@@ -12,7 +13,7 @@ import { usePublishJob } from "@/features/puestos/hooks/use-publish-job";
 export default function RevisionPage() {
   const router = useRouter();
   const { form } = useCreateJobForm();
-  const { publish, isLoading, error } = usePublishJob();
+  const { publish, isLoading } = usePublishJob();
 
   async function handlePublish() {
     const isValid = await form.trigger();
@@ -20,13 +21,15 @@ export default function RevisionPage() {
 
     try {
       await publish(form.getValues());
-      // TODO: cuando el back esté conectado, mostrar una confirmación (toast)
-      // de que la oferta se publicó.
+      toast.success("Oferta publicada.");
       router.push("/puestos");
-    } catch {
-      // publish() ya expone el error vía el estado `error` del hook
-      // (useUpdateJob → mutation.isError), que se muestra más abajo en el JSX.
-      // Acá solo evitamos que la excepción quede sin manejar en el submit.
+    } catch (err) {
+      // publish() puede lanzar de forma síncrona (ej. no se resolvió la empresa
+      // logueada) ANTES de correr la mutación, así que ese error no queda en el
+      // estado de `usePublishJob` — lo surfaceamos acá para no fallar en
+      // silencio. Los errores de la mutación (ApiError de POST /vacancy) también
+      // caen acá con su mensaje real.
+      toast.error(err instanceof Error ? err.message : "No se pudo publicar la oferta.");
     }
   }
 
@@ -40,10 +43,13 @@ export default function RevisionPage() {
         <div className="flex flex-col">
           <JobReviewCompanyInfo />
 
-          {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
-
           <div className="mt-auto flex flex-col gap-2 pt-4">
-            <Button type="button" onClick={handlePublish} disabled={isLoading} className="h-12 w-full">
+            <Button
+              type="button"
+              onClick={handlePublish}
+              disabled={isLoading}
+              className="h-12 w-full bg-ucu-blue text-white hover:bg-ucu-blue/90"
+            >
               {isLoading ? "Publicando..." : "Publicar oferta"}
             </Button>
             <div className="flex gap-2">
