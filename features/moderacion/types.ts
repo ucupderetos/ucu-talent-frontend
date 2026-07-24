@@ -2,33 +2,34 @@
 //
 // Las entidades core viven en @/types. Acá van las acciones de moderación.
 //
-// 🔴 BLOQUEANTE CONFIRMADO leyendo `docs/ENDPOINTS.md` del backend (rama
-// `dev`): NINGUNA de las dos colas de este dominio tiene un endpoint real
-// todavía. No es una asunción — es la lectura literal del documento:
-//   - Sección 1 (`/user`) no tiene `PUT`: no hay forma de pasar una cuenta de
-//     `PENDIENTE` a `APROBADO`/`RECHAZADO` (`AccountStatus`, ver types/index.ts).
-//   - Sección 10 (`/vacancy`): el único `PUT /vacancy/{id}` es rol `EMPRESA`,
-//     no `ADMIN` — y el enum `VacancyStatus` ni siquiera tiene un valor
-//     "publicado" o "rechazado" hoy (solo `PENDIENTE`/`FINALIZADO`).
-// Los tipos de abajo quedan como CONTRATO DESEADO (lo que RF-12/RF-13 piden),
-// no como algo que ya se pueda enchufar a un endpoint real. Antes de escribir
-// hooks para `(admin)/moderacion`, confirmar con el equipo de backend si estas
-// acciones están en el roadmap y con qué forma van a salir — construir contra
-// esta interfaz hoy sería construir contra un endpoint que no existe.
+// Estado de los endpoints de moderación (AGENTS.md, "Pendiente de aclarar"):
+//   - Cola de CUENTAS (empresas/alumnos): ✅ `PATCH /user/{id}` con
+//     { status, adminComment } EXISTE (A-02, Resuelto). `AccountResolution` se
+//     puede enchufar; la pantalla de validaciones ya lo usa (hoy como andamio
+//     sobre fixtures — ver use-review-account.ts, con el swap a apiClient
+//     marcado como TODO).
+//   - Cola de VACANTES: 🔴 todavía sin endpoint de ADMIN. El único
+//     `PUT /vacancy/{id}` es rol `EMPRESA`, y `VacancyStatus` no tiene
+//     "publicado"/"rechazado" hoy (solo `PENDIENTE`/`FINALIZADO`).
+//     `VacancyResolution` queda como CONTRATO DESEADO (RF-12), NO enchufable
+//     aún — confirmar con backend antes de construir hooks contra él.
 
-import type { AccountStatus, StudentProfile } from "@/types";
+import type { AccountStatus, Company, StudentProfile } from "@/types";
 
 /**
  * RF-13: aprobar o rechazar una empresa (o un alumno — `AccountStatus` es
  * genérico a los 3 roles, no solo a empresa). El campo cambió de forma: antes
  * era un booleano en `Company.approved` que no podía distinguir "rechazada"
  * de "todavía no revisada"; ahora `AccountStatus` en `User.status` sí lo
- * distingue. Buena noticia: la deuda del booleano quedó resuelta por el MER.
- * Mala noticia: no hay endpoint que la use (ver aviso arriba).
+ * distingue. Wire: `PATCH /user/{id}` (A-02).
  */
 export interface AccountResolution {
   userId: string;
   status: Extract<AccountStatus, "APROBADO" | "RECHAZADO">;
+  /** Motivo del rechazo (o nota de la revisión). Wire: `adminComment` de
+   *  `PATCH /user/{id}` (A-02) — el backend lo guarda en StudentProfile/Company
+   *  y se lo muestra al usuario si el Admin lo registró. */
+  adminComment?: string;
 }
 
 /**
@@ -77,6 +78,36 @@ export interface StudentFilters {
   search?: string;
   degreeIds?: string[];
   areaIds?: string[];
+  page?: number;
+  perPage?: number;
+}
+
+// tipos de la pantalla de validaciones (cola de empresas y alumnos pendientes)
+
+// fila de la tabla de empresas pendientes. es la Company real + el email y
+// la fecha de registro, que en verdad viven en el User de la misma PK.
+// ojo: Company no tiene contacto/persona de referencia, eso no existe en el
+// modelo, no lo inventamos
+export interface PendingCompanyRow extends Company {
+  email: string;
+  registeredAt: string; // ISO 8601
+}
+
+export interface PendingCompaniesFilters {
+  search?: string;
+  industries?: string[];
+  page?: number;
+  perPage?: number;
+}
+
+// mismo criterio para alumnos: StudentProfile real + email/fecha del User
+export interface PendingStudentRow extends StudentProfile {
+  email: string;
+  registeredAt: string; // ISO 8601
+}
+
+export interface PendingStudentsFilters {
+  search?: string;
   page?: number;
   perPage?: number;
 }

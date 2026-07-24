@@ -10,6 +10,7 @@ import {
   NewspaperIcon,
   PlusIcon,
   ShieldCheckIcon,
+  UserCheckIcon,
   UserIcon,
   UsersIcon,
   type LucideIcon,
@@ -36,5 +37,9 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
     { label: "Postulantes", href: "/postulantes", icon: UsersIcon },
     { label: "Perfil de empresa", href: "/perfil", icon: BuildingIcon },
   ],
-  ADMIN: [{ label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon }],
+  ADMIN: [
+    { label: "Validaciones", href: "/validaciones", icon: UserCheckIcon },
+    { label: "Usuarios", href: "/usuarios", icon: UsersIcon },
+    { label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon },
+  ],
 };

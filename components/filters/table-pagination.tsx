@@ -36,7 +36,7 @@ export function TablePagination({
   page: number;
   perPage: number;
   total: number;
-  /** Sustantivo del total, ej. "ofertas", "alumnos", "empresas". */
+  /** Sustantivo del total, ej. "ofertas", "alumnos", "postulaciones", "empresas". */
   itemLabel: string;
   onPageChange: (page: number) => void;
   onPerPageChange: (perPage: number) => void;
