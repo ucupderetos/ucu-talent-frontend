@@ -1,10 +1,11 @@
 "use client";
 
 // Tabla de "Postulaciones": de presentación, recibe las filas ya resueltas
-// por el hook. Los botones de acción todavía no hacen nada — no hay endpoint
-// (ver aviso en features/moderacion/types.ts).
+// por el hook. El botón de acciones todavía no hace nada — no hay endpoint
+// (ver aviso en features/moderacion/types.ts). Misma columna "Acciones" que
+// `students-table.tsx`, para que las dos tablas del admin se lean igual.
 
-import { EyeIcon, MoreVerticalIcon } from "lucide-react";
+import { MoreVerticalIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -36,18 +37,23 @@ function colorFor(id: string): string {
   return COLOR_CLASSES[hash];
 }
 
+/** `?? ""` porque con datos reales un nombre o apellido puede venir vacío, y
+ *  `name[0]` sería `undefined` — el avatar diría "undefinedU". */
 function initials(name: string, surname: string): string {
-  return `${name[0]}${surname[0]}`.toUpperCase();
+  return `${name[0] ?? ""}${surname[0] ?? ""}`.toUpperCase();
 }
 
+/** Fallback a la primera letra: una razón social sin ninguna palabra en
+ *  mayúscula ("datalab") dejaría el cuadrito de color vacío. */
 function companyInitials(name: string): string {
-  return name
+  const fromCapitals = name
     .split(" ")
     .filter((word) => /^[A-ZÁÉÍÓÚ]/.test(word))
     .slice(0, 2)
     .map((word) => word[0])
-    .join("")
-    .toUpperCase();
+    .join("");
+
+  return (fromCapitals || name.trim()[0] || "").toUpperCase();
 }
 
 function formatDate(iso: string): string {
@@ -107,14 +113,9 @@ export function ApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
                 <ApplicationStatusBadge status={row.status} />
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" aria-label="Ver">
-                    <EyeIcon />
-                  </Button>
-                  <Button variant="ghost" size="icon" aria-label="Acciones">
-                    <MoreVerticalIcon />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="icon" aria-label="Acciones">
+                  <MoreVerticalIcon />
+                </Button>
               </TableCell>
             </TableRow>
           ))}

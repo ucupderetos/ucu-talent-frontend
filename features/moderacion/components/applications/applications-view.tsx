@@ -47,9 +47,11 @@ export function ApplicationsView() {
     setAppliedFilters(DEFAULT_FILTERS);
   }
 
+  /** Vuelve a la página 1: con otro orden, la página en la que estabas muestra
+   *  filas distintas — mismo criterio que `applyFilters` y `onPerPageChange`. */
   function changeOrder(order: AdminApplicationOrder) {
     setDraftFilters((f) => ({ ...f, order }));
-    setAppliedFilters((f) => ({ ...f, order }));
+    setAppliedFilters((f) => ({ ...f, order, page: 1 }));
   }
 
   return (
