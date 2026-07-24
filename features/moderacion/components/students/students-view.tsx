@@ -51,9 +51,10 @@ export function StudentsView() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Sin `title`/`description`: el nombre de la sección ya lo muestra el
+          Navbar (AGENTS.md, "Header dinámico"). `PageHeader` queda por el slot
+          de acciones. */}
       <PageHeader
-        title="Usuarios"
-        description="Gestioná todos los usuarios registrados en la plataforma (alumnos y exalumnos)."
         actions={
           <Button variant="outline">
             <DownloadIcon />

@@ -7,7 +7,6 @@ import { useState } from "react";
 
 import { TablePagination } from "@/components/filters/table-pagination";
 import { EmptyState } from "@/components/layout/empty-state";
-import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VacanciesFilters } from "@/features/moderacion/components/vacancies/vacancies-filters";
 import { VacanciesTable } from "@/features/moderacion/components/vacancies/vacancies-table";
@@ -47,11 +46,6 @@ export function AdminVacanciesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Ofertas"
-        description="Revisá las ofertas publicadas y moderá las que lo necesiten."
-      />
-
       <VacanciesFilters
         filters={filters}
         companies={companies}

@@ -147,10 +147,15 @@ export function Navbar({ user }: { user: User | null }) {
               )}
             </nav>
           ) : (
-            <div className="flex min-w-0 items-center gap-2 font-semibold tracking-tight">
+            // `h1` y no `div`: el nombre de la sección ES el título de la
+            // pantalla. Las páginas no lo repiten en su contenido (ver el
+            // comentario de PageHeader), así que si acá no fuera un heading el
+            // documento quedaría sin `h1` para lectores de pantalla. Solo
+            // cambia la semántica: las clases son las mismas de antes.
+            <h1 className="flex min-w-0 items-center gap-2 font-semibold tracking-tight">
               <activeItem.icon className="size-5 shrink-0 text-muted-foreground" />
               <span className="truncate">{activeItem.label}</span>
-            </div>
+            </h1>
           )
         ) : (
           <Link href="/" className="font-semibold tracking-tight">
