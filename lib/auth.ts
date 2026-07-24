@@ -122,9 +122,9 @@ export function canAccess(role: Role | undefined, allowed: readonly Role[]): boo
 export const HOME_ROUTE_BY_ROLE: Record<Role, string> = {
   ALUMNO: "/feed",
   EMPRESA: "/puestos",
-  // Las pantallas de admin cuelgan de /moderacion/*; se apunta directo a la
-  // primera del nav en vez de a /moderacion, que es solo un redirect.
-  ADMIN: "/moderacion/validaciones",
+  // Las pantallas de admin cuelgan de /moderacion/*; se apunta directo al
+  // dashboard, que es su portada, en vez de a /moderacion, que es un redirect.
+  ADMIN: "/moderacion/dashboard",
 };
 
 export function homeRouteFor(role: Role): string {
