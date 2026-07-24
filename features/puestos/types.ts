@@ -38,8 +38,8 @@ export interface VacancyFilters {
  * (sale de `useSession()`, ya que `User.role === "EMPRESA"` implica que
  * `userId` = `companyId`).
  *
- * La empresa no elige el estado inicial: `POST /vacancy` fuerza `status` a
- * `PENDIENTE` sin importar lo que se mande.
+ * La empresa no elige el estado inicial: la vacante nace `PUBLICADO`
+ * (post-moderación, DEC-01) sin importar lo que se mande.
  */
 export interface VacancyInput {
   companyId: string;
@@ -97,18 +97,17 @@ export interface VacancyDetail extends Vacancy {
 /**
  * Cambio de estado hecho por la EMPRESA dueña de la vacante.
  *
- * 🔴 GAP CONFIRMADO: `VacancyStatus` hoy solo tiene `PENDIENTE` y `FINALIZADO`
- * (ver el gap documentado en `types/index.ts` — falta `RECHAZADO`, y no hay
- * NINGÚN estado "publicado"). Esto significa que, tal como está el backend:
- *   - No existe un flujo de aprobación de Admin UCU que lleve a "publicado":
- *     ese endpoint no existe (`PUT /vacancy/{id}` es rol `EMPRESA`, no `ADMIN`).
- *   - La única transición que la empresa puede pedir es cerrar la vacante
- *     (`FINALIZADO`), reenviando el objeto completo (no hay un endpoint chico
- *     de "solo cambiar status" — `PUT` espera `CreateVacancyRequest` entero).
- *   - No hay "pausar": ese estado no existe en el enum real.
- * No inventar `published`/`paused`/`rejected` en el frontend hasta que el
- * backend los agregue (roadmap #3 de `docs/ENDPOINTS.md`). Confirmar con
- * backend antes de construir cualquier UI de moderación de vacantes.
+ * La empresa dueña tiene UNA sola transición: cerrar la búsqueda,
+ * `PUBLICADO → FINALIZADO` (RF-PUE-03). Retirar una vacante a `PENDIENTE` es
+ * potestad exclusiva del Admin — ver la tabla de `VacancyStatus` en
+ * `types/index.ts`. Tampoco hay "pausar": ese estado no existe en el enum.
+ *
+ * Se manda el objeto completo porque no hay endpoint chico de "solo cambiar
+ * status": `PUT /vacancy/{id}` espera `CreateVacancyRequest` entero.
+ *
+ * 🔄 `api-dev` todavía expone solo `PENDIENTE | FINALIZADO` (A-14) y su
+ * `PUT /vacancy/{id}` es rol `EMPRESA`; el endpoint de ADMIN para mover
+ * estados no existe aún. Verificar al integrar.
  */
 export interface CompanyVacancyStatusChange extends VacancyInput {
   status: Extract<VacancyStatus, "FINALIZADO">;

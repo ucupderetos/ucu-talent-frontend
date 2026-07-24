@@ -626,17 +626,26 @@ export const MOCK_WORK_EXPERIENCE: WorkExperience[] = [
 ];
 
 /**
- * Vacantes de `u-2` (DataLab, PK compartida con su `User`), para maquetar la
- * tabla de "Mis ofertas" de la empresa con varios casos.
+ * Vacantes para maquetar la tabla de "Mis ofertas" de la empresa, el feed del
+ * alumno y la bandeja de moderación del Admin.
  *
- * ⚠️ El backend real hoy SOLO soporta `VacancyStatus: PENDIENTE | FINALIZADO`
- * (ver el gap documentado en `types/index.ts` — no existe "publicado",
- * "pausado" ni "rechazado" todavía, aunque el MER de referencia ya los
- * modela). Los casos de abajo que en el MER serían "publicado"/"pausado"/
- * "rechazado" quedan como `PENDIENTE` — es lo más parecido a "activa" que el
- * enum real permite hoy — y se recuperan como estados propios apenas el
- * backend los exponga (A-14 en `AGENTS.md`).
+ * La mayoría son de `u-2` (DataLab, PK compartida con su `User`); las últimas
+ * son de otras empresas para que el filtro por empresa del Admin tenga más de
+ * una opción.
+ *
+ * Estados: casi todas nacen `PUBLICADO` (post-moderación, DEC-01 — es el
+ * default y el único visible en el feed). Se deja una en `PENDIENTE` para
+ * representar el caso "el Admin la retiró para revisarla" y dos `FINALIZADO`.
+ * Ver la tabla de `VacancyStatus` en `types/index.ts`.
  */
+
+/**
+ * Fecha calculada, no literal: RF-MOD-01 pide destacar en la bandeja del Admin
+ * lo publicado en las últimas 24 h, y con una fecha fija ese resaltado deja de
+ * verse al día siguiente de escribir el fixture. Se borra junto con el resto
+ * de este archivo cuando exista el backend.
+ */
+const RECENTLY_PUBLISHED = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 export const MOCK_VACANCIES: Vacancy[] = [
   {
     vacancyId: "v-1",
@@ -664,9 +673,9 @@ export const MOCK_VACANCIES: Vacancy[] = [
     contractType: "Pasantía",
     salaryRange: "$35.000 - $45.000",
     modality: "HIBRIDO",
-    status: "PENDIENTE",
+    status: "PUBLICADO",
     location: "MONTEVIDEO",
-    publicationDate: null,
+    publicationDate: RECENTLY_PUBLISHED,
     closingDate: null,
   },
   {
@@ -718,7 +727,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
       "clientes.",
     contractType: "Full-time",
     modality: "HIBRIDO",
-    status: "PENDIENTE",
+    status: "PUBLICADO",
     salaryRange: "$38.000 - $48.000",
     publicationDate: "2026-07-08T09:30:00.000Z",
     closingDate: null,
@@ -746,9 +755,9 @@ export const MOCK_VACANCIES: Vacancy[] = [
       "- Se valora experiencia en el rubro tecnológico o de consultoría.",
     contractType: "Full-time",
     modality: "HIBRIDO",
-    status: "PENDIENTE",
+    status: "PUBLICADO",
     salaryRange: "$40.000 - $50.000",
-    publicationDate: null,
+    publicationDate: "2026-07-20T09:00:00.000Z",
     closingDate: null,
     location: "MONTEVIDEO",
   },
@@ -803,7 +812,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "PRESENCIAL",
     status: "PENDIENTE",
     salaryRange: "$25.000 - $30.000",
-    publicationDate: null,
+    publicationDate: "2026-07-18T15:00:00.000Z",
     closingDate: null,
     location: "MONTEVIDEO",
   },
@@ -827,7 +836,7 @@ export const MOCK_VACANCIES: Vacancy[] = [
       "- Proactividad y ganas de aprender en un equipo chico.",
     contractType: "Pasantía",
     modality: "PRESENCIAL",
-    status: "PENDIENTE",
+    status: "PUBLICADO",
     salaryRange: "$30.000 - $35.000",
     publicationDate: "2026-07-14T11:00:00.000Z",
     closingDate: null,
@@ -854,11 +863,64 @@ export const MOCK_VACANCIES: Vacancy[] = [
       "- Se valora experiencia trabajando en equipos ágiles (Scrum/Kanban).",
     contractType: "Full-time",
     modality: "REMOTO",
-    status: "PENDIENTE",
+    status: "PUBLICADO",
     salaryRange: "$45.000 - $60.000",
     publicationDate: "2026-06-15T13:00:00.000Z",
     closingDate: null,
     location: "CANELONES",
+  },
+  // Vacantes de otras empresas: sin esto el filtro por empresa de la bandeja
+  // del Admin ofrece una sola opcion y no se puede probar.
+  {
+    vacancyId: "v-9",
+    companyId: "c-2",
+    areaId: "a-2",
+    name: "Desarrollador/a Mobile",
+    description:
+      "Startup Nueva busca sumar una persona al equipo de producto para " +
+      "construir la app mobile desde cero, en React Native.",
+    requirements: "React Native, TypeScript, manejo de APIs REST.",
+    contractType: "Full-time",
+    salaryRange: "A convenir",
+    modality: "REMOTO",
+    status: "PUBLICADO",
+    location: "CANELONES",
+    publicationDate: "2026-07-22T10:00:00.000Z",
+    closingDate: null,
+  },
+  {
+    vacancyId: "v-10",
+    companyId: "c-3",
+    areaId: "a-5",
+    name: "Analista de Comercio Exterior",
+    description:
+      "Agro Sustentable incorpora una persona para la gestion de " +
+      "exportaciones y el vinculo con despachantes.",
+    requirements: "Formacion en comercio exterior o afines. Ingles avanzado.",
+    contractType: "Full-time",
+    salaryRange: "A convenir",
+    modality: "PRESENCIAL",
+    status: "PUBLICADO",
+    location: "CANELONES",
+    publicationDate: "2026-07-19T08:30:00.000Z",
+    closingDate: null,
+  },
+  {
+    vacancyId: "v-11",
+    companyId: "c-4",
+    areaId: "a-4",
+    name: "Asistente de Marketing",
+    description:
+      "Comercial del Este busca una persona para acompanar la ejecucion de " +
+      "campanas y la gestion de redes.",
+    requirements: "Estudiante avanzado/a de Comunicacion o Marketing.",
+    contractType: "Part-time",
+    salaryRange: "A convenir",
+    modality: "HIBRIDO",
+    status: "PENDIENTE",
+    location: "MALDONADO",
+    publicationDate: "2026-07-17T12:00:00.000Z",
+    closingDate: null,
   },
 ];
 
