@@ -8,13 +8,16 @@
 //
 // ⚠️ PUNTO DE CONFLICTO entre los 3 grupos — coordinar antes de editar.
 
-import { LogOutIcon, MenuIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, LogOutIcon, MenuIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-import { NAV_BY_ROLE } from "@/components/layout/nav-items";
+import { useBreadcrumbLabel } from "@/components/layout/breadcrumb-context";
+import { NAV_BY_ROLE, type NavItem } from "@/components/layout/nav-items";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -44,17 +47,28 @@ function initials(user: User): string {
   return `${user.name?.charAt(0) ?? ""}${user.surname?.charAt(0) ?? ""}`.toUpperCase() || "?";
 }
 
+/** El item de nav activo: match exacto (pantalla de listado) o el segmento
+ *  raíz de una ruta anidada (ej. "/puestos/123/postulantes" matchea el item
+ *  "/puestos"). Misma fuente que resalta el item activo del Sidebar/Sheet. */
+function findActiveNavItem(items: readonly NavItem[], pathname: string): NavItem | undefined {
+  return items.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+}
+
 export function Navbar({ user }: { user: User | null }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const items = user ? NAV_BY_ROLE[user.role] : [];
   const logout = useLogout();
+  const breadcrumbLabel = useBreadcrumbLabel();
+
+  const activeItem = findActiveNavItem(items, pathname);
+  const isNested = Boolean(activeItem && pathname !== activeItem.href);
 
   return (
     // shrink-0: vive dentro de la columna navbar+main de AppShell, junto a un
     // `main` que scrollea — sin esto se achicaría si el contenido no entra.
     <header className="shrink-0 border-b bg-background">
-      <div className="flex h-14 items-center gap-2 px-4">
+      <div className="flex h-16 items-center gap-2 px-4">
         {items.length > 0 && (
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
@@ -69,7 +83,17 @@ export function Navbar({ user }: { user: User | null }) {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 bg-sidebar p-0 text-sidebar-foreground">
               <SheetTitle className="sr-only">Navegación</SheetTitle>
-              <nav className="flex flex-col gap-1 p-4 pt-12">
+              <div className="flex h-16 items-center border-b border-sidebar-border px-4">
+                <Image
+                  src="/logo-ucu-talent.png"
+                  alt="UCU talent"
+                  width={425}
+                  height={155}
+                  className="h-8 w-auto object-contain"
+                  unoptimized
+                />
+              </div>
+              <nav className="flex flex-col gap-1 p-4">
                 {items.map((item) => (
                   <Link
                     key={item.href}
@@ -91,9 +115,48 @@ export function Navbar({ user }: { user: User | null }) {
           </Sheet>
         )}
 
-        <Link href="/" className="font-semibold tracking-tight">
-          UCU Talent
-        </Link>
+        {activeItem ? (
+          isNested ? (
+            // Breadcrumb "Sección > Ítem": la sección es link, el ítem actual
+            // va en negrita y sin link (AGENTS.md — "Header dinámico +
+            // breadcrumb"). El nombre del ítem lo pone la propia página de
+            // detalle vía `usePageBreadcrumb`.
+            <nav aria-label="Ruta actual" className="flex min-w-0 items-center gap-1.5">
+              <Link
+                href={activeItem.href}
+                className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <activeItem.icon className="size-4 shrink-0" />
+                <span className="hidden sm:inline">{activeItem.label}</span>
+              </Link>
+              {/* El ítem actual: Skeleton mientras carga (`undefined`). Si el
+                  dato resolvió sin nombre (`null` — vacante no encontrada o
+                  error) se omite el separador y el ítem, y queda solo la
+                  sección como link — nunca un Skeleton perpetuo. */}
+              {breadcrumbLabel !== null && (
+                <>
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                  {breadcrumbLabel === undefined ? (
+                    <Skeleton className="h-5 w-24 shrink-0" />
+                  ) : (
+                    <span className="truncate font-semibold tracking-tight text-foreground">
+                      {breadcrumbLabel}
+                    </span>
+                  )}
+                </>
+              )}
+            </nav>
+          ) : (
+            <div className="flex min-w-0 items-center gap-2 font-semibold tracking-tight">
+              <activeItem.icon className="size-5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{activeItem.label}</span>
+            </div>
+          )
+        ) : (
+          <Link href="/" className="font-semibold tracking-tight">
+            UCU Talent
+          </Link>
+        )}
 
         {user && (
           <div className="ml-auto">
@@ -110,6 +173,7 @@ export function Navbar({ user }: { user: User | null }) {
                   <span className="hidden max-w-40 truncate text-sm sm:inline">
                     {displayName(user)}
                   </span>
+                  <ChevronDownIcon className="hidden size-4 shrink-0 text-muted-foreground sm:inline" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
