@@ -1,19 +1,17 @@
 "use client";
 
-// buscador + un boton "Filtros" con la industria adentro. mismo patron que
-// vacancy-filters.tsx. filters es un borrador: recien busca cuando se
-// aprieta "Aplicar filtros".
+// buscador + un boton "Filtros" con la industria adentro. Filtrado inmediato:
+// cada cambio (search / industria) emite el filtro nuevo por onChange; no hay
+// borrador ni "Aplicar" (mismo criterio que la tab de estudiantes).
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
-import { ApplyFiltersButton } from "@/components/filters/apply-filters-button";
-import { ClearFiltersButton } from "@/components/filters/clear-filters-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MultiSelect } from "@/features/puestos/components/multi-select";
+import { MultiSelect } from "@/components/filters/multi-select";
 import type { PendingCompaniesFilters } from "@/features/moderacion/types";
 
 export function PendingCompaniesFiltersBar({
@@ -21,19 +19,11 @@ export function PendingCompaniesFiltersBar({
   industries,
   activeCount,
   onChange,
-  onApply,
-  onClear,
-  canApply,
-  canClear,
 }: {
   filters: PendingCompaniesFilters;
   industries: string[];
   activeCount: number;
   onChange: (filters: PendingCompaniesFilters) => void;
-  onApply: () => void;
-  onClear: () => void;
-  canApply: boolean;
-  canClear: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -73,11 +63,6 @@ export function PendingCompaniesFiltersBar({
           </div>
         </PopoverContent>
       </Popover>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <ApplyFiltersButton onClick={onApply} disabled={!canApply} />
-        <ClearFiltersButton onClick={onClear} disabled={!canClear} />
-      </div>
     </div>
   );
 }

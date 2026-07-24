@@ -4,12 +4,11 @@
 // cada una con su hook, sus filtros y su paginacion. la page.tsx solo
 // renderiza esto.
 
-import { useMemo, useState } from "react";
-import { DownloadIcon, SearchIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { SearchIcon, XIcon } from "lucide-react";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,7 +19,7 @@ import { PendingCompaniesFiltersBar } from "@/features/moderacion/components/pen
 import { PendingCompaniesTable } from "@/features/moderacion/components/pending-accounts/pending-companies-table";
 import { PendingStudentsTable } from "@/features/moderacion/components/pending-accounts/pending-students-table";
 import type { PendingCompaniesFilters, PendingStudentsFilters } from "@/features/moderacion/types";
-import { MOCK_COMPANIES } from "@/lib/fixtures";
+import { MOCK_COMPANIES, MOCK_COMPANY_USERS } from "@/lib/fixtures";
 
 type Tab = "empresas" | "estudiantes";
 
@@ -30,24 +29,18 @@ const DEFAULT_STUDENT_FILTERS: PendingStudentsFilters = { page: 1, perPage: 10 }
 export function ValidationsView() {
   const [tab, setTab] = useState<Tab>("empresas");
 
-  // el numero de las pestañas es sin filtrar, por eso lo pido acá aparte de
-  // lo que pide cada tab (misma query, no se duplica el fetch)
+  // El número de las pestañas es el total SIN filtrar, así que va en una query
+  // aparte de la de cada tab (con otro queryKey — es un fetch propio, no el
+  // mismo). Con fixtures es gratis; contra la API real conviene que el back
+  // exponga el conteo (o un endpoint de solo-total) para no traer toda la lista.
   const companiesCount = usePendingCompanies({}).data?.total ?? 0;
   const studentsCount = usePendingStudents({}).data?.total ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Validaciones"
-        description="Revisá y aprobá las solicitudes de empresas y estudiantes antes de que operen en la plataforma."
-        actions={
-          <Button variant="outline">
-            <DownloadIcon />
-            Exportar
-          </Button>
-        }
-      />
-
+      {/* Sin PageHeader: el título de la sección lo muestra el Navbar (header
+          dinámico, item "Validaciones" del nav admin) y esta pantalla no tiene
+          acción primaria — AGENTS.md, no se renderiza un PageHeader vacío. */}
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
         <TabsList>
           <TabsTrigger value="empresas">Empresas ({companiesCount})</TabsTrigger>
@@ -62,44 +55,23 @@ export function ValidationsView() {
 }
 
 function CompaniesTab() {
-  const [draftFilters, setDraftFilters] = useState<PendingCompaniesFilters>(
-    DEFAULT_COMPANY_FILTERS,
-  );
-  const [appliedFilters, setAppliedFilters] = useState<PendingCompaniesFilters>(
-    DEFAULT_COMPANY_FILTERS,
-  );
+  // Filtrado inmediato (sin borrador + "Aplicar"): mismo criterio que la tab de
+  // estudiantes. Cualquier cambio de filtro vuelve a la página 1.
+  const [filters, setFilters] = useState<PendingCompaniesFilters>(DEFAULT_COMPANY_FILTERS);
 
-  const { data, isLoading, isError } = usePendingCompanies(appliedFilters);
+  const { data, isLoading, isError } = usePendingCompanies(filters);
   const industries = useCompanyIndustryOptions();
 
-  const hasAny = (data?.total ?? 0) > 0 || hasCompanyFilters(appliedFilters);
-  const activeCount = appliedFilters.industries?.length ?? 0;
-
-  function applyFilters() {
-    setAppliedFilters((current) => ({
-      ...current,
-      search: draftFilters.search,
-      industries: draftFilters.industries,
-      page: 1,
-    }));
-  }
-
-  function clearFilters() {
-    setDraftFilters(DEFAULT_COMPANY_FILTERS);
-    setAppliedFilters(DEFAULT_COMPANY_FILTERS);
-  }
+  const hasAny = (data?.total ?? 0) > 0 || hasCompanyFilters(filters);
+  const activeCount = filters.industries?.length ?? 0;
 
   return (
     <>
       <PendingCompaniesFiltersBar
-        filters={draftFilters}
+        filters={filters}
         industries={industries}
         activeCount={activeCount}
-        onChange={setDraftFilters}
-        onApply={applyFilters}
-        onClear={clearFilters}
-        canApply={hasFieldsChanged(draftFilters, appliedFilters)}
-        canClear={hasCompanyFilters(draftFilters) || hasCompanyFilters(appliedFilters)}
+        onChange={(next) => setFilters({ ...next, page: 1 })}
       />
 
       {isLoading && <TableSkeleton />}
@@ -126,8 +98,8 @@ function CompaniesTab() {
             perPage={data.perPage}
             total={data.total}
             itemLabel="empresas"
-            onPageChange={(page) => setAppliedFilters((f) => ({ ...f, page }))}
-            onPerPageChange={(perPage) => setAppliedFilters((f) => ({ ...f, perPage, page: 1 }))}
+            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
         </>
       )}
@@ -209,26 +181,22 @@ function hasCompanyFilters(filters: PendingCompaniesFilters): boolean {
   return Boolean(filters.search || filters.industries?.length);
 }
 
-function hasFieldsChanged(
-  draft: PendingCompaniesFilters,
-  applied: PendingCompaniesFilters,
-): boolean {
-  return (
-    (draft.search ?? "") !== (applied.search ?? "") ||
-    !sameValues(draft.industries, applied.industries)
-  );
-}
-
-function sameValues<T>(a: T[] = [], b: T[] = []): boolean {
-  if (a.length !== b.length) return false;
-  const setB = new Set(b);
-  return a.every((value) => setB.has(value));
-}
-
-// opciones del multiselect de industria: solo las que alguna empresa
-// pendiente tiene, para no ofrecer opciones vacias.
+// Opciones del multiselect de industria: solo las de empresas PENDIENTES, para
+// no ofrecer opciones que no filtran nada. Va por `useQuery` como el resto de
+// las lecturas del dominio (andamio sobre fixtures — al integrar, GET /company).
 function useCompanyIndustryOptions(): string[] {
-  return useMemo(() => Array.from(new Set(MOCK_COMPANIES.map((c) => c.industry))).sort(), []);
+  const { data } = useQuery({
+    queryKey: ["moderacion", "empresas-industrias"],
+    queryFn: () => {
+      const pendingIds = new Set(
+        MOCK_COMPANY_USERS.filter((u) => u.status === "PENDIENTE").map((u) => u.userId),
+      );
+      return Array.from(
+        new Set(MOCK_COMPANIES.filter((c) => pendingIds.has(c.companyId)).map((c) => c.industry)),
+      ).sort();
+    },
+  });
+  return data ?? [];
 }
 
 function TableSkeleton() {
