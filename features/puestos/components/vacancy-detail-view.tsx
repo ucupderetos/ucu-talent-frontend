@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { EmptyState } from "@/components/layout/empty-state";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +66,7 @@ function companyInitials(name: string): string {
 
 export function VacancyDetailView({ vacancyId }: { vacancyId: string }) {
   const { data: vacancy, isLoading, isError } = useVacancy(vacancyId);
+  usePageBreadcrumb(isLoading ? undefined : (vacancy?.name ?? null));
 
   return (
     <div className="flex flex-col gap-4">
