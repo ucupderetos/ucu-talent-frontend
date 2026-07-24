@@ -13,7 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
-import { AdminVacancyStatusBadge } from "@/features/moderacion/components/vacancies/vacancy-status-badge";
+import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
+import { VacancyStatusBadge } from "@/components/vacancies/vacancy-status-badge";
 import type { AdminVacancyRow } from "@/features/moderacion/types";
 
 export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) {
@@ -27,7 +28,8 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
             <TableHead>Modalidad</TableHead>
             <TableHead>Publicación</TableHead>
             <TableHead>Postulaciones</TableHead>
-            <TableHead className="pr-5">Estado</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead className="pr-5 text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -74,8 +76,11 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                 <TableCell>{VACANCY_MODALITY_LABEL[vacancy.modality]}</TableCell>
                 <TableCell>{formatPublicationDate(vacancy.publicationDate)}</TableCell>
                 <TableCell>{vacancy.applicationCount.toLocaleString("es-UY")}</TableCell>
-                <TableCell className="pr-5">
-                  <AdminVacancyStatusBadge status={vacancy.status} />
+                <TableCell>
+                  <VacancyStatusBadge status={vacancy.status} />
+                </TableCell>
+                <TableCell className="pr-5 text-right">
+                  <VacancyActionsMenu vacancy={vacancy} />
                 </TableCell>
               </TableRow>
             );
