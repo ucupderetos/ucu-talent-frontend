@@ -68,7 +68,7 @@ export function ApplicationCard({ row }: { row: MyApplicationRow }) {
             className="bg-secondary-blue text-secondary-blue-foreground hover:bg-secondary-blue/90"
             asChild
           >
-            <Link href={`/feed/${vacancy.vacancyId}`}>
+            <Link href={`/postulaciones/${vacancy.vacancyId}`}>
               Ver detalle
               <ChevronRightIcon />
             </Link>

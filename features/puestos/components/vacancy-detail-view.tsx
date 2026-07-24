@@ -9,6 +9,7 @@
 // ver el comentario en ApplyAction más abajo.
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ArrowLeftIcon,
   BriefcaseIcon,
@@ -68,10 +69,17 @@ export function VacancyDetailView({ vacancyId }: { vacancyId: string }) {
   const { data: vacancy, isLoading, isError } = useVacancy(vacancyId);
   usePageBreadcrumb(isLoading ? undefined : (vacancy?.name ?? null));
 
+  // Esta vista se monta en dos rutas: /feed/[id] (desde el feed) y
+  // /postulaciones/[id] (desde "Mis postulaciones" — ver el detalle de una
+  // postulación no debería sentirse "dentro de Vacantes", ni en el
+  // breadcrumb del Navbar ni acá). "Volver" respeta desde dónde se entró.
+  const pathname = usePathname();
+  const backHref = pathname.startsWith("/postulaciones") ? "/postulaciones" : "/feed";
+
   return (
     <div className="flex flex-col gap-4">
       <Link
-        href="/feed"
+        href={backHref}
         className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />
