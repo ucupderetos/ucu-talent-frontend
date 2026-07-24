@@ -146,7 +146,7 @@ export function CompanyProfileForm({
                       >
                         <SelectValue placeholder="Seleccioná un departamento" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" side="bottom" avoidCollisions={false}>
                         {Object.entries(DEPARTMENT_LABELS).map(([value, label]) => (
                           <SelectItem key={value} value={value}>
                             {label}

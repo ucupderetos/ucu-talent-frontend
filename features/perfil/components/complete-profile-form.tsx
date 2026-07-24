@@ -199,7 +199,7 @@ function CompanyForm() {
                 <SelectTrigger id="location" className="w-full" aria-invalid={Boolean(errors.location)}>
                   <SelectValue placeholder="Elegí un departamento" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" side="bottom" avoidCollisions={false}>
                   {DEPARTMENTS.map((department) => (
                     <SelectItem key={department.value} value={department.value}>
                       {department.label}
