@@ -64,6 +64,7 @@ export function JobDetailsForm() {
             <FieldLabel htmlFor="salaryRange">Rango salarial *</FieldLabel>
             <Input
               id="salaryRange"
+              className="h-11"
               placeholder="$45.000 - $60.000 UYU"
               aria-invalid={Boolean(errors.salaryRange)}
               {...register("salaryRange")}
