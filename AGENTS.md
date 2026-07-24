@@ -203,9 +203,9 @@ de títulos distinta todavía; si se agrega una, el punto de cambio es esa varia
 ⚠️ **El encabezado de una pantalla es siempre `PageHeader`** (`components/layout/page-header.tsx`)
 — pero **nunca con `title` ni `description`: ninguna pantalla los pasa, no es una
 elección por pantalla.** El nombre de la sección lo muestra el Navbar ("Header dinámico +
-breadcrumb" más abajo — en desarrollo en otra rama); repetirlo como `<h1>`/bajada en el
-contenido de la página quedaría duplicado. Hasta que esa rama se mergee, las pantallas
-quedan sin título ni bajada visibles en el contenido — es a propósito, no un olvido.
+breadcrumb" más abajo — ya implementado); repetirlo como `<h1>`/bajada en el
+contenido de la página quedaría duplicado. Por eso las pantallas quedan sin título ni
+bajada visibles en el contenido — es a propósito, no un olvido.
 `PageHeader` hoy se usa solo por el slot de `actions` (ej. `company-vacancies-view.tsx`,
 el botón "Crear nueva oferta"); las pantallas sin acciones (`student-profile-view.tsx`,
 `company-profile-view.tsx`, `my-applications-view.tsx`) directamente no lo renderizan. No
@@ -375,15 +375,14 @@ radio: usa la utilidad que ya le corresponde a su tipo.
 Color de borde: siempre `border-border` (contenedores) o `border-input` (controles de
 formulario) — nunca un gris arbitrario.
 
-### Header dinámico + breadcrumb (🚧 documentado, todavía NO implementado)
+### Header dinámico + breadcrumb (✅ implementado)
 
-> No tocar `components/layout/navbar.tsx` por esto todavía — queda anotado acá para
-> cuando se decida encarar, igual que las demás decisiones de esta guía que están
-> "pendientes de aplicar". Es zona de conflicto (los 3 grupos comparten `Navbar`):
-> coordinar antes de implementarlo.
+> Sigue siendo zona de conflicto (los 3 grupos comparten `Navbar`): coordinar antes de
+> tocar `components/layout/navbar.tsx`. Ya está implementado — este bloque documenta el
+> comportamiento vigente, no una decisión pendiente.
 
-Hoy `Navbar` muestra un título fijo, `"UCU Talent"`, en las tres secciones. La decisión
-es reemplazarlo por:
+El `Navbar` ya **no** muestra un título fijo (`"UCU Talent"` se movió al logo del Sidebar):
+según el `pathname` muestra:
 
 - **En una pantalla de listado** (`/feed`, `/puestos`, `/moderacion`...): el título de la
   sección activa — mismo ícono + label que ya tiene resaltado el item activo del
@@ -396,6 +395,14 @@ es reemplazarlo por:
 
 Aplica **a las 3 secciones por igual** (alumno, empresa, admin) — no es un ajuste puntual
 de una pantalla.
+
+**Cómo lo alimenta una página de detalle**: el nombre del ítem lo pone la propia página
+(en `features/<dominio>/`) vía `usePageBreadcrumb(label)` de
+`components/layout/breadcrumb-context.tsx` — así la dependencia sigue yendo `features/` →
+`components/`, nunca al revés. El `label` tiene tres estados: `undefined` mientras carga
+(el Navbar muestra un `Skeleton`), `null` si resolvió sin nombre —error o no encontrado—
+(el Navbar omite el ítem y deja solo la sección, sin `Skeleton` perpetuo), y el `string`
+con el nombre.
 
 ### Estados de los componentes
 

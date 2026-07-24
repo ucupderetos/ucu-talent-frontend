@@ -13,15 +13,22 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
+// Tres estados, y hay que distinguirlos: `undefined` = cargando (el Navbar
+// muestra un Skeleton), `null` = resuelto pero sin nombre (ej. la vacante no
+// existe o falló el fetch — el Navbar omite el ítem y deja solo la sección),
+// `string` = el nombre del ítem. Aplanar `undefined` y `null` al mismo valor
+// dejaba el header en Skeleton para siempre cuando el dato daba error.
+type BreadcrumbLabel = string | null | undefined;
+
 interface BreadcrumbContextValue {
-  label: string | null;
-  setLabel: (label: string | null) => void;
+  label: BreadcrumbLabel;
+  setLabel: (label: BreadcrumbLabel) => void;
 }
 
 const BreadcrumbContext = createContext<BreadcrumbContextValue | null>(null);
 
 export function BreadcrumbProvider({ children }: { children: React.ReactNode }) {
-  const [label, setLabel] = useState<string | null>(null);
+  const [label, setLabel] = useState<BreadcrumbLabel>(undefined);
 
   return (
     <BreadcrumbContext.Provider value={{ label, setLabel }}>{children}</BreadcrumbContext.Provider>
@@ -37,16 +44,18 @@ export function useBreadcrumbLabel() {
 /**
  * Llamar desde una página de detalle anidada (ej. el detalle de una vacante)
  * con el nombre del ítem actual. `undefined` mientras el dato todavía está
- * cargando: el Navbar muestra un `Skeleton` en ese caso. Limpia el label al
- * desmontar, para que no quede pegado al navegar a otra sección.
+ * cargando (el Navbar muestra un `Skeleton`); `null` si el dato resolvió pero
+ * no hay nombre —error o no encontrado— (el Navbar omite el ítem y deja solo
+ * la sección). Limpia el label al desmontar, para que no quede pegado al
+ * navegar a otra sección.
  */
-export function usePageBreadcrumb(label: string | null | undefined) {
+export function usePageBreadcrumb(label: BreadcrumbLabel) {
   const ctx = useContext(BreadcrumbContext);
   if (!ctx) throw new Error("usePageBreadcrumb debe usarse dentro de AppShell");
   const { setLabel } = ctx;
 
   useEffect(() => {
-    setLabel(label ?? null);
-    return () => setLabel(null);
+    setLabel(label);
+    return () => setLabel(undefined);
   }, [label, setLabel]);
 }

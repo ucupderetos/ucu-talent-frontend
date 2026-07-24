@@ -129,13 +129,21 @@ export function Navbar({ user }: { user: User | null }) {
                 <activeItem.icon className="size-4 shrink-0" />
                 <span className="hidden sm:inline">{activeItem.label}</span>
               </Link>
-              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
-              {breadcrumbLabel !== null ? (
-                <span className="truncate font-semibold tracking-tight text-foreground">
-                  {breadcrumbLabel}
-                </span>
-              ) : (
-                <Skeleton className="h-5 w-24 shrink-0" />
+              {/* El ítem actual: Skeleton mientras carga (`undefined`). Si el
+                  dato resolvió sin nombre (`null` — vacante no encontrada o
+                  error) se omite el separador y el ítem, y queda solo la
+                  sección como link — nunca un Skeleton perpetuo. */}
+              {breadcrumbLabel !== null && (
+                <>
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                  {breadcrumbLabel === undefined ? (
+                    <Skeleton className="h-5 w-24 shrink-0" />
+                  ) : (
+                    <span className="truncate font-semibold tracking-tight text-foreground">
+                      {breadcrumbLabel}
+                    </span>
+                  )}
+                </>
               )}
             </nav>
           ) : (
