@@ -20,6 +20,7 @@ import type {
   StudentProfile,
   VacancyApplication,
   VacancyApplicationStatus,
+  VacancyStatus,
 } from "@/types";
 
 /**
@@ -157,73 +158,71 @@ export interface AdminApplicationFilters {
   perPage?: number;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Dashboard de Admin                                                         */
-/* -------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Dashboard de Admin ("Centro de Gestión").
+//
+// Son view models de una sola pantalla, no entidades del MER — por eso viven
+// acá y no en `@/types`.
+//
+// 🔴 Ninguno tiene endpoint todavía: no hay API de métricas agregadas. Los
+// datos salen de `features/moderacion/data/dashboard-mock.ts` a través de
+// `hooks/use-dashboard.ts`.
+//
+// Los estados salen de los enums core (`VacancyStatus`,
+// `VacancyApplicationStatus`), no de enums propios del dashboard: un segundo
+// juego de valores para lo mismo se desincroniza apenas el backend cambie uno.
+//
+// ⚠️ Consecuencia asumida: el dashboard solo puede graficar los estados que el
+// modelo tiene hoy. No hay "Rechazada" en `VacancyStatus` (es el gap A-14), y
+// el desglose de postulaciones es PENDIENTE/VISTO/FINALIZADO — no
+// aceptada/rechazada, que es el eje que DEC-06 descartó a favor del flag
+// `selected`. Si más adelante se quiere graficar por `selected`, es un campo
+// aparte, no un estado.
+// ---------------------------------------------------------------------------
 
-export type DashboardStat = {
+/** Una de las 4 métricas de la fila superior. El ícono no es un dato: lo elige
+ *  el componente a partir del `id`. */
+export interface DashboardStat {
   id: string;
   title: string;
   value: string;
   weeklyChange: string;
-};
+}
 
-export type VacancyStatus =
-  | "published"
-  | "finalized"
-  | "rejected";
-
-export type RecentVacancy = {
-  id: number;
+export interface RecentVacancy {
+  id: string;
   position: string;
   company: string;
+  /** ISO 8601 — el formato de fecha lo decide la vista, no el dato. */
   publishedAt: string;
   applications: number | null;
   status: VacancyStatus;
-};
+}
 
-
-
-export type PendingCompanyValidation = {
-  id: number;
+export interface PendingCompanyValidation {
+  id: string;
   name: string;
   description: string;
+  /** ISO 8601. */
   registeredAt: string;
- 
-};
+}
 
-export type ActivityType =
-  | "company"
-  | "vacancy"
-  | "application"
-  | "user"
-  | "validation";
+export type ActivityType = "company" | "vacancy" | "application" | "user" | "validation";
 
-export type RecentActivityItem = {
-  id: number;
+export interface RecentActivityItem {
+  id: string;
   title: string;
   description: string;
+  /** Texto relativo ya resuelto ("Hace 2 horas"). */
   time: string;
   type: ActivityType;
-};
+}
 
-export type ApplicationStatus =
-
-  | "pending"
-
-  | "aproved"
-
-  | "rejected"; 
-
-
-export type ApplicationStatusSummary = {
-
-  status: ApplicationStatus;
-
+/** Sin `percentage`: se deriva del total en el componente. Guardarlo permitía
+ *  que contradijera al `count`, y de hecho lo hacía — los tres sumaban 79% y
+ *  el donut quedaba con una cuña vacía del 21%. */
+export interface ApplicationStatusSummary {
+  status: VacancyApplicationStatus;
   label: string;
-
   count: number;
-
-  percentage: number;
-
-};
+}
