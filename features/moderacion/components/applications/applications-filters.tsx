@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MultiSelect } from "@/features/puestos/components/multi-select";
+import { MultiSelect } from "@/components/filters/multi-select";
 import { APPLICATION_STATUS_LABEL } from "@/features/moderacion/components/applications/application-status-badge";
 import type { AdminApplicationFilters, AdminApplicationOrder } from "@/features/moderacion/types";
 import type { Company, Vacancy, VacancyApplicationStatus } from "@/types";
