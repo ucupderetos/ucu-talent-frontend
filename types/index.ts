@@ -274,19 +274,28 @@ export interface Vacancy {
 
 /**
  * Wire: `VacancyApplicationStatus`. La transición NO retrocede (lo valida el
- * backend, `409` si se intenta). Sigue sin distinguir "finalizado con avance"
- * de "finalizado con rechazo" — ver `features/postulaciones/types.ts` para el
- * gap de cómo (o si) esa decisión viaja hoy al backend para el mail de RF-21.
+ * backend, `409` si se intenta).
  */
 export type VacancyApplicationStatus = "PENDIENTE" | "VISTO" | "FINALIZADO";
 
-/** Wire: `VacancyApplicationResponse`. */
+/**
+ * Wire: `VacancyApplicationResponse`.
+ *
+ * 🔴 `selected` está en el MER aprobado (ver AGENTS.md — "Postulaciones:
+ * máquina de estados y selected") pero A-17 confirma que todavía no está en
+ * `VacancyApplicationResponse`/`UpdateVacancyApplicationRequest` del backend
+ * real. Se agrega acá porque `features/postulaciones` ya lo necesita para el
+ * tramo final de la barra de progreso de "Mis postulaciones" — hoy solo vive
+ * en `lib/fixtures.ts`, hay que revisar cuando el contrato real lo exponga.
+ */
 export interface VacancyApplication {
   vacancyApplicationId: string;
   vacancyId: string;
   /** Apunta a `StudentProfile.studentProfileId`, NO a `User.userId`. */
   studentProfileId: string;
   status: VacancyApplicationStatus;
+  /** Solo tiene sentido cuando `status === "FINALIZADO"` (RN: se setea en `VISTO`, queda congelado al finalizar). */
+  selected: boolean;
   appliedAt: string; // ISO 8601
 }
 

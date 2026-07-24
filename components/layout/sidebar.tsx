@@ -68,13 +68,14 @@ export function Sidebar({
             const isActive = pathname.startsWith(item.href);
             const link = (
               <Link
+                key={item.href}
                 href={item.href}
                 aria-label={collapsed ? item.label : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                   collapsed && "justify-center px-0",
                   isActive
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                    ? "bg-secondary-blue font-medium text-secondary-blue-foreground"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                 )}
               >

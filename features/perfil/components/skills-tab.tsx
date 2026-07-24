@@ -74,7 +74,11 @@ export function SkillsTab({ skills }: { skills: string[] }) {
           ) : (
             <div className="flex flex-wrap gap-2">
               {savedSkills.map((skill) => (
-                <Badge key={skill} variant="secondary">
+                <Badge
+                  key={skill}
+                  variant="secondary"
+                  className="bg-secondary-blue text-secondary-blue-foreground"
+                >
                   {skill}
                 </Badge>
               ))}
@@ -112,7 +116,11 @@ export function SkillsTab({ skills }: { skills: string[] }) {
 
         <div className="flex flex-wrap gap-2">
           {draftSkills.map((skill) => (
-            <Badge key={skill} variant="secondary" className="gap-1 pr-1">
+            <Badge
+              key={skill}
+              variant="secondary"
+              className="gap-1 bg-secondary-blue pr-1 text-secondary-blue-foreground"
+            >
               {skill}
               <button
                 type="button"

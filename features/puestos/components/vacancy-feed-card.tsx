@@ -16,9 +16,10 @@ import type { Department } from "@/types";
 /**
  * Duplica el diccionario de RegisterForm.tsx/CompleteProfileForm.tsx — no hay
  * todavía un lugar compartido para labels de `Department` (los 19 valores
- * reales, ver docs/ENDPOINTS.md).
+ * reales, ver docs/ENDPOINTS.md). Exportado para que `vacancy-feed-table.tsx`
+ * (la vista en lista del mismo feed) no agregue una quinta copia.
  */
-const DEPARTMENT_LABEL: Record<Department, string> = {
+export const DEPARTMENT_LABEL: Record<Department, string> = {
   ARTIGAS: "Artigas",
   CANELONES: "Canelones",
   CERRO_LARGO: "Cerro Largo",
@@ -40,7 +41,7 @@ const DEPARTMENT_LABEL: Record<Department, string> = {
   TREINTA_Y_TRES: "Treinta y Tres",
 };
 
-const dateFormatter = new Intl.DateTimeFormat("es-UY", {
+export const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
@@ -79,8 +80,14 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            <Badge variant="secondary">{vacancy.areaName}</Badge>
-            {vacancy.parentAreaName && <Badge variant="secondary">{vacancy.parentAreaName}</Badge>}
+            <Badge variant="secondary" className="bg-secondary-blue text-secondary-blue-foreground">
+              {vacancy.areaName}
+            </Badge>
+            {vacancy.parentAreaName && (
+              <Badge variant="secondary" className="bg-secondary-blue text-secondary-blue-foreground">
+                {vacancy.parentAreaName}
+              </Badge>
+            )}
           </div>
 
           <div className="mt-auto flex flex-col gap-1.5 pt-1 text-sm text-muted-foreground">

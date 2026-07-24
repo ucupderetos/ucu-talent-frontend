@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MapPinIcon, TagIcon } from "lucide-react";
 import { DEPARTMENT_LABELS, type CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
@@ -32,27 +33,32 @@ export function CompanyProfilePreview({
       <CardContent>
         <div className="rounded-lg border p-4">
           <div className="flex items-start gap-3">
-            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border text-[10px] text-muted-foreground">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- URL de texto, sin endpoint de upload todavía
-                <img src={logoUrl} alt="Logo de la empresa" className="size-full object-cover" />
-              ) : (
-                "Logo"
-              )}
-            </div>
+            {/* Mismo tratamiento que el avatar de empresa en "Mis postulaciones"
+             *  (application-card.tsx) — círculo con la inicial de fallback, no
+             *  el cuadrado rounded-md que había acá antes. */}
+            <Avatar className="size-12 shrink-0">
+              <AvatarImage src={logoUrl || undefined} alt="Logo de la empresa" />
+              <AvatarFallback>{(legalName || "Razón social").charAt(0)}</AvatarFallback>
+            </Avatar>
             <div className="min-w-0">
               <p className="truncate font-semibold">
                 {legalName || "Razón social"}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {location && (
-                  <Badge variant="secondary" className="gap-1 font-normal">
+                  <Badge
+                    variant="secondary"
+                    className="gap-1 bg-secondary-blue font-normal text-secondary-blue-foreground"
+                  >
                     <MapPinIcon className="size-3" />
                     {DEPARTMENT_LABELS[location]}, Uruguay
                   </Badge>
                 )}
                 {industry && (
-                  <Badge variant="secondary" className="gap-1 font-normal">
+                  <Badge
+                    variant="secondary"
+                    className="gap-1 bg-secondary-blue font-normal text-secondary-blue-foreground"
+                  >
                     <TagIcon className="size-3" />
                     {industry}
                   </Badge>

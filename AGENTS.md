@@ -120,11 +120,21 @@ Todo color va por **token semántico** (`bg-primary`, `text-muted-foreground`,
 `border-border`, `bg-destructive/10`...), nunca un hex u oklch suelto en un componente.
 Los tokens ya están declarados en `app/globals.css` — un componente no declara los suyos.
 
+**Regla general: azul principal para lo importante, azul secundario para lo secundario.**
+El navy de marca (`--primary`/`bg-ucu-blue`) es para lo que tiene que llamar la atención —
+CTAs, focus ring. El azul secundario (`--secondary-blue`, un tono intermedio del mismo
+navy — ni el navy sólido de `--primary` ni un pastel casi blanco) es para todo lo que
+necesita leerse "de marca" sin pelearle protagonismo a lo importante — pills, tags,
+marcadores secundarios, y también el ítem activo del Sidebar (ver el aviso más abajo).
+Texto: claro (`--secondary-blue-foreground`, un blanco roto), no navy — a esta
+luminosidad un texto navy oscuro ya no tiene contraste suficiente.
+
 | Rol | Token / utilidad | Cuándo |
 |---|---|---|
 | **Botón de acción principal** | `bg-ucu-blue text-white hover:bg-ucu-blue/90` | El CTA de una pantalla (submit de login/registro, "Aplicar" en el detalle de vacante, etc.) — color de marca **explícito**, no el token `bg-primary`. Ver *nota* abajo. |
 | Focus ring / links | `ring-ring` / `text-primary` | Sigue por el token semántico — es el mismo navy, no hace falta repetirlo a mano fuera del botón principal. |
-| Acción secundaria | `bg-secondary` | Botón secundario, sin protagonismo visual (gris neutro, no de marca). |
+| Acción secundaria | `bg-secondary` | Botón secundario, sin protagonismo visual (gris neutro, no de marca — no confundir con el azul secundario de abajo). |
+| **Azul secundario (pills/tags)** | `bg-secondary-blue text-secondary-blue-foreground` | **Todo pill/tag de contenido**, sin excepción: skills (`skills-tab.tsx`, el detalle de vacante en `vacancy-detail-view.tsx`), área/carrera (`vacancy-feed-card.tsx`, `vacancy-feed-list-row.tsx`, `application-card.tsx`), ubicación/industria del preview de empresa (`company-profile-preview.tsx`), y el ítem activo del Sidebar/Sheet (`sidebar.tsx`, `navbar.tsx`) — mismas clases escritas literal en el sitio de uso, mismo criterio que el botón de acción principal (ver *nota* abajo). Un solo tono de azul secundario para todos los usos — no un pastel para unos y otro tono para otros. Confirmado 2026-07-23: no queda ningún pill de contenido en `bg-secondary` (gris neutro) — ese variant solo se usa hoy para badges que NO son pills de contenido (el contador de filtros activos junto al botón "Filtros", los `*StatusBadge` con punto de color). |
 | Texto apagado / ayuda | `text-muted-foreground` | Descripciones, helper text, metadata. |
 | Fondo sutil | `bg-muted` / `bg-accent` | Hover de filas, fondos de sección, superficies de bajo contraste. |
 | Error / destructivo | `bg-destructive` / `text-destructive` | Estados de error, botones destructivos, `aria-invalid`. |
@@ -143,15 +153,35 @@ momento. El resto de los usos de "primario" (focus ring, links) se quedan en el 
 (`ring-ring`/`text-primary`) — la explicitud es solo para el botón de acción principal.
 
 Los otros 2 colores de marca (`bg-ucu-orange`, `bg-ucu-teal`, y sus variantes
-`text-*`/`border-*`) siguen siendo para **superficies de marca explícitas** — el panel
-hero de `(auth)`, ilustraciones, acentos puntuales (los puntitos de color de
-`AuthLayout`) — no para pisar `bg-secondary`/`bg-muted`/etc. en cualquier lado.
+`text-*`/`border-*`) son para **superficies de marca explícitas** — el panel hero de
+`(auth)`, ilustraciones, acentos puntuales (los puntitos de color de `AuthLayout`) — no
+para pisar `bg-secondary`/`bg-muted`/etc. en cualquier lado. Ninguno de los dos tiene un
+rol semántico fijo fuera de "acento": son puntuales (dots, texto destacado), nunca un
+fondo grande ni un botón — sobre todo `ucu-orange`, el más saturado de los tres, que
+compite con el contenido si se usa de más.
 
-`ucu-teal` es el único de los dos con un rol semántico fijo fuera de "acento": es
-`--sidebar-primary`/`--sidebar-ring` (el ítem activo del Sidebar), porque el Sidebar ya es
-navy de fondo — un ítem activo navy sobre navy no se vería. `ucu-orange` no tiene token
-semántico propio: es acento puntual (dots, texto destacado), nunca un fondo grande ni un
-botón — es el color más saturado de los tres y compite con el contenido si se usa de más.
+⚠️ **`ucu-teal` YA NO es el marcador del ítem activo del Sidebar** — esa fue una decisión
+anterior (`--sidebar-primary`/`--sidebar-ring` en teal) que se revirtió por fea: un verde
+agua sobre el navy del Sidebar desentonaba con el resto de la paleta. Ese rol lo tiene
+ahora el **azul secundario**: el ítem activo escribe `bg-secondary-blue
+text-secondary-blue-foreground` literal en `sidebar.tsx`/`navbar.tsx`, no
+`bg-sidebar-primary` — mismo criterio (y misma razón, el choque de cache de la nota de
+arriba) que el botón de acción principal. `--sidebar-primary`/`--sidebar-ring` siguen
+apuntando a `--secondary-blue` en `globals.css` por si alguna librería de terceros los
+lee, pero ningún componente propio depende de esa cadena. `ucu-teal` queda solo como
+acento puntual, igual que `ucu-orange`.
+
+⚠️ **`--secondary-blue` se re-tonó el 2026-07-23 — un solo valor, no dos.** Al principio
+era un pastel casi blanco pensado solo para pills/tags (con texto navy encima, mismo
+criterio que `--primary-foreground` con los roles invertidos). Al reusar esa misma
+variable para el ítem activo del Sidebar (aviso de arriba), el pastel contrastaba
+demasiado fuerte contra el navy de fondo. En vez de mantener dos azules secundarios
+distintos (uno por contexto), se estandarizó a un único tono intermedio —
+`oklch(0.5 0.14 258.136)`, ni pastel ni navy sólido — que funciona para los dos casos, y
+se borró el valor pastel viejo. Consecuencia: `--secondary-blue-foreground` pasó de navy
+oscuro a un blanco roto (`oklch(0.98 0 0)`) en los tres sitios que lo usan (badges de
+área del feed/"Mis postulaciones" y el ítem activo del Sidebar/Sheet) — un cambio de
+CSS variable, sin tocar componentes.
 
 ### Tipografía
 
@@ -171,10 +201,18 @@ de títulos distinta todavía; si se agrega una, el punto de cambio es esa varia
 | Texto de badge/pill | `text-xs font-medium` | `Badge` |
 
 ⚠️ **El encabezado de una pantalla es siempre `PageHeader`** (`components/layout/page-header.tsx`)
-— título + bajada opcional + acciones. No se crea un componente nuevo por pantalla o por
-rol (tipo `DashboardHeader`) aunque sea solo para admin: es exactamente el caso que
-`PageHeader` existe para evitar (ver el comentario en el propio archivo). Si hace falta un
-acento visual que `PageHeader` no tiene, se agrega ahí — no se bifurca el componente.
+— pero **nunca con `title` ni `description`: ninguna pantalla los pasa, no es una
+elección por pantalla.** El nombre de la sección lo muestra el Navbar ("Header dinámico +
+breadcrumb" más abajo — en desarrollo en otra rama); repetirlo como `<h1>`/bajada en el
+contenido de la página quedaría duplicado. Hasta que esa rama se mergee, las pantallas
+quedan sin título ni bajada visibles en el contenido — es a propósito, no un olvido.
+`PageHeader` hoy se usa solo por el slot de `actions` (ej. `company-vacancies-view.tsx`,
+el botón "Crear nueva oferta"); las pantallas sin acciones (`student-profile-view.tsx`,
+`company-profile-view.tsx`, `my-applications-view.tsx`) directamente no lo renderizan. No
+se crea un componente nuevo por pantalla o por rol (tipo `DashboardHeader`) aunque sea
+solo para admin: es exactamente el caso que `PageHeader` existe para evitar (ver el
+comentario en el propio archivo). Si hace falta un acento visual que `PageHeader` no
+tiene, se agrega ahí — no se bifurca el componente.
 
 ### Tamaño de controles interactivos
 
@@ -193,9 +231,11 @@ distintas, y **los tres son correctos** — no hay que unificarlos a un solo alt
   descuido.
 - **CTA primario suelto en un card de contenido** (no es un formulario ni una toolbar —
   ej. "Aplicar" en el detalle de vacante, `ApplyAction` en `vacancy-detail-view.tsx`):
-  **`h-12`** con `px-6 text-sm` (mismo alto táctil que el submit de un formulario, pero con
-  el texto en `text-sm` — a `text-base` el label se ve desproporcionado en un botón que no
-  vive dentro de un formulario completo).
+  **`h-10`** con `px-6` (el default de `Button` ya trae `text-sm`, no hace falta repetirlo).
+  ⚠️ Antes decía `h-12` (mismo alto que el submit de un formulario) — se bajó a `h-10`
+  porque con una sola palabra ("Aplicar") el botón se veía chico/perdido dentro de una caja
+  demasiado alta, un CTA suelto en un card no necesita el mismo alto táctil que el submit
+  de un formulario de página completa.
 
 ⚠️ **Gotcha de `SelectTrigger`**: su tamaño no es una clase `h-*` común, es
 `data-[size=default]:h-8` / `data-[size=sm]:h-7` (variantes por atributo). Un `className="h-11"`
