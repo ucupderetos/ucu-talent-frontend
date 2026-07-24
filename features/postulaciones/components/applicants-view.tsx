@@ -14,7 +14,6 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
 import { ListPagination } from "@/components/pagination/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,11 +50,6 @@ export function ApplicantsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Postulantes"
-        description="Gestioná los postulantes a tus ofertas. Podés ver el estado de cada proceso y los datos de cada candidato."
-      />
-
       <ApplicantFiltersBar
         filters={filters}
         vacancyOptions={vacancyOptions}

@@ -40,6 +40,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout/empty-state";
+import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
 import { ApplicantStatusBadge } from "@/features/postulaciones/components/applicant-status-badge";
 import { useApplicantDetail } from "@/features/postulaciones/hooks/use-applicant-detail";
@@ -103,6 +104,13 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
   }, [vacancyApplicationId, status, markViewed]);
 
   const isLoading = isLoadingCompany || isLoadingDetail;
+
+  // Alimenta el breadcrumb del Navbar ("Postulantes › Nombre Apellido"):
+  // undefined mientras carga (muestra Skeleton), null si no se encontró el
+  // postulante (el Navbar deja solo la sección, sin Skeleton colgado).
+  usePageBreadcrumb(
+    isLoading ? undefined : detail ? `${detail.profile.name} ${detail.profile.surname}` : null,
+  );
 
   if (isLoading) {
     return (
