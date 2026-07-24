@@ -252,12 +252,28 @@ export interface AdminCompanyRow {
 }
 
 /**
+ * View model del detalle administrativo de una empresa.
+ *
+ * Los campos adicionales pertenecen a `Company`; no se agrega cantidad de
+ * empleados porque ese dato no existe en el contrato actual del backend.
+ */
+export interface AdminCompanyDetail extends AdminCompanyRow {
+  description: string;
+  webUrl: string;
+  linkedinUrl: string;
+}
+
+/**
  * Estado de búsqueda, filtros y paginación de la vista de empresas.
+ *
+ * Los filtros son arrays y no un valor único con centinela `"TODAS"`: la barra
+ * de filtros del repo usa `MultiSelect` (AGENTS.md, "Barras de filtros"), y
+ * "sin filtro" se representa con el array vacío, no con un valor mágico.
  */
 export interface AdminCompanyFilters {
-  search: string;
-  status: AccountStatus | "TODAS";
-  industry: string;
-  page: number;
-  perPage: number;
+  search?: string;
+  statuses?: AccountStatus[];
+  industries?: string[];
+  page?: number;
+  perPage?: number;
 }
