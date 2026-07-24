@@ -75,6 +75,7 @@ export function Sidebar({
                 height={155}
                 className="h-8 w-auto object-contain"
                 priority
+                unoptimized
               />
             </Link>
           )}

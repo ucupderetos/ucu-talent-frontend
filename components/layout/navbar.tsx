@@ -90,6 +90,7 @@ export function Navbar({ user }: { user: User | null }) {
                   width={425}
                   height={155}
                   className="h-8 w-auto object-contain"
+                  unoptimized
                 />
               </div>
               <nav className="flex flex-col gap-1 p-4">
@@ -120,19 +121,21 @@ export function Navbar({ user }: { user: User | null }) {
             // va en negrita y sin link (AGENTS.md — "Header dinámico +
             // breadcrumb"). El nombre del ítem lo pone la propia página de
             // detalle vía `usePageBreadcrumb`.
-            <nav aria-label="Ruta actual" className="flex min-w-0 items-center gap-1.5 text-sm">
+            <nav aria-label="Ruta actual" className="flex min-w-0 items-center gap-1.5">
               <Link
                 href={activeItem.href}
-                className="flex shrink-0 items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
               >
                 <activeItem.icon className="size-4 shrink-0" />
                 <span className="hidden sm:inline">{activeItem.label}</span>
               </Link>
               <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
               {breadcrumbLabel !== null ? (
-                <span className="truncate font-semibold text-foreground">{breadcrumbLabel}</span>
+                <span className="truncate font-semibold tracking-tight text-foreground">
+                  {breadcrumbLabel}
+                </span>
               ) : (
-                <Skeleton className="h-4 w-24 shrink-0" />
+                <Skeleton className="h-5 w-24 shrink-0" />
               )}
             </nav>
           ) : (
