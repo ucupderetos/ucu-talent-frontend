@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
-import { MultiSelect } from "@/features/puestos/components/multi-select";
+import { MultiSelect } from "@/components/filters/multi-select";
 import type { FeedFilters } from "@/features/puestos/types";
 import type { Area } from "@/types";
 

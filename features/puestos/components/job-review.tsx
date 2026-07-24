@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { DEPARTMENT_LABELS } from "@/features/puestos/types";
 
-import { useCurrentCompany } from "@/features/puestos/hooks/use-current-company";
+import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
 
 const MODALITY_LABELS: Record<string, string> = {
   PRESENCIAL: "Presencial",
