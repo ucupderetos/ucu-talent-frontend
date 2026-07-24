@@ -1,11 +1,8 @@
 "use client";
 
-// tabla de empresas pendientes. recibe las filas ya filtradas. aprobar y
-// rechazar no hacen nada todavia, no hay endpoint para eso.
+// tabla de empresas pendientes. recibe las filas ya filtradas. las acciones
+// (Aprobar/Rechazar, con confirmación y motivo) las maneja ReviewActions.
 
-import { CheckIcon, MoreVerticalIcon, XCircleIcon } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -14,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ReviewActions } from "@/features/moderacion/components/pending-accounts/review-actions";
 import type { PendingCompanyRow } from "@/features/moderacion/types";
 
 // colores semanticos (tokens --chart-* de globals.css), no la paleta cruda.
@@ -77,27 +75,11 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
               <TableCell className="text-muted-foreground">{company.email}</TableCell>
               <TableCell>{formatDate(company.registeredAt)}</TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
-                  >
-                    <CheckIcon />
-                    Aprobar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <XCircleIcon />
-                    Rechazar
-                  </Button>
-                  <Button variant="ghost" size="icon" aria-label="Más acciones">
-                    <MoreVerticalIcon />
-                  </Button>
-                </div>
+                <ReviewActions
+                  userId={company.companyId}
+                  displayName={company.name}
+                  accountType="company"
+                />
               </TableCell>
             </TableRow>
           ))}

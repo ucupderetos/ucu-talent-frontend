@@ -29,9 +29,11 @@ async function fetchPendingStudents(
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
-  const rows = MOCK_PENDING_STUDENT_USERS.map(toRow).filter(
-    (row): row is PendingStudentRow => row !== null,
-  );
+  // solo los alumnos cuyo user sigue PENDIENTE — al aprobar/rechazar
+  // (use-review-account.ts) el status cambia y salen de la cola.
+  const rows = MOCK_PENDING_STUDENT_USERS.filter((u) => u.status === "PENDIENTE")
+    .map(toRow)
+    .filter((row): row is PendingStudentRow => row !== null);
   const filtered = filterRows(rows, filters);
 
   const start = (page - 1) * perPage;

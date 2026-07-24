@@ -1,12 +1,10 @@
 "use client";
 
-// tabla de alumnos pendientes. recibe las filas ya filtradas. aprobar y
-// rechazar no hacen nada todavia, no hay endpoint para eso.
-
-import { CheckIcon, MoreVerticalIcon, XCircleIcon } from "lucide-react";
+// tabla de alumnos pendientes. recibe las filas ya filtradas. las acciones
+// (Aprobar/Rechazar, con confirmación y motivo) las maneja ReviewActions.
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { ReviewActions } from "@/features/moderacion/components/pending-accounts/review-actions";
 import {
   Table,
   TableBody,
@@ -81,27 +79,11 @@ export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
               <TableCell className="text-muted-foreground">{student.email}</TableCell>
               <TableCell>{formatDate(student.registeredAt)}</TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700"
-                  >
-                    <CheckIcon />
-                    Aprobar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <XCircleIcon />
-                    Rechazar
-                  </Button>
-                  <Button variant="ghost" size="icon" aria-label="Más acciones">
-                    <MoreVerticalIcon />
-                  </Button>
-                </div>
+                <ReviewActions
+                  userId={student.studentProfileId}
+                  displayName={`${student.name} ${student.surname}`}
+                  accountType="student"
+                />
               </TableCell>
             </TableRow>
           ))}
