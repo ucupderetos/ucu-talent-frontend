@@ -226,3 +226,54 @@ export interface ApplicationStatusSummary {
   label: string;
   count: number;
 }
+
+// ---------------------------------------------------------------------------
+// Vista de empresas — Admin
+// ---------------------------------------------------------------------------
+
+/**
+ * View model del listado administrativo de empresas.
+ *
+ * Combina Company con los datos de User necesarios para la vista.
+ * El estado de aprobación pertenece a User.status.
+ *
+ * Pendiente: el backend todavía no permite obtener este estado para
+ * todas las empresas desde el listado administrativo.
+ */
+export interface AdminCompanyRow {
+  id: string;
+  name: string;
+  email: string;
+  industry: string;
+  location: string;
+  registeredAt: string;
+  status: AccountStatus;
+  initials: string;
+}
+
+/**
+ * View model del detalle administrativo de una empresa.
+ *
+ * Los campos adicionales pertenecen a `Company`; no se agrega cantidad de
+ * empleados porque ese dato no existe en el contrato actual del backend.
+ */
+export interface AdminCompanyDetail extends AdminCompanyRow {
+  description: string;
+  webUrl: string;
+  linkedinUrl: string;
+}
+
+/**
+ * Estado de búsqueda, filtros y paginación de la vista de empresas.
+ *
+ * Los filtros son arrays y no un valor único con centinela `"TODAS"`: la barra
+ * de filtros del repo usa `MultiSelect` (AGENTS.md, "Barras de filtros"), y
+ * "sin filtro" se representa con el array vacío, no con un valor mágico.
+ */
+export interface AdminCompanyFilters {
+  search?: string;
+  statuses?: AccountStatus[];
+  industries?: string[];
+  page?: number;
+  perPage?: number;
+}
