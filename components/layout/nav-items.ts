@@ -2,6 +2,14 @@
 // toca acá y se actualizan navbar y sidebar juntos.
 //
 // ⚠️ PUNTO DE CONFLICTO entre los 3 grupos — coordinar antes de editar.
+//
+// ⚠️ NINGÚN `href` puede ser prefijo de otro. El item activo se resuelve por
+// prefijo en tres lugares (`sidebar.tsx`, y dos veces en `navbar.tsx`), así que
+// un href padre se traga a sus hijos: resalta dos items a la vez en el sidebar
+// y, en el navbar, `items.find` devuelve el padre con `isNested = true` — o sea
+// que el header queda esperando un `usePageBreadcrumb` que la pantalla no llama
+// y muestra un Skeleton para siempre. Por eso las pantallas de admin cuelgan
+// todas de `/moderacion/*` y ninguna se queda con `/moderacion` a secas.
 
 import {
   BriefcaseIcon,
@@ -38,8 +46,9 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
     { label: "Perfil de empresa", href: "/perfil", icon: BuildingIcon },
   ],
   ADMIN: [
-    { label: "Validaciones", href: "/validaciones", icon: UserCheckIcon },
-    { label: "Usuarios", href: "/usuarios", icon: UsersIcon },
-    { label: "Moderación", href: "/moderacion", icon: ShieldCheckIcon },
+    { label: "Validaciones", href: "/moderacion/validaciones", icon: UserCheckIcon },
+    { label: "Usuarios", href: "/moderacion/usuarios", icon: UsersIcon },
+    { label: "Postulaciones", href: "/moderacion/postulaciones", icon: FileTextIcon },
+    { label: "Ofertas", href: "/moderacion/ofertas", icon: ShieldCheckIcon },
   ],
 };
