@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   // responde 200 y recién salta al hidratar; esto es un 308 de verdad, sin JS.
   async redirects() {
     return [
-      { source: "/moderacion", destination: "/moderacion/validaciones", permanent: true },
+      { source: "/moderacion", destination: "/moderacion/dashboard", permanent: true },
     ];
   },
 };
