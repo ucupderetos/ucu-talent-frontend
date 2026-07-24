@@ -152,3 +152,26 @@ export interface CompanyVacancyRow extends Vacancy {
   /** Postulaciones de los últimos 7 días. Alimenta el "+N esta semana". */
   newApplicantsThisWeek: number;
 }
+// ---------------------------------------------------------------------------
+// Catálogo de departamentos para selects del formulario de creación.
+//
+// ⚠️ DUPLICADO A PROPÓSITO: el mismo array existe (con distinta forma) en
+// features/auth/components/register-form.tsx y
+// features/perfil/components/complete-profile-form.tsx. Centralizarlo de
+// verdad (types/index.ts o lib/) es zona de conflicto — ticket aparte.
+// ---------------------------------------------------------------------------
+
+export const DEPARTMENTS: readonly Department[] = [
+  "ARTIGAS", "CANELONES", "CERRO_LARGO", "COLONIA", "DURAZNO", "FLORES",
+  "FLORIDA", "LAVALLEJA", "MALDONADO", "MONTEVIDEO", "PAYSANDU", "RIO_NEGRO",
+  "RIVERA", "ROCHA", "SALTO", "SAN_JOSE", "SORIANO", "TACUAREMBO", "TREINTA_Y_TRES",
+];
+
+export const DEPARTMENT_LABELS: Record<Department, string> = {
+  ARTIGAS: "Artigas", CANELONES: "Canelones", CERRO_LARGO: "Cerro Largo",
+  COLONIA: "Colonia", DURAZNO: "Durazno", FLORES: "Flores", FLORIDA: "Florida",
+  LAVALLEJA: "Lavalleja", MALDONADO: "Maldonado", MONTEVIDEO: "Montevideo",
+  PAYSANDU: "Paysandú", RIO_NEGRO: "Río Negro", RIVERA: "Rivera", ROCHA: "Rocha",
+  SALTO: "Salto", SAN_JOSE: "San José", SORIANO: "Soriano",
+  TACUAREMBO: "Tacuarembó", TREINTA_Y_TRES: "Treinta y Tres",
+};
