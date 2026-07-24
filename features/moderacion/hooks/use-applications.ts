@@ -12,11 +12,10 @@
 import { useQuery } from "@tanstack/react-query";
 
 import {
+  MOCK_APPLICANT_USERS,
   MOCK_APPLICATIONS,
   MOCK_COMPANIES,
   MOCK_STUDENT_PROFILES,
-  MOCK_STUDENT_USERS,
-  MOCK_USERS,
   MOCK_VACANCIES,
 } from "@/lib/fixtures";
 import type {
@@ -24,7 +23,7 @@ import type {
   AdminApplicationOrder,
   AdminApplicationRow,
 } from "@/features/moderacion/types";
-import type { Paginated, User } from "@/types";
+import type { Paginated } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -57,19 +56,17 @@ async function fetchApplications(
   return { items, total: sorted.length, page, perPage };
 }
 
-/** Todos los `User` con sesión de prueba: el único `ALUMNO` de `MOCK_USERS`
- *  más los que solo tienen perfil (`MOCK_STUDENT_USERS`, ver fixtures.ts). */
-function allStudentUsers(): User[] {
-  return [MOCK_USERS.ALUMNO, ...MOCK_STUDENT_USERS];
-}
-
 /** `null` si falta algún dato relacionado (no debería pasar con la PK
  *  compartida, pero el tipo de `find` lo permite). */
 function toRow(application: (typeof MOCK_APPLICATIONS)[number]): AdminApplicationRow | null {
   const profile = MOCK_STUDENT_PROFILES.find(
     (p) => p.studentProfileId === application.studentProfileId,
   );
-  const user = allStudentUsers().find((u) => u.userId === application.studentProfileId);
+  // `MOCK_APPLICANT_USERS` es el conjunto que cubre a los postulantes de
+  // `MOCK_APPLICATIONS` (u-1 + sp-*). `MOCK_STUDENT_USERS` NO sirve acá: son
+  // los alumnos del listado de "Usuarios" (u-10…u-14) y dejaría sin email a
+  // la mayoría de las filas.
+  const user = MOCK_APPLICANT_USERS.find((u) => u.userId === application.studentProfileId);
   const vacancy = MOCK_VACANCIES.find((v) => v.vacancyId === application.vacancyId);
   const company = MOCK_COMPANIES.find((c) => c.companyId === vacancy?.companyId);
   if (!profile || !vacancy) return null;

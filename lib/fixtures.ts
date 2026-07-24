@@ -58,12 +58,11 @@ export const MOCK_USERS: Record<Role, User> = {
 };
 
 /**
- * Alumnos con perfil pero sin sesión de prueba propia en `MOCK_USERS`
- * (`ALUMNO` ahí es un solo usuario). Hace falta esto para poblar el listado
- * de "Usuarios" del admin y para que "Postulaciones" pueda mostrar el email
- * de quien se postuló (vive en `User`, no en `StudentProfile`).
+ * Alumnos para el listado de "Usuarios" del admin (`(admin)/usuarios`). Va
+ * como array — a diferencia de `MOCK_USERS`, que es un solo usuario por rol
+ * para simular la sesión — porque acá la tabla necesita varios alumnos.
  *
- * PK compartida: mismo `userId` que el `studentProfileId` correspondiente.
+ * PK compartida con `MOCK_STUDENT_PROFILES` (mismo `userId`/`studentProfileId`).
  */
 export const MOCK_STUDENT_USERS: User[] = [
   {
@@ -110,15 +109,6 @@ export const MOCK_STUDENT_USERS: User[] = [
     registeredAt: "2026-07-07T10:00:00.000Z",
     name: "Valentina",
     surname: "Silveira",
-  },
-  {
-    userId: "sp-2",
-    email: "martina.pereira@correo.ucu.edu.uy",
-    role: "ALUMNO",
-    status: "APROBADO",
-    registeredAt: "2026-02-20T10:00:00.000Z",
-    name: "Martina",
-    surname: "Pereira",
   },
 ];
 
