@@ -30,6 +30,15 @@ jobs:
           docker build \
             --build-arg NEXT_PUBLIC_API_BASE_URL=${{ vars.API_BASE_URL }} \
             -t temp-image:ci-check .
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'temp-image:ci-check'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
   build-and-deploy:
     name: Build, push y deploy a Cloud Run
     needs: [unit-test-frontend, docker-build-check-frontend]
@@ -53,11 +62,12 @@ jobs:
           docker build \
             --build-arg NEXT_PUBLIC_API_BASE_URL=${{ vars.API_BASE_URL }} \
             -t ${{ env.IMAGE }}:${{ env.SHORT_SHA }} .
-          docker tag ${{ env.IMAGE }}:${{ env.SHORT_SHA }} ${{ env.IMAGE }}:latest
+          docker tag ${{ env.IMAGE }}:${{ env.SHORT_SHA }} ${{ env.IMAGE }}:prod-latest
+
       - name: Push a Artifact Registry
         run: |
           docker push ${{ env.IMAGE }}:${{ env.SHORT_SHA }}
-          docker push ${{ env.IMAGE }}:latest
+          docker push ${{ env.IMAGE }}:prod-latest
       - name: Deploy a Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
