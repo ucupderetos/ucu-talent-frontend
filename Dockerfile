@@ -34,6 +34,16 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Endurecimiento de la imagen final para el scan de Trivy (severity HIGH,CRITICAL):
+#   1. apk upgrade  -> parcha paquetes del SO (openssl libcrypto3/libssl3, CVE-2026-45447).
+#   2. rm npm/npx   -> el runtime solo corre `node server.js`; npm no hace falta y arrastra
+#      CVEs por sus deps bundleadas (tar, sigstore, glob, minimatch, brace-expansion,
+#      cross-spawn). Borrarlo las elimina del scan y reduce superficie de ataque.
+RUN apk upgrade --no-cache \
+  && rm -rf /usr/local/lib/node_modules/npm \
+            /usr/local/lib/node_modules/corepack \
+            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
