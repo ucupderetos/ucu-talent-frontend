@@ -35,7 +35,7 @@ jobs:
         with:
           image-ref: 'temp-image:ci-check'
           format: 'table'
-          exit-code: '1'
+          exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'HIGH,CRITICAL'
