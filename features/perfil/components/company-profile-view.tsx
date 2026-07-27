@@ -4,6 +4,8 @@
 // Se monta desde /perfil (route group compartido (perfil)) cuando el rol es
 // EMPRESA — ver app/(perfil)/perfil/page.tsx.
 
+import { useSession } from "@/features/auth/hooks/use-session";
+import { CompanyAccountStatusBanner } from "@/features/perfil/components/company-account-status-banner";
 import { CompanyProfileForm } from "@/features/perfil/components/company-profile-form";
 import { CompanyProfilePreview } from "@/features/perfil/components/company-profile-preview";
 import { CompanyProfileTips } from "@/features/perfil/components/company-profile-tips";
@@ -11,9 +13,14 @@ import { useCompanyProfileForm } from "@/features/perfil/hooks/use-company-profi
 
 export function CompanyProfileView() {
   const { form, mode, startEditing, commitSave, cancelEditing } = useCompanyProfileForm();
+  // RoleGuard + ProfileGuard ((empresa)/layout.tsx) ya garantizaron sesión y
+  // perfil antes de montar esto — mismo criterio que app/(perfil)/perfil/page.tsx.
+  const { user } = useSession();
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
+      {user && <CompanyAccountStatusBanner status={user.status} />}
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <CompanyProfileForm
@@ -29,6 +36,6 @@ export function CompanyProfileView() {
           <CompanyProfileTips />
         </div>
       </div>
-    </>
+    </div>
   );
 }

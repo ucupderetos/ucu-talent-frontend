@@ -1,6 +1,7 @@
 "use client";
 
 import { Controller, useWatch, type UseFormReturn } from "react-hook-form";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -50,8 +51,14 @@ export function CompanyProfileForm({
   const description = useWatch({ control, name: "description" }) ?? "";
 
   const onSubmit = handleSubmit(async (values) => {
-    await updateProfile(values);
+    try {
+      await updateProfile(values);
+    } catch {
+      // El mensaje de error ya se muestra abajo (`error`, de useUpdateCompanyProfile).
+      return;
+    }
     commitSave(values);
+    toast.success("Perfil de empresa actualizado.");
   });
 
   if (mode === "view") {
