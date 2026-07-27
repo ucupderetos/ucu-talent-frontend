@@ -74,6 +74,24 @@ export async function getCurrentUser(signal?: AbortSignal): Promise<User | null>
  * "Registro en dos pasos y ProfileGuard" en AGENTS.md). `ProfileGuard`
  * (`features/perfil/components/`) usa esto para saber si mandar a
  * `/completar-perfil`.
+ *
+ * ⚠️ El recurso propio va por PATH param (`/student-profile/{id}`,
+ * `/company/{id}`, `/admin/{id}` — PK compartida con `User`), NO por query
+ * param (`?userId=`). Confirmado contra api-dev: una cuenta con perfil real
+ * (`POST /student-profile` la había creado, `201`) daba `403` en
+ * `/student-profile?userId=X` pero `200` con el perfil completo en
+ * `/student-profile/X` — el query param no es una variante más laxa del
+ * mismo endpoint, es una URL distinta que ni siquiera encuentra el recurso
+ * del dueño. Con la forma vieja, ese `403` se colaba como `ApiError` real:
+ * `useSession().error` quedaba en `true` y tanto `RoleGuard` (mensaje
+ * genérico de "no pudimos verificar tu sesión") como `ProfileGuard` (corta
+ * en `if (isLoading || error) return`, nunca redirige a
+ * `/completar-perfil`) se quedaban trabados — la cuenta quedaba inutilizable
+ * sin explicación, aunque el perfil existiera. El resto del código ya daba
+ * esta forma por buena en otros dominios (`PUT /company/{id}`,
+ * `GET /company/:id` en comentarios de `use-update-company-profile.ts` /
+ * `use-vacancy.ts`) — acá era el único punto que todavía pegaba con
+ * query param.
  */
 export async function getDisplayProfile(
   user: User,
@@ -84,24 +102,18 @@ export async function getDisplayProfile(
   try {
     switch (user.role) {
       case "ALUMNO": {
-        const profile = await apiClient.get<StudentProfile>("/student-profile", {
-          params: { userId: user.userId },
-          signal,
-        });
+        const profile = await apiClient.get<StudentProfile>(
+          `/student-profile/${user.userId}`,
+          { signal },
+        );
         return { name: profile.name, surname: profile.surname };
       }
       case "EMPRESA": {
-        const profile = await apiClient.get<Company>("/company", {
-          params: { userId: user.userId },
-          signal,
-        });
+        const profile = await apiClient.get<Company>(`/company/${user.userId}`, { signal });
         return { name: profile.name };
       }
       case "ADMIN": {
-        const profile = await apiClient.get<Admin>("/admin", {
-          params: { userId: user.userId },
-          signal,
-        });
+        const profile = await apiClient.get<Admin>(`/admin/${user.userId}`, { signal });
         return { name: profile.name, surname: profile.surname };
       }
     }
