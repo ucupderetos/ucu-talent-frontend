@@ -44,7 +44,14 @@ export function LoginForm() {
 
   return (
     <form
-      onSubmit={handleSubmit(({ email, password }) => login({ email, password }))}
+      onSubmit={handleSubmit(async ({ email, password }) => {
+        try {
+          await login({ email, password });
+        } catch {
+          // `useLogin().error` ya expone el mensaje (401/400/etc.) de forma
+          // reactiva — acá solo evitamos que el rechazo quede sin capturar.
+        }
+      })}
       noValidate
     >
       <FieldGroup>
