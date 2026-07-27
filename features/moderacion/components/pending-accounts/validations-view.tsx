@@ -63,14 +63,12 @@ function CompaniesTab() {
   const industries = useCompanyIndustryOptions();
 
   const hasAny = (data?.total ?? 0) > 0 || hasCompanyFilters(filters);
-  const activeCount = filters.industries?.length ?? 0;
 
   return (
     <>
       <PendingCompaniesFiltersBar
         filters={filters}
         industries={industries}
-        activeCount={activeCount}
         onChange={(next) => setFilters({ ...next, page: 1 })}
       />
 

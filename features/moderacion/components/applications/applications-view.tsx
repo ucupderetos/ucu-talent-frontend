@@ -22,36 +22,23 @@ import { MOCK_APPLICATIONS, MOCK_COMPANIES, MOCK_VACANCIES } from "@/lib/fixture
 const DEFAULT_FILTERS: AdminApplicationFilters = { order: "recent", page: 1, perPage: 10 };
 
 export function ApplicationsView() {
-  const [draftFilters, setDraftFilters] = useState<AdminApplicationFilters>(DEFAULT_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<AdminApplicationFilters>(DEFAULT_FILTERS);
+  // Filtrado inmediato (sin "Aplicar filtros"): cada cambio de filtro vuelve
+  // a la página 1.
+  const [filters, setFilters] = useState<AdminApplicationFilters>(DEFAULT_FILTERS);
 
-  const { data, isLoading, isError } = useApplications(appliedFilters);
+  const { data, isLoading, isError } = useApplications(filters);
   const { vacancies, companies } = useApplicationFilterOptions();
 
-  const hasAnyApplication = (data?.total ?? 0) > 0 || hasActiveFilters(appliedFilters);
-  const activeFilterCount = countActiveFilters(appliedFilters);
+  const hasAnyApplication = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 
-  function applyFilters() {
-    setAppliedFilters((current) => ({
-      ...current,
-      search: draftFilters.search,
-      vacancyIds: draftFilters.vacancyIds,
-      companyIds: draftFilters.companyIds,
-      statuses: draftFilters.statuses,
-      page: 1,
-    }));
-  }
-
-  function clearFilters() {
-    setDraftFilters(DEFAULT_FILTERS);
-    setAppliedFilters(DEFAULT_FILTERS);
+  function updateFilters(next: AdminApplicationFilters) {
+    setFilters({ ...next, page: 1 });
   }
 
   /** Vuelve a la página 1: con otro orden, la página en la que estabas muestra
-   *  filas distintas — mismo criterio que `applyFilters` y `onPerPageChange`. */
+   *  filas distintas — mismo criterio que `updateFilters` y `onPerPageChange`. */
   function changeOrder(order: AdminApplicationOrder) {
-    setDraftFilters((f) => ({ ...f, order }));
-    setAppliedFilters((f) => ({ ...f, order, page: 1 }));
+    setFilters((f) => ({ ...f, order, page: 1 }));
   }
 
   return (
@@ -69,16 +56,11 @@ export function ApplicationsView() {
       />
 
       <ApplicationsFilters
-        filters={draftFilters}
+        filters={filters}
         vacancies={vacancies}
         companies={companies}
-        activeCount={activeFilterCount}
-        onChange={setDraftFilters}
+        onChange={updateFilters}
         onOrderChange={changeOrder}
-        onApply={applyFilters}
-        onClear={clearFilters}
-        canApply={hasFilterFieldsChanged(draftFilters, appliedFilters)}
-        canClear={hasActiveFilters(draftFilters) || hasActiveFilters(appliedFilters)}
       />
 
       {isLoading && <TableSkeleton />}
@@ -109,8 +91,8 @@ export function ApplicationsView() {
             perPage={data.perPage}
             total={data.total}
             itemLabel="postulaciones"
-            onPageChange={(page) => setAppliedFilters((f) => ({ ...f, page }))}
-            onPerPageChange={(perPage) => setAppliedFilters((f) => ({ ...f, perPage, page: 1 }))}
+            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
         </>
       )}
@@ -125,34 +107,6 @@ function hasActiveFilters(filters: AdminApplicationFilters): boolean {
       filters.companyIds?.length ||
       filters.statuses?.length,
   );
-}
-
-/** `search` no cuenta porque el input ya está siempre visible en la barra;
- *  `order` tampoco porque se aplica de inmediato (no pasa por el popover). */
-function countActiveFilters(filters: AdminApplicationFilters): number {
-  return (
-    (filters.vacancyIds?.length ?? 0) +
-    (filters.companyIds?.length ?? 0) +
-    (filters.statuses?.length ?? 0)
-  );
-}
-
-function hasFilterFieldsChanged(
-  draft: AdminApplicationFilters,
-  applied: AdminApplicationFilters,
-): boolean {
-  return (
-    (draft.search ?? "") !== (applied.search ?? "") ||
-    !sameValues(draft.vacancyIds, applied.vacancyIds) ||
-    !sameValues(draft.companyIds, applied.companyIds) ||
-    !sameValues(draft.statuses, applied.statuses)
-  );
-}
-
-function sameValues<T>(a: T[] = [], b: T[] = []): boolean {
-  if (a.length !== b.length) return false;
-  const setB = new Set(b);
-  return a.every((value) => setB.has(value));
 }
 
 /** Opciones de los MultiSelect: solo las ofertas/empresas que realmente

@@ -24,7 +24,6 @@ export function AdminVacanciesView() {
   const { data, isLoading, isError } = useAdminVacancies(filters);
   const { data: companies = [] } = useAdminVacancyCompanies();
   const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
-  const activeFilterCount = countActiveFilters(filters);
 
   function changeFilters(nextFilters: AdminVacancyFilters) {
     setFilters((current) => ({
@@ -34,25 +33,9 @@ export function AdminVacanciesView() {
     }));
   }
 
-  function clearFilterFields() {
-    setFilters((current) => ({
-      ...current,
-      companyIds: [],
-      statuses: [],
-      modalities: [],
-      page: 1,
-    }));
-  }
-
   return (
     <div className="flex flex-col gap-6">
-      <VacanciesFilters
-        filters={filters}
-        companies={companies}
-        activeCount={activeFilterCount}
-        onChange={changeFilters}
-        onClearFilters={clearFilterFields}
-      />
+      <VacanciesFilters filters={filters} companies={companies} onChange={changeFilters} />
 
       {isLoading && <TableSkeleton />}
 
@@ -99,15 +82,6 @@ function hasActiveFilters(filters: AdminVacancyFilters): boolean {
       filters.companyIds?.length ||
       filters.statuses?.length ||
       filters.modalities?.length,
-  );
-}
-
-/** La búsqueda no cuenta porque ya está visible fuera del popover. */
-function countActiveFilters(filters: AdminVacancyFilters): number {
-  return (
-    (filters.companyIds?.length ?? 0) +
-    (filters.statuses?.length ?? 0) +
-    (filters.modalities?.length ?? 0)
   );
 }
 

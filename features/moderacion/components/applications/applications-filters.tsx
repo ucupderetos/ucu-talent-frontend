@@ -6,19 +6,17 @@
 // `features/puestos/components/vacancy-filters.tsx` (AGENTS.md, "Barras de
 // filtros"). Controlado desde afuera.
 //
-// Los filtros no se aplican en cada cambio: `filters` es un borrador local
-// que solo se busca cuando se presiona "Aplicar filtros". El orden es la
-// excepción: se aplica de inmediato, no es un filtro.
+// Filtrado inmediato: cada cambio se aplica al toque, sin "Aplicar filtros".
+// "Limpiar todo" vive DENTRO del popover de "Filtros", al pie de las
+// secciones. El orden usa `onOrderChange` en vez de `onChange` porque no es
+// un filtro (AGENTS.md) — aunque los dos se apliquen igual de inmediato.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
-import { ApplyFiltersButton } from "@/components/filters/apply-filters-button";
-import { ClearFiltersButton } from "@/components/filters/clear-filters-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -26,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
 import { APPLICATION_STATUS_LABEL } from "@/features/moderacion/components/applications/application-status-badge";
 import type { AdminApplicationFilters, AdminApplicationOrder } from "@/features/moderacion/types";
@@ -40,25 +39,24 @@ export function ApplicationsFilters({
   filters,
   vacancies,
   companies,
-  activeCount,
   onChange,
   onOrderChange,
-  onApply,
-  onClear,
-  canApply,
-  canClear,
 }: {
   filters: AdminApplicationFilters;
   vacancies: Vacancy[];
   companies: Company[];
-  activeCount: number;
   onChange: (filters: AdminApplicationFilters) => void;
   onOrderChange: (order: AdminApplicationOrder) => void;
-  onApply: () => void;
-  onClear: () => void;
-  canApply: boolean;
-  canClear: boolean;
 }) {
+  const activeCount =
+    (filters.vacancyIds?.length ?? 0) +
+    (filters.companyIds?.length ?? 0) +
+    (filters.statuses?.length ?? 0);
+
+  function clearAll() {
+    onChange({ ...filters, vacancyIds: [], companyIds: [], statuses: [] });
+  }
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -99,9 +97,8 @@ export function ApplicationsFilters({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Oferta</Label>
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+          <FilterSection label="Oferta">
             <MultiSelect
               label="Oferta"
               placeholder="Todas las ofertas"
@@ -110,10 +107,9 @@ export function ApplicationsFilters({
               onChange={(vacancyIds) => onChange({ ...filters, vacancyIds })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Empresa</Label>
+          <FilterSection label="Empresa">
             <MultiSelect
               label="Empresa"
               placeholder="Todas las empresas"
@@ -122,10 +118,9 @@ export function ApplicationsFilters({
               onChange={(companyIds) => onChange({ ...filters, companyIds })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Estado</Label>
+          <FilterSection label="Estado">
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
@@ -139,14 +134,9 @@ export function ApplicationsFilters({
               }
               className="w-full"
             />
-          </div>
-        </PopoverContent>
+          </FilterSection>
+        </FilterPopoverContent>
       </Popover>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <ApplyFiltersButton onClick={onApply} disabled={!canApply} />
-        <ClearFiltersButton onClick={onClear} disabled={!canClear} />
-      </div>
     </div>
   );
 }

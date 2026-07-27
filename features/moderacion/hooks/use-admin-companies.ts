@@ -62,6 +62,23 @@ export function useAdminCompanyIndustries() {
   });
 }
 
+/** Ubicaciones presentes en los datos, para poblar el filtro. Mismo criterio
+ *  que `useAdminCompanyIndustries`: por `useQuery` para que el día que haya
+ *  endpoint sea el mismo cambio que el resto. */
+export function adminCompanyLocationsQueryKey() {
+  return ["moderacion", "empresas", "ubicaciones"] as const;
+}
+
+export function useAdminCompanyLocations() {
+  return useQuery({
+    queryKey: adminCompanyLocationsQueryKey(),
+    queryFn: async () =>
+      Array.from(new Set(allCompanyDetails().map((company) => company.location))).sort((a, b) =>
+        a.localeCompare(b, "es"),
+      ),
+  });
+}
+
 async function fetchAdminCompanies(
   filters: AdminCompanyFilters,
 ): Promise<Paginated<AdminCompanyRow>> {
@@ -141,6 +158,7 @@ function filterRows(
   return rows.filter((row) => {
     if (filters.statuses?.length && !filters.statuses.includes(row.status)) return false;
     if (filters.industries?.length && !filters.industries.includes(row.industry)) return false;
+    if (filters.locations?.length && !filters.locations.includes(row.location)) return false;
     if (search) {
       const haystack = `${row.name} ${row.email}`.toLowerCase();
       if (!haystack.includes(search)) return false;

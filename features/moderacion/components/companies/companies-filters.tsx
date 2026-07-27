@@ -1,23 +1,23 @@
 "use client";
 
 // Barra de filtros de "Empresas": búsqueda (siempre visible, ancho fijo) + un
-// botón único "Filtros" que abre un panel con dos MultiSelect (estado, rubro)
-// — mismo patrón que `students-filters.tsx` y `applications-filters.tsx`
-// (AGENTS.md, "Barras de filtros"). Controlado desde afuera.
+// botón único "Filtros" que abre un panel con tres MultiSelect (estado,
+// rubro, ubicación) — mismo patrón que `students-filters.tsx` y
+// `applications-filters.tsx` (AGENTS.md, "Barras de filtros"). Controlado
+// desde afuera.
 //
-// Los filtros no se aplican en cada cambio: `filters` es un borrador local que
-// solo se busca cuando se presiona "Aplicar filtros".
+// Filtrado inmediato: cada cambio se aplica al toque, sin "Aplicar filtros".
+// "Limpiar todo" vive DENTRO del popover de "Filtros", al pie de las
+// secciones.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
-import { ApplyFiltersButton } from "@/components/filters/apply-filters-button";
-import { ClearFiltersButton } from "@/components/filters/clear-filters-button";
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { COMPANY_STATUS_LABEL } from "@/features/moderacion/components/companies/company-status-badge";
 import type { AdminCompanyFilters } from "@/features/moderacion/types";
 import type { AccountStatus } from "@/types";
@@ -25,23 +25,23 @@ import type { AccountStatus } from "@/types";
 export function CompaniesFilters({
   filters,
   industries,
-  activeCount,
+  locations,
   onChange,
-  onApply,
-  onClear,
-  canApply,
-  canClear,
 }: {
   filters: AdminCompanyFilters;
   industries: string[];
-  /** Cantidad de filtros del popover ya APLICADOS (no del borrador). */
-  activeCount: number;
+  locations: string[];
   onChange: (filters: AdminCompanyFilters) => void;
-  onApply: () => void;
-  onClear: () => void;
-  canApply: boolean;
-  canClear: boolean;
 }) {
+  const activeCount =
+    (filters.statuses?.length ?? 0) +
+    (filters.industries?.length ?? 0) +
+    (filters.locations?.length ?? 0);
+
+  function clearAll() {
+    onChange({ ...filters, statuses: [], industries: [], locations: [] });
+  }
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -66,9 +66,8 @@ export function CompaniesFilters({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Estado</Label>
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+          <FilterSection label="Estado">
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
@@ -82,10 +81,9 @@ export function CompaniesFilters({
               }
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Rubro / Industria</Label>
+          <FilterSection label="Rubro / Industria">
             <MultiSelect
               label="Rubro"
               placeholder="Todos los rubros"
@@ -94,14 +92,20 @@ export function CompaniesFilters({
               onChange={(industries) => onChange({ ...filters, industries })}
               className="w-full"
             />
-          </div>
-        </PopoverContent>
-      </Popover>
+          </FilterSection>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <ApplyFiltersButton onClick={onApply} disabled={!canApply} />
-        <ClearFiltersButton onClick={onClear} disabled={!canClear} />
-      </div>
+          <FilterSection label="Ubicación">
+            <MultiSelect
+              label="Ubicación"
+              placeholder="Todas las ubicaciones"
+              options={locations.map((location) => ({ value: location, label: location }))}
+              selected={filters.locations ?? []}
+              onChange={(locations) => onChange({ ...filters, locations })}
+              className="w-full"
+            />
+          </FilterSection>
+        </FilterPopoverContent>
+      </Popover>
     </div>
   );
 }

@@ -2,29 +2,34 @@
 
 // buscador + un boton "Filtros" con la industria adentro. Filtrado inmediato:
 // cada cambio (search / industria) emite el filtro nuevo por onChange; no hay
-// borrador ni "Aplicar" (mismo criterio que la tab de estudiantes).
+// borrador ni "Aplicar". "Limpiar todo" vive DENTRO del popover vía
+// `FilterPopoverContent`.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
+import { MultiSelect } from "@/components/filters/multi-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MultiSelect } from "@/components/filters/multi-select";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import type { PendingCompaniesFilters } from "@/features/moderacion/types";
 
 export function PendingCompaniesFiltersBar({
   filters,
   industries,
-  activeCount,
   onChange,
 }: {
   filters: PendingCompaniesFilters;
   industries: string[];
-  activeCount: number;
   onChange: (filters: PendingCompaniesFilters) => void;
 }) {
+  const activeCount = filters.industries?.length ?? 0;
+
+  function clearAll() {
+    onChange({ ...filters, industries: [] });
+  }
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -49,9 +54,8 @@ export function PendingCompaniesFiltersBar({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Industria</Label>
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+          <FilterSection label="Industria">
             <MultiSelect
               label="Industria"
               placeholder="Todas las industrias"
@@ -60,8 +64,8 @@ export function PendingCompaniesFiltersBar({
               onChange={(industries) => onChange({ ...filters, industries })}
               className="w-full"
             />
-          </div>
-        </PopoverContent>
+          </FilterSection>
+        </FilterPopoverContent>
       </Popover>
     </div>
   );

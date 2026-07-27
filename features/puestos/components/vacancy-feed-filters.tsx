@@ -11,9 +11,8 @@ import { FilterIcon, SearchIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
 import type { FeedFilters } from "@/features/puestos/types";
 import type { Area } from "@/types";
@@ -59,7 +58,7 @@ export function VacancyFeedFilters({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
           <FilterSection label="Carrera">
             <MultiSelect
               label="Carrera"
@@ -81,16 +80,7 @@ export function VacancyFeedFilters({
               className="w-full"
             />
           </FilterSection>
-
-          {activeCount > 0 && (
-            <>
-              <Separator />
-              <div className="flex justify-center">
-                <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>
-              </div>
-            </>
-          )}
-        </PopoverContent>
+        </FilterPopoverContent>
       </Popover>
     </div>
   );

@@ -276,6 +276,7 @@ export interface AdminCompanyFilters {
   search?: string;
   statuses?: AccountStatus[];
   industries?: string[];
+  locations?: string[];
   page?: number;
   perPage?: number;
 }

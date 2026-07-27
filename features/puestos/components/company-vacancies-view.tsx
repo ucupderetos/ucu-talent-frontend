@@ -25,51 +25,30 @@ const DEFAULT_FILTERS: CompanyVacancyFilters = { order: "recent", page: 1, perPa
 export function CompanyVacanciesView() {
   const { company, isLoading: isLoadingCompany } = useCurrentCompany();
 
-  // Los filtros solo se buscan al presionar "Aplicar filtros": `draftFilters`
-  // es lo que el usuario va tocando en los inputs, `appliedFilters` es lo que
-  // realmente le llega al hook de datos. La paginación y el orden son la
-  // excepción: ambos actúan de inmediato (ver `changeOrder` y
-  // `ListPagination`), no son parte del "borrador".
-  const [draftFilters, setDraftFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
+  // Filtrado inmediato (sin "Aplicar filtros"): cada cambio de filtro vuelve
+  // a la página 1, mismo criterio que el resto de las pantallas con
+  // paginación (ver `updateFilters`/`changeOrder` abajo).
+  const [filters, setFilters] = useState<CompanyVacancyFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading: isLoadingVacancies, isError } = useCompanyVacancies(
     company?.companyId,
-    appliedFilters,
+    filters,
   );
 
   const { areas, locations } = useCompanyVacancyOptions(company?.companyId);
 
   const isLoading = isLoadingCompany || isLoadingVacancies;
-  const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(appliedFilters);
-  const activeFilterCount = countActiveFilters(appliedFilters);
+  const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 
-  // Solo los campos que de verdad pasan por el borrador de "Aplicar filtros"
-  // (`order` se excluye a propósito: se aplica al toque, ver `changeOrder`).
-  // Un spread de `draftFilters` entero pisaba `page`/`perPage` de vuelta a su
-  // valor inicial (nunca se editan en el borrador) y perdía el tamaño de
-  // página que el usuario ya había elegido en la paginación.
-  function applyFilters() {
-    setAppliedFilters((current) => ({
-      ...current,
-      search: draftFilters.search,
-      statuses: draftFilters.statuses,
-      areaIds: draftFilters.areaIds,
-      locations: draftFilters.locations,
-      page: 1,
-    }));
+  function updateFilters(next: CompanyVacancyFilters) {
+    setFilters({ ...next, page: 1 });
   }
 
-  function clearFilters() {
-    setDraftFilters(DEFAULT_FILTERS);
-    setAppliedFilters(DEFAULT_FILTERS);
-  }
-
-  // Ordenar no es lo mismo que filtrar (AGENTS.md): se aplica de inmediato,
-  // sin pasar por "Aplicar filtros".
+  // Ordenar no es lo mismo que filtrar (AGENTS.md), pero también se aplica de
+  // inmediato y también vuelve a la página 1: con otro orden, la página en la
+  // que estabas muestra filas distintas.
   function changeOrder(order: CompanyVacancyOrder) {
-    setDraftFilters((f) => ({ ...f, order }));
-    setAppliedFilters((f) => ({ ...f, order }));
+    setFilters((f) => ({ ...f, order, page: 1 }));
   }
 
   return (
@@ -88,16 +67,11 @@ export function CompanyVacanciesView() {
       />
 
       <VacancyFilters
-        filters={draftFilters}
+        filters={filters}
         areas={areas}
         locations={locations}
-        activeCount={activeFilterCount}
-        onChange={setDraftFilters}
+        onChange={updateFilters}
         onOrderChange={changeOrder}
-        onApply={applyFilters}
-        onClear={clearFilters}
-        canApply={hasFilterFieldsChanged(draftFilters, appliedFilters)}
-        canClear={hasActiveFilters(draftFilters) || hasActiveFilters(appliedFilters)}
       />
 
       {isLoading && <TableSkeleton />}
@@ -128,8 +102,8 @@ export function CompanyVacanciesView() {
             perPage={data.perPage}
             total={data.total}
             itemLabel="ofertas"
-            onPageChange={(page) => setAppliedFilters((f) => ({ ...f, page }))}
-            onPerPageChange={(perPage) => setAppliedFilters((f) => ({ ...f, perPage, page: 1 }))}
+            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
         </>
       )}
@@ -142,45 +116,10 @@ function hasActiveFilters(filters: CompanyVacancyFilters): boolean {
     filters.search ||
       filters.statuses?.length ||
       filters.areaIds?.length ||
-      filters.locations?.length,
+      filters.locations?.length ||
+      filters.publishedFrom ||
+      filters.publishedTo,
   );
-}
-
-/** Cuenta los filtros del popover que están realmente aplicados — se llama
- *  con `appliedFilters`, nunca con el borrador: el badge del botón "Filtros"
- *  tiene que reflejar lo que filtra la tabla ahora mismo, no lo que el
- *  usuario tildó y todavía no confirmó con "Aplicar filtros". `search` no
- *  cuenta porque el input ya está siempre visible en la barra. */
-function countActiveFilters(filters: CompanyVacancyFilters): number {
-  return (
-    (filters.statuses?.length ?? 0) +
-    (filters.areaIds?.length ?? 0) +
-    (filters.locations?.length ?? 0)
-  );
-}
-
-/** Compara borrador vs. aplicado para habilitar "Aplicar filtros" — ignora
- *  `page`/`perPage` (no son parte del borrador que edita la barra de
- *  filtros) y `order` (se aplica de inmediato, ver `changeOrder`, así que
- *  nunca queda pendiente). `statuses`/`areaIds`/`locations` son
- *  multi-selección, así que se comparan como conjuntos (el orden en que se
- *  van tildando no importa). */
-function hasFilterFieldsChanged(
-  draft: CompanyVacancyFilters,
-  applied: CompanyVacancyFilters,
-): boolean {
-  return (
-    (draft.search ?? "") !== (applied.search ?? "") ||
-    !sameValues(draft.statuses, applied.statuses) ||
-    !sameValues(draft.areaIds, applied.areaIds) ||
-    !sameValues(draft.locations, applied.locations)
-  );
-}
-
-function sameValues<T>(a: T[] = [], b: T[] = []): boolean {
-  if (a.length !== b.length) return false;
-  const setB = new Set(b);
-  return a.every((value) => setB.has(value));
 }
 
 /**
