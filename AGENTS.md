@@ -278,48 +278,49 @@ siempre el mismo layout — dos partes con roles fijos que no se intercambian:
   - **Por sección: dentro del propio dropdown de cada `MultiSelect`**, no al lado del
     `Label`. Cuando esa sección tiene algo tildado, el dropdown agrega un `CommandSeparator`
     y un `CommandItem` centrado "Limpiar" al pie de sus opciones (ver
-    `features/puestos/components/multi-select.tsx`) — limpiar esa sección es una acción del
+    `components/filters/multi-select.tsx`) — limpiar esa sección es una acción del
     propio control, no de la sección que lo envuelve. `FilterSection`
-    (`features/puestos/components/filter-section.tsx`) queda solo como el wrapper
+    (`components/filters/filter-popover.tsx`) queda solo como el wrapper
     `Label` + control, sin lógica de limpiar.
   - **Todas: al pie del popover, debajo de la última sección** — un `Separator` y un
     `ClearLink` ("Limpiar todo") centrado, visible solo si `activeCount > 0`. Resetea
     todos los campos del popover, PERO NO búsqueda ni orden (esos no son "filtros" en este
     layout, son sus propios controles — ver el punto de arriba). No va arriba del todo ni
     al lado del título "Filtros": es la última acción de la lista, después de haber visto
-    todas las secciones.
+    todas las secciones. **No se arma a mano en cada barra**: se usa
+    `FilterPopoverContent` de `components/filters/filter-popover.tsx`, que ya incluye el
+    pie de "Limpiar todo". Cada barra solo pasa `activeCount`, `onClearAll` y las
+    `FilterSection` como `children`.
 
   ```tsx
-  <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-    <p className="text-sm font-medium">Filtros</p>
-
+  <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
     <FilterSection label="Área">
       <MultiSelect className="w-full" /* trae su propio "Limpiar" interno */ />
     </FilterSection>
     {/* ...una FilterSection por filtro... */}
-
-    {activeCount > 0 && (
-      <>
-        <Separator />
-        <div className="flex justify-center">
-          <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>
-        </div>
-      </>
-    )}
-  </PopoverContent>
+  </FilterPopoverContent>
   ```
 
-⚠️ **`features/puestos/components/multi-select.tsx` es el único `MultiSelect` del
-repo — no `components/filters/`.** Un PR paralelo (#14) había agregado un
-`FilterMultiSelect` genérico en `components/filters/`, sin consumidores en ese momento;
-se eliminó (`filter-multi-select.tsx` sigue sin uso, no volver a agregarlo). Pero
-`ApplyFiltersButton`/`ClearFiltersButton` (mismo directorio) **sí tienen un consumidor
-real**: `features/puestos/components/vacancy-filters.tsx` ("Mis ofertas" de empresa, PR
-#19) los usa para un paradigma de estado "borrador" + aplicar explícito, distinto del
-Popover con aplicado en vivo de esta sección. Es una divergencia puntual de esa pantalla,
-no una migración general — el feed de alumno (`vacancy-feed-filters.tsx`) sigue con
-aplicado en vivo. Si se quiere unificar un solo paradigma para toda la app, es una
-decisión a coordinar entre los tres grupos, no algo a resolver a mano en un archivo.
+⚠️ **`components/filters/multi-select.tsx` es el único `MultiSelect` del repo.** Un PR
+paralelo (#14) había agregado un `FilterMultiSelect` genérico aparte, sin consumidores;
+se eliminó (`filter-multi-select.tsx` sigue sin uso, no volver a agregarlo). El pie de
+"Limpiar todo" tampoco se reimplementa: siempre va por `FilterPopoverContent`.
+
+⚠️ **Ya no existe el paradigma de "borrador" + "Aplicar filtros".** Hasta 2026-07-24,
+`vacancy-filters.tsx` ("Mis ofertas" de empresa) y las tres barras de `moderacion/`
+(`companies-filters.tsx`, `students-filters.tsx`, `applications-filters.tsx`) divergían
+del resto: editaban un estado "borrador" y solo buscaban al presionar un botón "Aplicar
+filtros" (`ApplyFiltersButton`/`ClearFiltersButton`, en `components/filters/`), con esos
+dos botones sueltos al lado del popover de "Filtros". Se unificó todo a **un solo
+paradigma, aplicado en vivo**, igual al que ya tenía el feed de alumno
+(`vacancy-feed-filters.tsx`): cada cambio (búsqueda o `MultiSelect`) se emite de
+inmediato por `onChange`, sin estado intermedio ni botón de "Aplicar". `ApplyFiltersButton`
+y `ClearFiltersButton` se borraron — no quedan consumidores, no se vuelven a agregar. En
+las pantallas con paginación, el `onChange` que le pasa la vista a la barra de filtros
+envuelve al filtro nuevo para resetear `page: 1` (ver `updateFilters` en
+`company-vacancies-view.tsx`, `admin-companies-view.tsx`, `students-view.tsx` y
+`applications-view.tsx`) — el "Limpiar todo" queda igual que en el resto de la sección
+(`FilterPopoverContent`, ver arriba).
 
 ```tsx
 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -335,14 +336,15 @@ decisión a coordinar entre los tres grupos, no algo a resolver a mano en un arc
         {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-      {/* Un Label + <MultiSelect className="w-full" ... /> por filtro */}
-    </PopoverContent>
+    <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+      {/* Un FilterSection + <MultiSelect className="w-full" ... /> por filtro */}
+    </FilterPopoverContent>
   </Popover>
 </div>
 ```
 
 Ver `vacancy-feed-filters.tsx` y `vacancy-filters.tsx` para el patrón ya aplicado.
+El pie de "Limpiar todo" lo aporta `FilterPopoverContent` — no se repite a mano.
 
 ### Espaciado
 

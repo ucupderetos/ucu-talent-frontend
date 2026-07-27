@@ -115,7 +115,7 @@ export function VacancyFeedView() {
  */
 function useFeedFilterOptions() {
   return useMemo(() => {
-    const visible = MOCK_VACANCIES.filter((vacancy) => vacancy.status === "PENDIENTE");
+    const visible = MOCK_VACANCIES.filter((vacancy) => vacancy.status === "PUBLICADO");
     const areaIds = new Set(visible.map((vacancy) => vacancy.areaId));
     const contractTypes = Array.from(new Set(visible.map((vacancy) => vacancy.contractType))).sort();
 

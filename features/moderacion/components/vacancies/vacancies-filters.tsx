@@ -1,22 +1,17 @@
 "use client";
 
 // Barra de filtros de Ofertas: búsqueda visible + un único popover. Los
-// cambios se aplican en vivo y "Limpiar todo" vive dentro del popover, tal
-// como define AGENTS.md.
+// cambios se aplican en vivo y "Limpiar todo" vive dentro del popover vía
+// `FilterPopoverContent` (AGENTS.md, "Barras de filtros").
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { VACANCY_STATUS_LABEL } from "@/components/vacancies/vacancy-status-badge";
 import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
 import type { AdminVacancyFilters } from "@/features/moderacion/types";
@@ -25,17 +20,21 @@ import type { Company, Modality, VacancyStatus } from "@/types";
 export function VacanciesFilters({
   filters,
   companies,
-  activeCount,
   onChange,
-  onClearFilters,
 }: {
   filters: AdminVacancyFilters;
   companies: Company[];
-  /** Cantidad de filtros del popover ya aplicados. */
-  activeCount: number;
   onChange: (filters: AdminVacancyFilters) => void;
-  onClearFilters: () => void;
 }) {
+  const activeCount =
+    (filters.companyIds?.length ?? 0) +
+    (filters.statuses?.length ?? 0) +
+    (filters.modalities?.length ?? 0);
+
+  function clearAll() {
+    onChange({ ...filters, companyIds: [], statuses: [], modalities: [] });
+  }
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -60,11 +59,8 @@ export function VacanciesFilters({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <p className="text-sm font-medium">Filtros</p>
-
-          <div className="flex flex-col gap-1.5">
-            <Label>Empresa</Label>
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+          <FilterSection label="Empresa">
             <MultiSelect
               label="Empresa"
               placeholder="Todas las empresas"
@@ -76,10 +72,9 @@ export function VacanciesFilters({
               onChange={(companyIds) => onChange({ ...filters, companyIds })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Estado</Label>
+          <FilterSection label="Estado">
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
@@ -93,10 +88,9 @@ export function VacanciesFilters({
               }
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Modalidad</Label>
+          <FilterSection label="Modalidad">
             <MultiSelect
               label="Modalidad"
               placeholder="Todas las modalidades"
@@ -110,23 +104,8 @@ export function VacanciesFilters({
               }
               className="w-full"
             />
-          </div>
-
-          {activeCount > 0 && (
-            <>
-              <Separator />
-              <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={onClearFilters}
-                  className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                >
-                  Limpiar todo
-                </button>
-              </div>
-            </>
-          )}
-        </PopoverContent>
+          </FilterSection>
+        </FilterPopoverContent>
       </Popover>
     </div>
   );

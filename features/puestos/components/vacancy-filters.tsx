@@ -3,27 +3,23 @@
 // Barra de filtros de "Mis ofertas": búsqueda + orden (siempre visibles) + un
 // botón único "Filtros" que abre un panel con tres MultiSelect (estado, área,
 // ubicación) — cada uno con pinta de Select, pero se puede tildar más de una
-// opción adentro. Controlado desde afuera (`company-vacancies-view.tsx`) —
-// este componente no sabe de dónde vienen los datos, solo emite el filtro
-// nuevo.
+// opción adentro — más un rango de fecha de publicación (Desde/Hasta).
+// Controlado desde afuera (`company-vacancies-view.tsx`) — este componente no
+// sabe de dónde vienen los datos, solo emite el filtro nuevo.
 //
-// Los filtros no se aplican en cada cambio: `filters` es un borrador local
-// que solo se busca cuando se presiona "Aplicar filtros"
-// (`ApplyFiltersButton`, en `components/filters/`). "Limpiar filtros"
-// (`ClearFiltersButton`) resetea borrador y búsqueda a la vez.
+// Filtrado inmediato: cada cambio se aplica al toque, sin "Aplicar filtros"
+// (mismo criterio que `vacancy-feed-filters.tsx`). "Limpiar todo" vive DENTRO
+// del popover de "Filtros", al pie de las secciones.
 //
-// El orden es la excepción: no es un filtro (AGENTS.md), así que su Select
-// usa `onOrderChange` en vez de `onChange` y el padre lo aplica de inmediato,
-// sin pasar por "Aplicar filtros".
+// El orden usa `onOrderChange` en vez de `onChange` porque no es un filtro
+// (AGENTS.md) — aunque los dos se apliquen igual de inmediato.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
-import { ApplyFiltersButton } from "@/components/filters/apply-filters-button";
-import { ClearFiltersButton } from "@/components/filters/clear-filters-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -31,8 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { ClearLink, FilterSection } from "@/features/puestos/components/filter-section";
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
 import { VACANCY_STATUS_LABEL } from "@/components/vacancies/vacancy-status-badge";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
@@ -48,29 +43,32 @@ export function VacancyFilters({
   filters,
   areas,
   locations,
-  activeCount,
   onChange,
   onOrderChange,
-  onApply,
-  onClear,
-  canApply,
-  canClear,
 }: {
   filters: CompanyVacancyFilters;
   areas: Area[];
   locations: string[];
-  /** Cantidad de filtros del popover ya APLICADOS (no del borrador) — la
-   *  pasa el padre calculada sobre `appliedFilters`. */
-  activeCount: number;
   onChange: (filters: CompanyVacancyFilters) => void;
   onOrderChange: (order: CompanyVacancyOrder) => void;
-  onApply: () => void;
-  onClear: () => void;
-  canApply: boolean;
-  canClear: boolean;
 }) {
+  const activeCount =
+    (filters.statuses?.length ?? 0) +
+    (filters.areaIds?.length ?? 0) +
+    (filters.locations?.length ?? 0) +
+    (filters.publishedFrom ? 1 : 0) +
+    (filters.publishedTo ? 1 : 0);
+
   function clearAll() {
-    onChange({ ...filters, statuses: [], areaIds: [], locations: [], page: 1 });
+    onChange({
+      ...filters,
+      statuses: [],
+      areaIds: [],
+      locations: [],
+      publishedFrom: undefined,
+      publishedTo: undefined,
+      page: 1,
+    });
   }
 
   return (
@@ -113,7 +111,7 @@ export function VacancyFilters({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
           <FilterSection label="Estado">
             <MultiSelect
               label="Estado"
@@ -152,21 +150,30 @@ export function VacancyFilters({
             />
           </FilterSection>
 
-          {activeCount > 0 && (
-            <>
-              <Separator />
-              <div className="flex justify-center">
-                <ClearLink onClick={clearAll}>Limpiar todo</ClearLink>
-              </div>
-            </>
-          )}
-        </PopoverContent>
+          <FilterSection label="Fecha de publicación">
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="date"
+                value={filters.publishedFrom ?? ""}
+                onChange={(e) =>
+                  onChange({ ...filters, publishedFrom: e.target.value || undefined })
+                }
+                max={filters.publishedTo}
+                aria-label="Publicadas desde"
+              />
+              <Input
+                type="date"
+                value={filters.publishedTo ?? ""}
+                onChange={(e) =>
+                  onChange({ ...filters, publishedTo: e.target.value || undefined })
+                }
+                min={filters.publishedFrom}
+                aria-label="Publicadas hasta"
+              />
+            </div>
+          </FilterSection>
+        </FilterPopoverContent>
       </Popover>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <ApplyFiltersButton onClick={onApply} disabled={!canApply} />
-        <ClearFiltersButton onClick={onClear} disabled={!canClear} />
-      </div>
     </div>
   );
 }

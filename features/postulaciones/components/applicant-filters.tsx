@@ -3,15 +3,16 @@
 // Barra de filtros de "Postulantes": búsqueda + orden (siempre visibles) + un
 // botón único "Filtros" que abre un panel con multi-selects de estado y oferta.
 // La tabla arranca sin estado aplicado, así trae todos los postulantes.
+// "Limpiar todo" vive DENTRO del popover vía `FilterPopoverContent`.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -38,6 +39,10 @@ export function ApplicantFiltersBar({
   onChange: (filters: ApplicantFilters) => void;
 }) {
   const activeCount = (filters.statuses?.length ?? 0) + (filters.vacancyIds?.length ?? 0);
+
+  function clearAll() {
+    onChange({ ...filters, statuses: [], vacancyIds: [], page: 1 });
+  }
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -79,9 +84,8 @@ export function ApplicantFiltersBar({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Estado</Label>
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+          <FilterSection label="Estado">
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
@@ -95,10 +99,9 @@ export function ApplicantFiltersBar({
               }
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Oferta</Label>
+          <FilterSection label="Oferta">
             <MultiSelect
               label="Oferta"
               placeholder="Todas las ofertas"
@@ -107,8 +110,8 @@ export function ApplicantFiltersBar({
               onChange={(vacancyIds) => onChange({ ...filters, vacancyIds, page: 1 })}
               className="w-full"
             />
-          </div>
-        </PopoverContent>
+          </FilterSection>
+        </FilterPopoverContent>
       </Popover>
     </div>
   );

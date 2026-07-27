@@ -22,31 +22,17 @@ import { MOCK_AREAS, MOCK_DEGREES, MOCK_EDUCATION } from "@/lib/fixtures";
 const DEFAULT_FILTERS: StudentFilters = { page: 1, perPage: 10 };
 
 export function StudentsView() {
-  // Los filtros solo se buscan al presionar "Aplicar filtros": `draftFilters`
-  // es lo que el usuario va tocando en los inputs, `appliedFilters` es lo que
-  // realmente le llega al hook de datos.
-  const [draftFilters, setDraftFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
+  // Filtrado inmediato (sin "Aplicar filtros"): cada cambio de filtro vuelve
+  // a la página 1.
+  const [filters, setFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
 
-  const { data, isLoading, isError } = useStudents(appliedFilters);
+  const { data, isLoading, isError } = useStudents(filters);
   const { degrees, areas } = useStudentFilterOptions();
 
-  const hasAnyStudent = (data?.total ?? 0) > 0 || hasActiveFilters(appliedFilters);
-  const activeFilterCount = countActiveFilters(appliedFilters);
+  const hasAnyStudent = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 
-  function applyFilters() {
-    setAppliedFilters((current) => ({
-      ...current,
-      search: draftFilters.search,
-      degreeIds: draftFilters.degreeIds,
-      areaIds: draftFilters.areaIds,
-      page: 1,
-    }));
-  }
-
-  function clearFilters() {
-    setDraftFilters(DEFAULT_FILTERS);
-    setAppliedFilters(DEFAULT_FILTERS);
+  function updateFilters(next: StudentFilters) {
+    setFilters({ ...next, page: 1 });
   }
 
   return (
@@ -63,17 +49,7 @@ export function StudentsView() {
         }
       />
 
-      <StudentsFilters
-        filters={draftFilters}
-        degrees={degrees}
-        areas={areas}
-        activeCount={activeFilterCount}
-        onChange={setDraftFilters}
-        onApply={applyFilters}
-        onClear={clearFilters}
-        canApply={hasFilterFieldsChanged(draftFilters, appliedFilters)}
-        canClear={hasActiveFilters(draftFilters) || hasActiveFilters(appliedFilters)}
-      />
+      <StudentsFilters filters={filters} degrees={degrees} areas={areas} onChange={updateFilters} />
 
       {isLoading && <TableSkeleton />}
 
@@ -103,8 +79,8 @@ export function StudentsView() {
             perPage={data.perPage}
             total={data.total}
             itemLabel="usuarios"
-            onPageChange={(page) => setAppliedFilters((f) => ({ ...f, page }))}
-            onPerPageChange={(perPage) => setAppliedFilters((f) => ({ ...f, perPage, page: 1 }))}
+            onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+            onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
         </>
       )}
@@ -114,26 +90,6 @@ export function StudentsView() {
 
 function hasActiveFilters(filters: StudentFilters): boolean {
   return Boolean(filters.search || filters.degreeIds?.length || filters.areaIds?.length);
-}
-
-/** Cuenta los filtros del popover ya aplicados — `search` no cuenta porque el
- *  input ya está siempre visible en la barra (mismo criterio que puestos). */
-function countActiveFilters(filters: StudentFilters): number {
-  return (filters.degreeIds?.length ?? 0) + (filters.areaIds?.length ?? 0);
-}
-
-function hasFilterFieldsChanged(draft: StudentFilters, applied: StudentFilters): boolean {
-  return (
-    (draft.search ?? "") !== (applied.search ?? "") ||
-    !sameValues(draft.degreeIds, applied.degreeIds) ||
-    !sameValues(draft.areaIds, applied.areaIds)
-  );
-}
-
-function sameValues<T>(a: T[] = [], b: T[] = []): boolean {
-  if (a.length !== b.length) return false;
-  const setB = new Set(b);
-  return a.every((value) => setB.has(value));
 }
 
 /** Opciones de los MultiSelect: solo las carreras/áreas que algún alumno

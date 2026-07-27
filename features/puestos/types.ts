@@ -129,12 +129,18 @@ export type CompanyVacancyOrder = "recent" | "oldest" | "applicants";
 /** Filtros de la tabla de "Mis ofertas". Hoy se resuelven en el cliente sobre
  *  fixtures — cuando exista el contrato de la API, probablemente viajen como
  *  query params de un GET paginado.
- *  `statuses`/`areaIds`/`locations`: multi-selección, ver `vacancy-filters.tsx`. */
+ *  `statuses`/`areaIds`/`locations`: multi-selección, ver `vacancy-filters.tsx`.
+ *  `publishedFrom`/`publishedTo`: rango sobre `Vacancy.publicationDate`
+ *  (fechas `yyyy-MM-dd`, del `<input type="date">` de la barra de filtros).
+ *  Una vacante sin `publicationDate` (todavía `PENDIENTE`) queda fuera de
+ *  cualquier rango que se aplique. */
 export interface CompanyVacancyFilters {
   search?: string;
   statuses?: VacancyStatus[];
   areaIds?: string[];
   locations?: Department[];
+  publishedFrom?: string;
+  publishedTo?: string;
   order?: CompanyVacancyOrder;
   page?: number;
   perPage?: number;

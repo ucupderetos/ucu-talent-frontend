@@ -6,18 +6,17 @@
 // (AGENTS.md, "Barras de filtros"). Controlado desde afuera — este componente
 // no sabe de dónde vienen los datos, solo emite el filtro nuevo.
 //
-// Los filtros no se aplican en cada cambio: `filters` es un borrador local
-// que solo se busca cuando se presiona "Aplicar filtros".
+// Filtrado inmediato: cada cambio se aplica al toque, sin "Aplicar filtros".
+// "Limpiar todo" vive DENTRO del popover de "Filtros", al pie de las
+// secciones.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
-import { ApplyFiltersButton } from "@/components/filters/apply-filters-button";
-import { ClearFiltersButton } from "@/components/filters/clear-filters-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
 import type { StudentFilters } from "@/features/moderacion/types";
 import type { Area, Degree } from "@/types";
@@ -26,24 +25,19 @@ export function StudentsFilters({
   filters,
   degrees,
   areas,
-  activeCount,
   onChange,
-  onApply,
-  onClear,
-  canApply,
-  canClear,
 }: {
   filters: StudentFilters;
   degrees: Degree[];
   areas: Area[];
-  /** Cantidad de filtros del popover ya APLICADOS (no del borrador). */
-  activeCount: number;
   onChange: (filters: StudentFilters) => void;
-  onApply: () => void;
-  onClear: () => void;
-  canApply: boolean;
-  canClear: boolean;
 }) {
+  const activeCount = (filters.degreeIds?.length ?? 0) + (filters.areaIds?.length ?? 0);
+
+  function clearAll() {
+    onChange({ ...filters, degreeIds: [], areaIds: [] });
+  }
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-64">
@@ -68,9 +62,8 @@ export function StudentsFilters({
             {activeCount > 0 && <Badge variant="secondary">{activeCount}</Badge>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="flex w-72 flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label>Carrera</Label>
+        <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+          <FilterSection label="Carrera">
             <MultiSelect
               label="Carrera"
               placeholder="Todas las carreras"
@@ -79,10 +72,9 @@ export function StudentsFilters({
               onChange={(degreeIds) => onChange({ ...filters, degreeIds })}
               className="w-full"
             />
-          </div>
+          </FilterSection>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Facultad</Label>
+          <FilterSection label="Facultad">
             <MultiSelect
               label="Facultad"
               placeholder="Todas las facultades"
@@ -91,14 +83,9 @@ export function StudentsFilters({
               onChange={(areaIds) => onChange({ ...filters, areaIds })}
               className="w-full"
             />
-          </div>
-        </PopoverContent>
+          </FilterSection>
+        </FilterPopoverContent>
       </Popover>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <ApplyFiltersButton onClick={onApply} disabled={!canApply} />
-        <ClearFiltersButton onClick={onClear} disabled={!canClear} />
-      </div>
     </div>
   );
 }

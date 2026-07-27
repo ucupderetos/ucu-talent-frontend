@@ -84,6 +84,14 @@ function filterRows(
     if (filters.statuses?.length && !filters.statuses.includes(row.status)) return false;
     if (filters.areaIds?.length && !filters.areaIds.includes(row.areaId)) return false;
     if (filters.locations?.length && !filters.locations.includes(row.location)) return false;
+    if (filters.publishedFrom || filters.publishedTo) {
+      // Sin `publicationDate` (vacante todavía `PENDIENTE`) no hay fecha para
+      // comparar contra el rango: queda afuera.
+      if (!row.publicationDate) return false;
+      const publishedDate = row.publicationDate.slice(0, 10);
+      if (filters.publishedFrom && publishedDate < filters.publishedFrom) return false;
+      if (filters.publishedTo && publishedDate > filters.publishedTo) return false;
+    }
     if (search) {
       const haystack = `${row.name} ${row.areaName}`.toLowerCase();
       if (!haystack.includes(search)) return false;
