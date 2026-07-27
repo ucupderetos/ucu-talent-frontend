@@ -277,7 +277,13 @@ export function RegisterForm() {
     } catch (cause) {
       // El 409 (email duplicado, paso 1) se muestra en el campo, no en el
       // banner genérico — `useRegister().error` ya lo silencia para ese caso.
+      // El campo `email` vive en el paso "cuenta": si el submit se dispara
+      // desde "perfil" (como siempre, el submit real es del paso 2), el error
+      // quedaba seteado en un campo que no se renderizaba y el usuario no lo
+      // veía hasta volver manualmente al paso 1. Por eso el catch también
+      // vuelve al paso donde el campo es visible.
       if (cause instanceof ApiError && cause.status === 409) {
+        setStep("cuenta");
         setError("email", {
           type: "manual",
           message: "Ese email ya está registrado. ¿Ya tenés cuenta? Iniciá sesión.",
