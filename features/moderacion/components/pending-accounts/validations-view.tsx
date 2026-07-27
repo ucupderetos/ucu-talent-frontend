@@ -90,7 +90,7 @@ function CompaniesTab() {
       )}
 
       {!isLoading && !isError && data && data.items.length > 0 && (
-        <>
+        <div className="flex flex-col gap-2">
           <PendingCompaniesTable rows={data.items} />
           <TablePagination
             page={data.page}
@@ -100,7 +100,7 @@ function CompaniesTab() {
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
             onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
-        </>
+        </div>
       )}
     </>
   );
@@ -119,7 +119,7 @@ function StudentsTab() {
 
   return (
     <>
-      <div className="relative w-full sm:w-64">
+      <div className="relative w-full sm:w-96">
         <SearchIcon
           className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
@@ -160,7 +160,7 @@ function StudentsTab() {
       )}
 
       {!isLoading && !isError && data && data.items.length > 0 && (
-        <>
+        <div className="flex flex-col gap-2">
           <PendingStudentsTable rows={data.items} />
           <TablePagination
             page={data.page}
@@ -170,7 +170,7 @@ function StudentsTab() {
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
             onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
-        </>
+        </div>
       )}
     </>
   );
