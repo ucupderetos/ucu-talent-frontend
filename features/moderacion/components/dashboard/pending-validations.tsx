@@ -3,7 +3,7 @@
 // Empresas esperando validación, en el dashboard. Muestra solo las 3 primeras;
 // el resto se ve en la pantalla de Validaciones.
 //
-// "Revisar" va al listado de Validaciones y no a un detalle por empresa: esa
+// "Detalles" va al listado de Validaciones y no a un detalle por empresa: esa
 // pantalla no existe todavía.
 
 import Link from "next/link";
@@ -36,7 +36,7 @@ export function PendingValidations({
   const visible = validations.slice(0, VISIBLE_COUNT);
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden py-0">
+    <Card className="flex flex-col gap-0 overflow-hidden py-0">
       <CardHeader className="px-5 py-3">
         <CardTitle>Validaciones pendientes</CardTitle>
       </CardHeader>
@@ -79,7 +79,7 @@ export function PendingValidations({
                   </div>
 
                   <Button asChild variant="outline">
-                    <Link href="/moderacion/validaciones">Revisar</Link>
+                    <Link href="/moderacion/validaciones">Detalles</Link>
                   </Button>
                 </div>
               </div>
@@ -90,11 +90,9 @@ export function PendingValidations({
         )}
       </CardContent>
 
-      <Separator />
-
       <CardFooter className="mt-auto px-5 py-3">
         <Button asChild variant="link" className="h-auto p-0 text-primary">
-          <Link href="/moderacion/validaciones">Ver todas las pendientes</Link>
+          <Link href="/moderacion/validaciones">Ver todas las validaciones pendientes</Link>
         </Button>
       </CardFooter>
     </Card>

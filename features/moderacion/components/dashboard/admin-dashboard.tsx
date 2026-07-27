@@ -31,12 +31,12 @@ export function AdminDashboard() {
         <>
           <StatsGrid stats={data.stats} />
 
-          <div className="grid gap-6 xl:grid-cols-2">
+          <div className="grid items-start gap-6 xl:grid-cols-2">
             <RecentActivity activities={data.recentActivity} />
             <ApplicationsByStatus statuses={data.applicationsByStatus} />
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+          <div className="grid items-start gap-6 xl:grid-cols-[1.4fr_1fr]">
             <RecentVacanciesTable vacancies={data.recentVacancies} />
             <PendingValidations validations={data.pendingValidations} />
           </div>

@@ -34,14 +34,14 @@ function formatDate(iso: string): string {
 
 export function RecentVacanciesTable({ vacancies }: { vacancies: RecentVacancy[] }) {
   return (
-    <Card className="flex h-full flex-col overflow-hidden py-0">
-      <CardHeader className="px-5 py-3">
+    <Card className="flex flex-col overflow-hidden gap-0 py-0">
+      <CardHeader className="gap-0 px-5 py-3">
         <CardTitle>Ofertas más recientes</CardTitle>
       </CardHeader>
 
       <Separator />
 
-      <CardContent className="min-h-0 flex-1 p-0">
+      <CardContent className="flex min-h-0 flex-1 flex-col p-0">
         {vacancies.length === 0 ? (
           <div className="p-5">
             <EmptyState
@@ -50,11 +50,11 @@ export function RecentVacanciesTable({ vacancies }: { vacancies: RecentVacancy[]
             />
           </div>
         ) : (
-          <div className="max-h-[220px] overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto [&_[data-slot=table-container]]:overflow-x-hidden">
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow>
-                  <TableHead className="px-5">Puesto</TableHead>
+                  <TableHead className="h-9 px-5">Puesto</TableHead>
                   <TableHead>Empresa</TableHead>
                   <TableHead>Publicación</TableHead>
                   <TableHead>Postulaciones</TableHead>
@@ -91,8 +91,6 @@ export function RecentVacanciesTable({ vacancies }: { vacancies: RecentVacancy[]
           </div>
         )}
       </CardContent>
-
-      <Separator />
 
       <CardFooter className="mt-auto px-5 py-3">
         <Button asChild variant="link" className="h-auto p-0 text-primary">
