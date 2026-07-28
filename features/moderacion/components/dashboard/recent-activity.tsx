@@ -46,7 +46,7 @@ const ACTIVITY_CONFIG: Record<
   user: {
     icon: UserRoundCheckIcon,
     className: "bg-chart-4/15 text-chart-4",
-    href: "/moderacion/usuarios",
+    href: "/moderacion/estudiantes",
   },
   validation: {
     icon: ShieldCheckIcon,

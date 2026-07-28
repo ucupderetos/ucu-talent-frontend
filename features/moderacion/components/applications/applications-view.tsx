@@ -5,7 +5,7 @@
 // page.tsx solo renderiza esto. Mismo patrón que
 // `features/puestos/components/company-vacancies-view.tsx`.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DownloadIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,11 +13,13 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablePagination } from "@/components/filters/table-pagination";
-import { useApplications } from "@/features/moderacion/hooks/use-applications";
+import {
+  useApplicationFilterOptions,
+  useApplications,
+} from "@/features/moderacion/hooks/use-applications";
 import { ApplicationsFilters } from "@/features/moderacion/components/applications/applications-filters";
 import { ApplicationsTable } from "@/features/moderacion/components/applications/applications-table";
 import type { AdminApplicationFilters, AdminApplicationOrder } from "@/features/moderacion/types";
-import { MOCK_APPLICATIONS, MOCK_COMPANIES, MOCK_VACANCIES } from "@/lib/fixtures";
 
 const DEFAULT_FILTERS: AdminApplicationFilters = { order: "recent", page: 1, perPage: 10 };
 
@@ -27,7 +29,9 @@ export function ApplicationsView() {
   const [filters, setFilters] = useState<AdminApplicationFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading, isError } = useApplications(filters);
-  const { vacancies, companies } = useApplicationFilterOptions();
+  const { data: filterOptions } = useApplicationFilterOptions();
+  const vacancies = filterOptions?.vacancies ?? [];
+  const companies = filterOptions?.companies ?? [];
 
   const hasAnyApplication = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 
@@ -107,20 +111,6 @@ function hasActiveFilters(filters: AdminApplicationFilters): boolean {
       filters.companyIds?.length ||
       filters.statuses?.length,
   );
-}
-
-/** Opciones de los MultiSelect: solo las ofertas/empresas que realmente
- *  tienen alguna postulación, para que el dropdown no ofrezca opciones
- *  vacías. Mismo criterio que `useCompanyVacancyOptions` en puestos. */
-function useApplicationFilterOptions() {
-  return useMemo(() => {
-    const vacancyIds = new Set(MOCK_APPLICATIONS.map((a) => a.vacancyId));
-    const vacancies = MOCK_VACANCIES.filter((v) => vacancyIds.has(v.vacancyId));
-    const companyIds = new Set(vacancies.map((v) => v.companyId));
-    const companies = MOCK_COMPANIES.filter((c) => companyIds.has(c.companyId));
-
-    return { vacancies, companies };
-  }, []);
 }
 
 function TableSkeleton() {

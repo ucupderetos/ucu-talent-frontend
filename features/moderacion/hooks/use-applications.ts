@@ -38,6 +38,27 @@ export function useApplications(filters: AdminApplicationFilters) {
   });
 }
 
+export function applicationFilterOptionsQueryKey() {
+  return ["moderacion", "postulaciones", "opciones-filtros"] as const;
+}
+
+/** Solo ofrece vacantes y empresas que tienen al menos una postulación. */
+export function useApplicationFilterOptions() {
+  return useQuery({
+    queryKey: applicationFilterOptionsQueryKey(),
+    queryFn: fetchApplicationFilterOptions,
+  });
+}
+
+async function fetchApplicationFilterOptions() {
+  const vacancyIds = new Set(MOCK_APPLICATIONS.map((application) => application.vacancyId));
+  const vacancies = MOCK_VACANCIES.filter((vacancy) => vacancyIds.has(vacancy.vacancyId));
+  const companyIds = new Set(vacancies.map((vacancy) => vacancy.companyId));
+  const companies = MOCK_COMPANIES.filter((company) => companyIds.has(company.companyId));
+
+  return { vacancies, companies };
+}
+
 async function fetchApplications(
   filters: AdminApplicationFilters,
 ): Promise<Paginated<AdminApplicationRow>> {

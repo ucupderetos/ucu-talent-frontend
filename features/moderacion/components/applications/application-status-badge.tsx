@@ -14,9 +14,9 @@ export const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> 
 };
 
 const APPLICATION_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
-  PENDIENTE: "bg-chart-2",
-  VISTO: "bg-chart-4",
-  FINALIZADO: "bg-success",
+  PENDIENTE: "bg-warning",
+  VISTO: "bg-chart-2",
+  FINALIZADO: "bg-muted-foreground",
 };
 
 export function ApplicationStatusBadge({ status }: { status: VacancyApplicationStatus }) {

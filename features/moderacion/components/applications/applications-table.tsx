@@ -1,14 +1,25 @@
 "use client";
 
-// Tabla de "Postulaciones": de presentación, recibe las filas ya resueltas
-// por el hook. El botón de acciones todavía no hace nada — no hay endpoint
-// (ver aviso en features/moderacion/types.ts). Misma columna "Acciones" que
-// `students-table.tsx`, para que las dos tablas del admin se lean igual.
+// Tabla de "Postulaciones": recibe las filas ya resueltas por el hook. Las
+// identidades y el menú de acciones navegan a los detalles administrativos
+// existentes; el Admin no modifica manualmente el estado de una postulación.
 
-import { MoreVerticalIcon } from "lucide-react";
+import Link from "next/link";
+import {
+  BriefcaseBusinessIcon,
+  Building2Icon,
+  MoreVerticalIcon,
+  UserRoundIcon,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -78,49 +89,109 @@ export function ApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
           {rows.map((row) => (
             <TableRow key={row.vacancyApplicationId}>
               <TableCell>
-                <div className="flex items-center gap-3">
+                <Link
+                  href={`/moderacion/estudiantes/${row.studentProfileId}`}
+                  aria-label={`Ver perfil de ${row.studentName} ${row.studentSurname}`}
+                  className="group flex items-center gap-3 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
                   <Avatar>
                     <AvatarFallback className={colorFor(row.studentProfileId)}>
                       {initials(row.studentName, row.studentSurname)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium group-hover:underline group-focus-visible:underline">
                       {row.studentName} {row.studentSurname}
                     </p>
                     <p className="text-xs text-muted-foreground">{row.studentEmail}</p>
                   </div>
-                </div>
+                </Link>
               </TableCell>
               <TableCell>
-                <p>{row.vacancyName}</p>
-                <p className="text-xs text-muted-foreground">ID: {row.vacancyId}</p>
+                <Link
+                  href={`/moderacion/ofertas/${row.vacancyId}`}
+                  aria-label={`Ver oferta ${row.vacancyName}`}
+                  className="group block rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <p className="font-medium group-hover:underline group-focus-visible:underline">
+                    {row.vacancyName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">ID: {row.vacancyId}</p>
+                </Link>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  {row.companyId && (
+                {row.companyId ? (
+                  <Link
+                    href={`/moderacion/empresas/${row.companyId}`}
+                    aria-label={`Ver empresa ${row.companyName}`}
+                    className="group flex items-center gap-2 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
                     <span
                       className={`flex size-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${colorFor(row.companyId)}`}
                     >
                       {companyInitials(row.companyName)}
                     </span>
-                  )}
-                  <span className="whitespace-nowrap">{row.companyName}</span>
-                </div>
+                    <span className="whitespace-nowrap font-medium group-hover:underline group-focus-visible:underline">
+                      {row.companyName}
+                    </span>
+                  </Link>
+                ) : (
+                  <span className="whitespace-nowrap text-muted-foreground">
+                    {row.companyName}
+                  </span>
+                )}
               </TableCell>
               <TableCell>{formatDate(row.appliedAt)}</TableCell>
               <TableCell>
                 <ApplicationStatusBadge status={row.status} />
               </TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="icon" aria-label="Acciones">
-                  <MoreVerticalIcon />
-                </Button>
+                <ApplicationActionsMenu application={row} />
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+function ApplicationActionsMenu({ application }: { application: AdminApplicationRow }) {
+  const studentName = `${application.studentName} ${application.studentSurname}`;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Abrir acciones de la postulación de ${studentName}`}
+        >
+          <MoreVerticalIcon />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem asChild>
+          <Link href={`/moderacion/usuarios/${application.studentProfileId}`}>
+            <UserRoundIcon />
+            Ver perfil
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={`/moderacion/ofertas/${application.vacancyId}`}>
+            <BriefcaseBusinessIcon />
+            Ver oferta
+          </Link>
+        </DropdownMenuItem>
+        {application.companyId && (
+          <DropdownMenuItem asChild>
+            <Link href={`/moderacion/empresas/${application.companyId}`}>
+              <Building2Icon />
+              Ver empresa
+            </Link>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

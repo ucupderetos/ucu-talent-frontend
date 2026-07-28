@@ -7,10 +7,8 @@
 // solo cierra, y eso vive en el dominio `puestos`.
 //
 // ⚠️ ANDAMIO TEMPORAL, mismo criterio que use-review-account.ts: por ahora muta
-// el `status` en fixtures. El endpoint de ADMIN para vacantes todavía NO existe
-// (`PUT /vacancy/{id}` es rol `EMPRESA`), así que este es el único punto que
-// cambia cuando aparezca.
-// TODO(api): reemplazar el cuerpo de `mutationFn` por la llamada real.
+// el `status` en fixtures. AGENTS.md A-02 confirma el endpoint administrativo
+// `PUT /vacancy/status/{id}`; falta conectar acá su payload real.
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

@@ -16,13 +16,18 @@
 
 import type {
   AccountStatus,
+  Area,
   Company,
+  Degree,
+  Education,
   Modality,
   StudentProfile,
+  User,
   Vacancy,
   VacancyApplication,
   VacancyApplicationStatus,
   VacancyStatus,
+  WorkExperience,
 } from "@/types";
 
 /**
@@ -67,17 +72,37 @@ export type ModerationQueue = "pending-accounts" | "pending-vacancies";
 
 /**
  * Fila de la tabla de alumnos: el `StudentProfile` del MER más los datos
- * derivados que la pantalla necesita mostrar (email/fecha de registro vienen
- * del `User` con la misma PK, carrera/facultad de `Education` → `Degree` →
- * `Area`). No es una entidad del MER, por eso vive acá y no en `@/types`.
+ * derivados que la pantalla necesita mostrar (email/status/fecha de registro
+ * vienen del `User` con la misma PK, carrera/facultad de `Education` →
+ * `Degree` → `Area`). No es una entidad del MER, por eso vive acá y no en
+ * `@/types`.
  */
 export interface StudentRow extends StudentProfile {
   email: string;
+  status: AccountStatus;
   registeredAt: string; // ISO 8601
   degreeId: string | null;
   degreeName: string;
   areaId: string | null;
   areaName: string;
+}
+
+/** Una formación del alumno con sus catálogos ya resueltos para el detalle.
+ *  Conserva la entidad `Education` completa y agrega únicamente las relaciones
+ *  que la vista necesita presentar. */
+export interface AdminStudentEducation extends Education {
+  degree: Degree | null;
+  area: Area | null;
+}
+
+/** Detalle administrativo de un alumno. Combina las entidades reales que
+ *  comparten la PK del usuario; no agrega campos de CV ni datos personales que
+ *  el contrato actual no expone. */
+export interface AdminStudentDetail {
+  user: User;
+  profile: StudentProfile;
+  education: AdminStudentEducation[];
+  workExperience: WorkExperience[];
 }
 
 /** Filtros del listado de alumnos. Se resuelven en el cliente sobre
@@ -295,6 +320,18 @@ export interface AdminVacancyRow extends Vacancy {
   companyName: string;
   companyInitials: string;
   applicationCount: number;
+}
+
+/** Detalle administrativo de una oferta. Es el superset de la fila: además
+ *  resuelve las relaciones reales que el Admin necesita consultar sin
+ *  introducir los campos exploratorios del preview del feed. */
+export interface AdminVacancyDetail extends AdminVacancyRow {
+  company: Company | null;
+  companyUser: User | null;
+  area: Area | null;
+  parentArea: Area | null;
+  applicationStatusCounts: Record<VacancyApplicationStatus, number>;
+  selectedApplicationCount: number;
 }
 
 /** Filtros del listado de ofertas. Se resuelven sobre fixtures mientras se

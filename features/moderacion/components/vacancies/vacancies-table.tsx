@@ -43,9 +43,15 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                 className={isNew ? "bg-accent/50" : undefined}
               >
                 <TableCell className="px-5 py-4">
-                  <div className="max-w-72">
+                  <Link
+                    href={`/moderacion/ofertas/${vacancy.vacancyId}`}
+                    aria-label={`Ver detalle de la oferta ${vacancy.name}`}
+                    className="group block max-w-72 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
                     <div className="flex items-center gap-2">
-                      <p className="truncate font-medium">{vacancy.name}</p>
+                      <p className="truncate font-medium group-hover:underline group-focus-visible:underline">
+                        {vacancy.name}
+                      </p>
                       {isNew && (
                         <Badge className="shrink-0 bg-secondary-blue text-secondary-blue-foreground">
                           Nueva
@@ -55,7 +61,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                     <p className="truncate text-xs text-muted-foreground">
                       {vacancy.contractType} · {formatDepartment(vacancy.location)}
                     </p>
-                  </div>
+                  </Link>
                 </TableCell>
 
                 <TableCell>

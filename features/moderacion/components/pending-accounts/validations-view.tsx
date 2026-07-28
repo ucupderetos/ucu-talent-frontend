@@ -5,7 +5,6 @@
 // renderiza esto.
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { SearchIcon, XIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/layout/empty-state";
@@ -13,13 +12,15 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TablePagination } from "@/components/filters/table-pagination";
-import { usePendingCompanies } from "@/features/moderacion/hooks/use-pending-companies";
+import {
+  usePendingCompanies,
+  usePendingCompanyIndustries,
+} from "@/features/moderacion/hooks/use-pending-companies";
 import { usePendingStudents } from "@/features/moderacion/hooks/use-pending-students";
 import { PendingCompaniesFiltersBar } from "@/features/moderacion/components/pending-accounts/pending-companies-filters";
 import { PendingCompaniesTable } from "@/features/moderacion/components/pending-accounts/pending-companies-table";
 import { PendingStudentsTable } from "@/features/moderacion/components/pending-accounts/pending-students-table";
 import type { PendingCompaniesFilters, PendingStudentsFilters } from "@/features/moderacion/types";
-import { MOCK_COMPANIES, MOCK_COMPANY_USERS } from "@/lib/fixtures";
 
 type Tab = "empresas" | "estudiantes";
 
@@ -60,7 +61,7 @@ function CompaniesTab() {
   const [filters, setFilters] = useState<PendingCompaniesFilters>(DEFAULT_COMPANY_FILTERS);
 
   const { data, isLoading, isError } = usePendingCompanies(filters);
-  const industries = useCompanyIndustryOptions();
+  const { data: industries = [] } = usePendingCompanyIndustries();
 
   const hasAny = (data?.total ?? 0) > 0 || hasCompanyFilters(filters);
 
@@ -177,24 +178,6 @@ function StudentsTab() {
 
 function hasCompanyFilters(filters: PendingCompaniesFilters): boolean {
   return Boolean(filters.search || filters.industries?.length);
-}
-
-// Opciones del multiselect de industria: solo las de empresas PENDIENTES, para
-// no ofrecer opciones que no filtran nada. Va por `useQuery` como el resto de
-// las lecturas del dominio (andamio sobre fixtures — al integrar, GET /company).
-function useCompanyIndustryOptions(): string[] {
-  const { data } = useQuery({
-    queryKey: ["moderacion", "empresas-industrias"],
-    queryFn: () => {
-      const pendingIds = new Set(
-        MOCK_COMPANY_USERS.filter((u) => u.status === "PENDIENTE").map((u) => u.userId),
-      );
-      return Array.from(
-        new Set(MOCK_COMPANIES.filter((c) => pendingIds.has(c.companyId)).map((c) => c.industry)),
-      ).sort();
-    },
-  });
-  return data ?? [];
 }
 
 function TableSkeleton() {

@@ -50,7 +50,7 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
     { label: "Centro de Gestión", href: "/moderacion/dashboard", icon: LayoutDashboardIcon },
     { label: "Validaciones", href: "/moderacion/validaciones", icon: UserCheckIcon },
     { label: "Empresas", href: "/moderacion/empresas", icon: BuildingIcon },
-    { label: "Usuarios", href: "/moderacion/usuarios", icon: UsersIcon },
+    { label: "Estudiantes", href: "/moderacion/estudiantes", icon: UsersIcon },
     { label: "Postulaciones", href: "/moderacion/postulaciones", icon: FileTextIcon },
     { label: "Ofertas", href: "/moderacion/ofertas", icon: ShieldCheckIcon },
   ],

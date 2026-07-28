@@ -7,7 +7,15 @@
 // `FINALIZADO` es terminal, así que desde ahí no se ofrece nada más.
 
 import { useState } from "react";
-import { BanIcon, EyeIcon, EyeOffIcon, MoreVerticalIcon, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import {
+  BanIcon,
+  BriefcaseBusinessIcon,
+  EyeIcon,
+  EyeOffIcon,
+  MoreVerticalIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { VACANCY_STATUS_LABEL } from "@/components/vacancies/vacancy-status-badge";
@@ -114,13 +122,19 @@ export function VacancyActionsMenu({ vacancy }: { vacancy: AdminVacancyRow }) {
             variant="ghost"
             size="icon"
             aria-label={`Abrir acciones de ${vacancy.name}`}
-            disabled={transitions.length === 0}
           >
             <MoreVerticalIcon />
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem asChild>
+            <Link href={`/moderacion/ofertas/${vacancy.vacancyId}`}>
+              <BriefcaseBusinessIcon />
+              Ver oferta
+            </Link>
+          </DropdownMenuItem>
+
           {transitions.map((status) => {
             const item = TRANSITION[status];
             const Icon = item.icon;

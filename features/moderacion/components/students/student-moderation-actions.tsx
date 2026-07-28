@@ -1,23 +1,18 @@
 "use client";
 
-// Acciones de moderación sobre una empresa, compartidas por la tabla y el
-// detalle, con diálogo de confirmación.
-//
-// Escribe de verdad: usa `useReviewAccount`, el mismo hook que la pantalla de
-// Validaciones. El estado de una empresa vive en `User.status`, así que
-// aprobar/rechazar una empresa es exactamente la misma operación que sobre
-// cualquier cuenta — wire: `PATCH /user/{id}` (A-02, resuelto). El hook todavía
-// es un andamio sobre fixtures, pero el swap a `apiClient` está en un solo
-// lugar y esta pantalla no se entera.
+// Acciones administrativas de un alumno, compartidas por la tabla y el
+// detalle. Replica la máquina de estados de empresa porque `AccountStatus`
+// pertenece a User y el mismo PATCH /user/{id} modera ambos tipos de cuenta:
+// PENDIENTE → APROBADO/RECHAZADO; APROBADO → RECHAZADO (dar de baja).
 
 import { useState } from "react";
 import Link from "next/link";
 import {
   BanIcon,
-  Building2Icon,
   CheckIcon,
   CircleXIcon,
   MoreVerticalIcon,
+  UserRoundIcon,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -42,99 +37,100 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useReviewAccount } from "@/features/moderacion/hooks/use-review-account";
-import type { AdminCompanyDetail } from "@/features/moderacion/types";
 import type { AccountStatus } from "@/types";
 
-type CompanyModerationAction = "approve" | "reject" | "deactivate";
+type StudentModerationAction = "approve" | "reject" | "deactivate";
 
 interface ActionConfig {
   triggerLabel: string;
   confirmLabel: string;
   pendingLabel: string;
   title: string;
-  description: (companyName: string) => string;
+  description: (studentName: string) => string;
   icon: LucideIcon;
   variant: "default" | "destructive";
   iconClassName: string;
-  /** A qué `AccountStatus` lleva la acción. */
   status: Extract<AccountStatus, "APROBADO" | "RECHAZADO">;
-  /** Si pide motivo, confirmar queda deshabilitado hasta que se escriba. */
   requiresReason: boolean;
   successMessage: string;
 }
 
-const ACTION_CONFIG: Record<CompanyModerationAction, ActionConfig> = {
+const ACTION_CONFIG: Record<StudentModerationAction, ActionConfig> = {
   approve: {
-    triggerLabel: "Aprobar empresa",
+    triggerLabel: "Aprobar alumno",
     confirmLabel: "Sí, aprobar",
     pendingLabel: "Aprobando...",
-    title: "¿Aprobar esta empresa?",
-    description: (companyName) =>
-      `${companyName} quedará habilitada para publicar vacantes en la plataforma.`,
+    title: "¿Aprobar este alumno?",
+    description: (studentName) =>
+      `${studentName} quedará habilitado para postularse a vacantes en la plataforma.`,
     icon: CheckIcon,
     variant: "default",
     iconClassName: "bg-primary/10 text-primary",
     status: "APROBADO",
     requiresReason: false,
-    successMessage: "Empresa aprobada.",
+    successMessage: "Alumno aprobado.",
   },
   reject: {
-    triggerLabel: "Rechazar empresa",
+    triggerLabel: "Rechazar alumno",
     confirmLabel: "Sí, rechazar",
     pendingLabel: "Rechazando...",
-    title: "¿Rechazar esta empresa?",
-    description: (companyName) =>
-      `${companyName} no podrá publicar vacantes mientras su cuenta esté rechazada.`,
+    title: "¿Rechazar este alumno?",
+    description: (studentName) =>
+      `${studentName} no podrá postularse mientras su cuenta esté rechazada.`,
     icon: CircleXIcon,
     variant: "destructive",
     iconClassName: "bg-destructive/10 text-destructive",
     status: "RECHAZADO",
     requiresReason: true,
-    successMessage: "Empresa rechazada.",
+    successMessage: "Alumno rechazado.",
   },
   deactivate: {
     triggerLabel: "Dar de baja",
     confirmLabel: "Sí, dar de baja",
     pendingLabel: "Dando de baja...",
-    title: "¿Dar de baja esta empresa?",
-    description: (companyName) =>
-      `${companyName} dejará de estar aprobada y no podrá publicar nuevas vacantes.`,
+    title: "¿Dar de baja este alumno?",
+    description: (studentName) =>
+      `${studentName} dejará de estar aprobado y no podrá realizar nuevas postulaciones.`,
     icon: BanIcon,
     variant: "destructive",
     iconClassName: "bg-destructive/10 text-destructive",
     status: "RECHAZADO",
     requiresReason: true,
-    successMessage: "Empresa dada de baja.",
+    successMessage: "Alumno dado de baja.",
   },
 };
 
-const AVAILABLE_ACTIONS: Record<AccountStatus, CompanyModerationAction[]> = {
+const AVAILABLE_ACTIONS: Record<AccountStatus, StudentModerationAction[]> = {
   PENDIENTE: ["approve", "reject"],
   APROBADO: ["deactivate"],
   RECHAZADO: [],
 };
 
-type CompanyModerationSubject = Pick<AdminCompanyDetail, "id" | "name" | "status">;
-
-export function CompanyModerationActions({
-  company,
-  presentation = "buttons",
-}: {
-  company: CompanyModerationSubject;
+interface StudentModerationActionsProps {
+  userId: string;
+  status: AccountStatus;
+  displayName: string;
   /** Menú compacto para tablas; botones visibles para la pantalla de detalle. */
   presentation?: "buttons" | "menu";
-}) {
-  const [action, setAction] = useState<CompanyModerationAction | null>(null);
+}
+
+export function StudentModerationActions({
+  userId,
+  status,
+  displayName,
+  presentation = "buttons",
+}: StudentModerationActionsProps) {
+  const [action, setAction] = useState<StudentModerationAction | null>(null);
   const [reason, setReason] = useState("");
   const review = useReviewAccount();
 
-  const availableActions = AVAILABLE_ACTIONS[company.status];
+  const availableActions = AVAILABLE_ACTIONS[status];
   const config = action ? ACTION_CONFIG[action] : null;
   const ActionIcon = config?.icon;
   const confirmDisabled =
     review.isPending || Boolean(config?.requiresReason && reason.trim() === "");
 
-  function openAction(nextAction: CompanyModerationAction) {
+  function openAction(nextAction: StudentModerationAction) {
     setReason("");
     setAction(nextAction);
   }
@@ -149,8 +145,8 @@ export function CompanyModerationActions({
 
     review.mutate(
       {
-        userId: company.id,
-        accountType: "company",
+        userId,
+        accountType: "student",
         status: config.status,
         adminComment: config.requiresReason ? reason.trim() : undefined,
       },
@@ -169,8 +165,9 @@ export function CompanyModerationActions({
   return (
     <>
       {presentation === "menu" ? (
-        <CompanyActionsMenu
-          company={company}
+        <ActionsMenu
+          userId={userId}
+          displayName={displayName}
           actions={availableActions}
           onSelect={openAction}
         />
@@ -207,23 +204,23 @@ export function CompanyModerationActions({
                   <ActionIcon className="size-5" aria-hidden />
                 </div>
                 <DialogTitle className="text-lg">{config.title}</DialogTitle>
-                <DialogDescription>{config.description(company.name)}</DialogDescription>
+                <DialogDescription>{config.description(displayName)}</DialogDescription>
               </DialogHeader>
 
               {config.requiresReason && (
                 <Field>
-                  <FieldLabel htmlFor={`company-admin-comment-${company.id}-${action}`}>
+                  <FieldLabel htmlFor={`student-admin-comment-${userId}-${action}`}>
                     Motivo
                   </FieldLabel>
                   <Textarea
-                    id={`company-admin-comment-${company.id}-${action}`}
+                    id={`student-admin-comment-${userId}-${action}`}
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
-                    placeholder="Contale a la empresa por qué se toma esta decisión."
+                    placeholder="Explicá por qué se toma esta decisión."
                     rows={3}
                   />
                   <FieldDescription>
-                    Se guarda como comentario del Admin y la empresa puede verlo.
+                    Se guarda como comentario del Admin y el alumno puede verlo.
                   </FieldDescription>
                 </Field>
               )}
@@ -252,14 +249,16 @@ export function CompanyModerationActions({
   );
 }
 
-function CompanyActionsMenu({
-  company,
+function ActionsMenu({
+  userId,
+  displayName,
   actions,
   onSelect,
 }: {
-  company: CompanyModerationSubject;
-  actions: CompanyModerationAction[];
-  onSelect: (action: CompanyModerationAction) => void;
+  userId: string;
+  displayName: string;
+  actions: StudentModerationAction[];
+  onSelect: (action: StudentModerationAction) => void;
 }) {
   return (
     <DropdownMenu>
@@ -267,16 +266,16 @@ function CompanyActionsMenu({
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Abrir acciones de ${company.name}`}
+          aria-label={`Abrir acciones de ${displayName}`}
         >
           <MoreVerticalIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem asChild>
-          <Link href={`/moderacion/empresas/${company.id}`}>
-            <Building2Icon />
-            Ver empresa
+          <Link href={`/moderacion/estudiantes/${userId}`}>
+            <UserRoundIcon />
+            Ver perfil
           </Link>
         </DropdownMenuItem>
 

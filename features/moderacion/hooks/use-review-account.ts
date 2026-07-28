@@ -1,6 +1,7 @@
 "use client";
 
-// Aprueba o rechaza una cuenta pendiente (empresa o alumno) contra el padrón.
+// Cambia el estado de una cuenta (empresa o alumno): permite aprobar/rechazar
+// una pendiente y dar de baja una aprobada llevándola a RECHAZADO.
 // Wire: `PATCH /user/{id}` con { status, adminComment } — A-02 (✅) lo confirma.
 //
 // ⚠️ ANDAMIO TEMPORAL: por ahora muta el `status` del user en fixtures (mismo
@@ -9,11 +10,17 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { MOCK_COMPANY_USERS, MOCK_PENDING_STUDENT_USERS } from "@/lib/fixtures";
+import {
+  MOCK_APPLICANT_USERS,
+  MOCK_COMPANY_USERS,
+  MOCK_PENDING_STUDENT_USERS,
+  MOCK_STUDENT_USERS,
+  MOCK_USERS,
+} from "@/lib/fixtures";
 import type { AccountResolution } from "@/features/moderacion/types";
 
 export type ReviewAccountInput = AccountResolution & {
-  /** De qué cola viene la cuenta — define qué array de fixtures mutar. */
+  /** Tipo de perfil cuya cuenta se modera. */
   accountType: "student" | "company";
 };
 
@@ -23,13 +30,21 @@ export function useReviewAccount() {
   return useMutation({
     mutationFn: async ({ userId, accountType, status }: ReviewAccountInput) => {
       // TODO(api): apiClient.patch(`/user/${userId}`, { status, adminComment })
-      const pool = accountType === "student" ? MOCK_PENDING_STUDENT_USERS : MOCK_COMPANY_USERS;
-      const user = pool.find((u) => u.userId === userId);
-      if (user) user.status = status;
+      const user =
+        accountType === "student"
+          ? (MOCK_STUDENT_USERS.find((candidate) => candidate.userId === userId) ??
+            MOCK_PENDING_STUDENT_USERS.find((candidate) => candidate.userId === userId) ??
+            MOCK_APPLICANT_USERS.find((candidate) => candidate.userId === userId))
+          : (MOCK_COMPANY_USERS.find((candidate) => candidate.userId === userId) ??
+            (MOCK_USERS.EMPRESA.userId === userId ? MOCK_USERS.EMPRESA : undefined));
+
+      if (!user) throw new Error(`No se encontró la cuenta ${userId}.`);
+
+      user.status = status;
     },
     onSuccess: () => {
       // Invalida ambas colas (empresas y alumnos) — todas cuelgan de "moderacion".
-      queryClient.invalidateQueries({ queryKey: ["moderacion"] });
+      void queryClient.invalidateQueries({ queryKey: ["moderacion"] });
     },
   });
 }
