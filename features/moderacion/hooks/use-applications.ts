@@ -1,32 +1,33 @@
 "use client";
 
-// Datos de la tabla de "Postulaciones" (vista admin).
+// tabla de "Postulaciones" (vista admin).
 //
-// 🔴 No hay endpoint real todavía (ver aviso en features/moderacion/types.ts).
-// Esto simula un GET paginado y filtrado, pero resuelve todo en memoria sobre
-// lib/fixtures.ts. Cuando exista el contrato, fetchApplications() pasa a
-// llamar a apiClient.get<Paginated<AdminApplicationRow>>(...) con `filters`
-// como query params — el resto (la forma del hook, `AdminApplicationRow`) no
-// cambia.
+// GET /vacancy-application no tiene un "traeme todas" sin filtro, asi que
+// pedimos una vez por cada status del enum y mergeamos. la respuesta viene
+// pelada (sin nombre de alumno, oferta ni empresa), asi que cruzamos con
+// student-profile, user (para el email), vacancy y company — todo fetch-all,
+// mismo criterio que usamos en el resto de moderacion.
 
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  MOCK_APPLICANT_USERS,
-  MOCK_APPLICATIONS,
-  MOCK_COMPANIES,
-  MOCK_STUDENT_PROFILES,
-  MOCK_VACANCIES,
-} from "@/lib/fixtures";
+import { apiClient } from "@/lib/api-client";
 import type {
   AdminApplicationFilters,
   AdminApplicationOrder,
   AdminApplicationRow,
 } from "@/features/moderacion/types";
-import type { Company, Paginated, Vacancy } from "@/types";
+import type {
+  Company,
+  Paginated,
+  StudentProfile,
+  User,
+  Vacancy,
+  VacancyApplication,
+  VacancyApplicationStatus,
+} from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
+const ALL_STATUSES: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADA"];
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function applicationsQueryKey(filters: AdminApplicationFilters) {
@@ -46,9 +47,27 @@ async function fetchApplications(
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
-  const rows = MOCK_APPLICATIONS.map(toRow).filter(
-    (row): row is AdminApplicationRow => row !== null,
-  );
+  const [applicationsByStatus, profiles, users, vacancies, companies] = await Promise.all([
+    Promise.all(
+      ALL_STATUSES.map((status) =>
+        apiClient.get<VacancyApplication[]>("/vacancy-application", { params: { status } }),
+      ),
+    ),
+    apiClient.get<StudentProfile[]>("/student-profile"),
+    apiClient.get<User[]>("/user", { params: { role: "ALUMNO" } }),
+    apiClient.get<Vacancy[]>("/vacancy"),
+    apiClient.get<Company[]>("/company"),
+  ]);
+
+  const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
+  const usersById = new Map(users.map((u) => [u.userId, u]));
+  const vacanciesById = new Map(vacancies.map((v) => [v.vacancyId, v]));
+  const companiesById = new Map(companies.map((c) => [c.companyId, c]));
+
+  const rows = applicationsByStatus
+    .flat()
+    .map((application) => toRow(application, profilesById, usersById, vacanciesById, companiesById))
+    .filter((row): row is AdminApplicationRow => row !== null);
   const filtered = filterRows(rows, filters);
   const sorted = sortRows(filtered, filters.order);
 
@@ -58,20 +77,21 @@ async function fetchApplications(
   return { items, total: sorted.length, page, perPage };
 }
 
-/** `null` si falta algún dato relacionado (no debería pasar con la PK
- *  compartida, pero el tipo de `find` lo permite). */
-function toRow(application: (typeof MOCK_APPLICATIONS)[number]): AdminApplicationRow | null {
-  const profile = MOCK_STUDENT_PROFILES.find(
-    (p) => p.studentProfileId === application.studentProfileId,
-  );
-  // `MOCK_APPLICANT_USERS` es el conjunto que cubre a los postulantes de
-  // `MOCK_APPLICATIONS` (u-1 + sp-*). `MOCK_STUDENT_USERS` NO sirve acá: son
-  // los alumnos del listado de "Usuarios" (u-10…u-14) y dejaría sin email a
-  // la mayoría de las filas.
-  const user = MOCK_APPLICANT_USERS.find((u) => u.userId === application.studentProfileId);
-  const vacancy = MOCK_VACANCIES.find((v) => v.vacancyId === application.vacancyId);
-  const company = MOCK_COMPANIES.find((c) => c.companyId === vacancy?.companyId);
+/** null si falta el perfil o la oferta — no deberia pasar con la pk
+ *  compartida, pero asi no rompemos la tabla entera por un dato huerfano. */
+function toRow(
+  application: VacancyApplication,
+  profilesById: Map<string, StudentProfile>,
+  usersById: Map<string, User>,
+  vacanciesById: Map<string, Vacancy>,
+  companiesById: Map<string, Company>,
+): AdminApplicationRow | null {
+  const profile = profilesById.get(application.studentProfileId);
+  const vacancy = vacanciesById.get(application.vacancyId);
   if (!profile || !vacancy) return null;
+
+  const user = usersById.get(application.studentProfileId);
+  const company = companiesById.get(vacancy.companyId);
 
   return {
     ...application,
@@ -117,16 +137,19 @@ function sortRows(
   return order === "oldest" ? sorted.sort(delta) : sorted.sort((a, b) => -delta(a, b));
 }
 
-/** Opciones de los MultiSelect: solo las ofertas/empresas que realmente
- *  tienen alguna postulación, para que el dropdown no ofrezca opciones
- *  vacías. Mismo criterio que `useCompanyVacancyFilterOptions` en puestos. */
+/** opciones de los multiselect: catalogo completo de ofertas/empresas, sin
+ *  filtro. query key propia para no repedirlo con cada cambio de filtro. */
 export function useApplicationFilterOptions(): { vacancies: Vacancy[]; companies: Company[] } {
-  return useMemo(() => {
-    const vacancyIds = new Set(MOCK_APPLICATIONS.map((a) => a.vacancyId));
-    const vacancies = MOCK_VACANCIES.filter((v) => vacancyIds.has(v.vacancyId));
-    const companyIds = new Set(vacancies.map((v) => v.companyId));
-    const companies = MOCK_COMPANIES.filter((c) => companyIds.has(c.companyId));
+  const { data } = useQuery({
+    queryKey: ["moderacion", "postulaciones-filtros"],
+    queryFn: async () => {
+      const [vacancies, companies] = await Promise.all([
+        apiClient.get<Vacancy[]>("/vacancy"),
+        apiClient.get<Company[]>("/company"),
+      ]);
+      return { vacancies, companies };
+    },
+  });
 
-    return { vacancies, companies };
-  }, []);
+  return data ?? { vacancies: [], companies: [] };
 }
