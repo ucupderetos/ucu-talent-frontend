@@ -58,7 +58,7 @@ export function AdminVacanciesView() {
       )}
 
       {!isLoading && !isError && data && data.items.length > 0 && (
-        <>
+        <div className="space-y-2">
           <VacanciesTable vacancies={data.items} />
           <TablePagination
             page={data.page}
@@ -70,7 +70,7 @@ export function AdminVacanciesView() {
               setFilters((current) => ({ ...current, perPage, page: 1 }))
             }
           />
-        </>
+        </div>
       )}
     </div>
   );
@@ -79,9 +79,9 @@ export function AdminVacanciesView() {
 function hasActiveFilters(filters: AdminVacancyFilters): boolean {
   return Boolean(
     filters.search ||
-      filters.companyIds?.length ||
-      filters.statuses?.length ||
-      filters.modalities?.length,
+    filters.companyIds?.length ||
+    filters.statuses?.length ||
+    filters.modalities?.length,
   );
 }
 

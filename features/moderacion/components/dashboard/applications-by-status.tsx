@@ -51,14 +51,14 @@ export function ApplicationsByStatus({ statuses }: { statuses: ApplicationStatus
   const total = statuses.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden py-0">
-      <CardHeader className="px-5 py-3">
+    <Card className="flex flex-col overflow-hidden gap-0 py-0">
+      <CardHeader className="gap-0 px-5 py-3">
         <CardTitle>Postulaciones por estado</CardTitle>
       </CardHeader>
 
       <Separator />
 
-      <CardContent className="flex-1 p-0">
+      <CardContent className="flex flex-1 items-center p-0">
         {total === 0 ? (
           <div className="p-5">
             <EmptyState
@@ -67,7 +67,7 @@ export function ApplicationsByStatus({ statuses }: { statuses: ApplicationStatus
             />
           </div>
         ) : (
-          <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex w-full flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
             <div
               className="relative mx-auto size-44 shrink-0 rounded-full"
               style={{ background: donutBackground(statuses, total) }}
@@ -97,8 +97,6 @@ export function ApplicationsByStatus({ statuses }: { statuses: ApplicationStatus
           </div>
         )}
       </CardContent>
-
-      <Separator />
 
       <CardFooter className="mt-auto justify-center px-5 py-3">
         <Button asChild variant="link" className="h-auto p-0 text-primary">

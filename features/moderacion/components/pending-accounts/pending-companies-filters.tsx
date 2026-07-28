@@ -32,7 +32,7 @@ export function PendingCompaniesFiltersBar({
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <div className="relative w-full sm:w-64">
+      <div className="relative w-full sm:w-96">
         <SearchIcon
           className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden

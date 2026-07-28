@@ -57,8 +57,8 @@ const ACTIVITY_CONFIG: Record<
 
 export function RecentActivity({ activities }: { activities: RecentActivityItem[] }) {
   return (
-    <Card className="flex h-full flex-col overflow-hidden py-0">
-      <CardHeader className="px-5 py-3">
+    <Card className="flex h-full flex-col overflow-hidden gap-0 py-0">
+      <CardHeader className="gap-0 px-5 py-3">
         <CardTitle>Actividad reciente</CardTitle>
       </CardHeader>
 
