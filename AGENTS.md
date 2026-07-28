@@ -206,19 +206,19 @@ de títulos distinta todavía; si se agrega una, el punto de cambio es esa varia
 | Ayuda / error de campo | `text-sm text-muted-foreground` (error: `text-destructive` vía `data-[invalid=true]`) | `FieldDescription` |
 | Texto de badge/pill | `text-xs font-medium` | `Badge` |
 
-⚠️ **El encabezado de una pantalla es siempre `PageHeader`** (`components/layout/page-header.tsx`)
-— pero **nunca con `title` ni `description`: ninguna pantalla los pasa, no es una
-elección por pantalla.** El nombre de la sección lo muestra el Navbar ("Header dinámico +
-breadcrumb" más abajo — ya implementado); repetirlo como `<h1>`/bajada en el
-contenido de la página quedaría duplicado. Por eso las pantallas quedan sin título ni
-bajada visibles en el contenido — es a propósito, no un olvido.
-`PageHeader` hoy se usa solo por el slot de `actions` (ej. `company-vacancies-view.tsx`,
-el botón "Crear nueva oferta"); las pantallas sin acciones (`student-profile-view.tsx`,
-`company-profile-view.tsx`, `my-applications-view.tsx`) directamente no lo renderizan. No
-se crea un componente nuevo por pantalla o por rol (tipo `DashboardHeader`) aunque sea
-solo para admin: es exactamente el caso que `PageHeader` existe para evitar (ver el
-comentario en el propio archivo). Si hace falta un acento visual que `PageHeader` no
-tiene, se agrega ahí — no se bifurca el componente.
+⚠️ **Ninguna pantalla renderiza su propio título ni bajada.** El nombre de la sección lo
+muestra el Navbar ("Header dinámico + breadcrumb" más abajo — ya implementado); repetirlo
+como `<h1>`/bajada en el contenido de la página quedaría duplicado. Por eso las pantallas
+quedan sin título ni bajada visibles en el contenido — es a propósito, no un olvido. No se
+crea un componente nuevo por pantalla o por rol (tipo `DashboardHeader`) aunque sea solo
+para admin.
+
+`PageHeader` (`components/layout/page-header.tsx`) existía como contenedor de ese header
+(`title`/`description`/`actions`), pero **hoy no lo renderiza ninguna pantalla**: el título
+y la bajada los da el Navbar (arriba) y la acción primaria pasó a la fila de filtros,
+alineada a la derecha (**2026-07-28** — ver `company-vacancies-view.tsx` y "Barras de
+filtros / toolbars" más abajo). El componente queda disponible por si alguna pantalla
+vuelve a necesitar un header propio, pero sin usos actuales.
 
 ### Tamaño de controles interactivos
 
@@ -275,9 +275,14 @@ siempre el mismo layout — dos partes con roles fijos que no se intercambian:
   que se entienda de un vistazo que se puede tildar más de una. El filtro pasa a ser un
   array (`areaIds?: string[]`, no `areaId?: string`) y el filtrado en memoria matchea por
   pertenencia (`.includes(...)`), no por igualdad.
-- **La acción primaria de la pantalla (crear, publicar) va siempre arriba a la derecha**,
-  en el `actions` de `PageHeader` — nunca en la misma fila que los filtros. Estas dos
-  posiciones (filtros a la izquierda, acción primaria arriba a la derecha) no se tocan.
+- **La acción primaria de la pantalla (crear, publicar) va siempre arriba a la derecha, en
+  la misma fila que la barra de filtros/búsqueda** — un `flex items-center justify-between
+  gap-4` con los filtros a la izquierda y el botón de acción a la derecha (ver
+  `company-vacancies-view.tsx`). Lo fijo son las dos posiciones —filtros a la izquierda,
+  acción arriba a la derecha—, no el envoltorio: no hace falta un `PageHeader` en una fila
+  aparte solo para colgar la acción. ⚠️ **Cambiado 2026-07-28**: antes esta guía pedía la
+  acción en el `actions` de `PageHeader`, en una fila propia, y prohibía compartir la fila
+  de los filtros — se revirtió.
 - **Limpiar filtros tiene dos niveles, los dos DENTRO del popover de "Filtros"** — no se
   agrega ningún botón de limpiar suelto en la barra: el badge de conteo en "Filtros" ya
   avisa que hay algo activo, y abrir el popover es donde se decide qué.
