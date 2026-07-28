@@ -1,7 +1,8 @@
 "use client";
 
-// Tabla de "Empresas": de presentación, recibe las filas ya resueltas por el
-// hook. La fila entera linkea al detalle.
+// Tabla de "Empresas": recibe las filas ya resueltas por el hook. La identidad
+// enlaza al detalle y el menú reutiliza las acciones administrativas de esa
+// pantalla.
 //
 // El estado se pinta con `CompanyStatusBadge`, no con un mapa propio: antes
 // había dos `statusConfig` para el mismo enum, con estilos distintos.
@@ -18,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CompanyStatusBadge } from "@/features/moderacion/components/companies/company-status-badge";
+import { CompanyModerationActions } from "@/features/moderacion/components/companies/company-moderation-actions";
 import type { AdminCompanyRow } from "@/features/moderacion/types";
 
 function formatDate(iso: string): string {
@@ -35,6 +37,7 @@ export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) 
             <TableHead>Ubicación</TableHead>
             <TableHead>Fecha de registro</TableHead>
             <TableHead>Estado</TableHead>
+            <TableHead className="pr-5 text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -66,6 +69,9 @@ export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) 
 
               <TableCell>
                 <CompanyStatusBadge status={company.status} />
+              </TableCell>
+              <TableCell className="pr-5 text-right">
+                <CompanyModerationActions company={company} presentation="menu" />
               </TableCell>
             </TableRow>
           ))}

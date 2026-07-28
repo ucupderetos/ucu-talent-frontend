@@ -1,11 +1,11 @@
 "use client";
 
-// Orquestador de "Usuarios" (vista admin, RF-MOD-05): arma el estado de
+// Orquestador de "Estudiantes" (vista admin, RF-MOD-05): arma el estado de
 // filtros/paginación que consumen los componentes de presentación. La
 // page.tsx solo renderiza esto. Mismo patrón que
 // `features/puestos/components/company-vacancies-view.tsx`.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DownloadIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,11 +13,13 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablePagination } from "@/components/filters/table-pagination";
-import { useStudents } from "@/features/moderacion/hooks/use-students";
+import {
+  useStudentFilterOptions,
+  useStudents,
+} from "@/features/moderacion/hooks/use-students";
 import { StudentsFilters } from "@/features/moderacion/components/students/students-filters";
 import { StudentsTable } from "@/features/moderacion/components/students/students-table";
 import type { StudentFilters } from "@/features/moderacion/types";
-import { MOCK_AREAS, MOCK_DEGREES, MOCK_EDUCATION } from "@/lib/fixtures";
 
 const DEFAULT_FILTERS: StudentFilters = { page: 1, perPage: 10 };
 
@@ -27,7 +29,9 @@ export function StudentsView() {
   const [filters, setFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading, isError } = useStudents(filters);
-  const { degrees, areas } = useStudentFilterOptions();
+  const { data: filterOptions } = useStudentFilterOptions();
+  const degrees = filterOptions?.degrees ?? [];
+  const areas = filterOptions?.areas ?? [];
 
   const hasAnyStudent = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 
@@ -55,14 +59,14 @@ export function StudentsView() {
 
       {!isLoading && isError && (
         <EmptyState
-          title="No pudimos cargar los usuarios"
+          title="No pudimos cargar los alumnos"
           description="Revisá tu conexión y volvé a intentar."
         />
       )}
 
       {!isLoading && !isError && data && data.items.length === 0 && (
         <EmptyState
-          title={hasAnyStudent ? "No hay usuarios con esos filtros" : "Todavía no hay alumnos registrados"}
+          title={hasAnyStudent ? "No hay alumnos con esos filtros" : "Todavía no hay alumnos registrados"}
           description={
             hasAnyStudent
               ? "Probá ajustando la búsqueda o los filtros."
@@ -78,7 +82,7 @@ export function StudentsView() {
             page={data.page}
             perPage={data.perPage}
             total={data.total}
-            itemLabel="usuarios"
+            itemLabel="alumnos"
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
             onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
@@ -90,20 +94,6 @@ export function StudentsView() {
 
 function hasActiveFilters(filters: StudentFilters): boolean {
   return Boolean(filters.search || filters.degreeIds?.length || filters.areaIds?.length);
-}
-
-/** Opciones de los MultiSelect: solo las carreras/áreas que algún alumno
- *  mockeado realmente cursa, para que el dropdown no ofrezca opciones vacías.
- *  Mismo criterio que `useCompanyVacancyOptions` en puestos. */
-function useStudentFilterOptions() {
-  return useMemo(() => {
-    const degreeIds = new Set(MOCK_EDUCATION.map((e) => e.degreeId));
-    const degrees = MOCK_DEGREES.filter((degree) => degreeIds.has(degree.degreeId));
-    const areaIds = new Set(degrees.map((degree) => degree.areaId));
-    const areas = MOCK_AREAS.filter((area) => areaIds.has(area.areaId));
-
-    return { degrees, areas };
-  }, []);
 }
 
 function TableSkeleton() {

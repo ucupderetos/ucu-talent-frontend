@@ -24,6 +24,32 @@ export function usePendingCompanies(filters: PendingCompaniesFilters) {
   });
 }
 
+export function pendingCompanyIndustriesQueryKey() {
+  return ["moderacion", "empresas-pendientes", "industrias"] as const;
+}
+
+/** Industrias presentes en empresas que todavía requieren validación. */
+export function usePendingCompanyIndustries() {
+  return useQuery({
+    queryKey: pendingCompanyIndustriesQueryKey(),
+    queryFn: fetchPendingCompanyIndustries,
+  });
+}
+
+async function fetchPendingCompanyIndustries(): Promise<string[]> {
+  const pendingIds = new Set(
+    MOCK_COMPANY_USERS.filter((user) => user.status === "PENDIENTE").map((user) => user.userId),
+  );
+
+  return Array.from(
+    new Set(
+      MOCK_COMPANIES.filter((company) => pendingIds.has(company.companyId)).map(
+        (company) => company.industry,
+      ),
+    ),
+  ).sort();
+}
+
 async function fetchPendingCompanies(
   filters: PendingCompaniesFilters,
 ): Promise<Paginated<PendingCompanyRow>> {

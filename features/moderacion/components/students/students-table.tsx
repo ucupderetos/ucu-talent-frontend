@@ -1,13 +1,12 @@
 "use client";
 
 // Tabla de "Usuarios" (alumnos): de presentación, recibe las filas ya
-// resueltas por el hook. El menú de acciones todavía no hace nada — no hay
-// endpoint (ver aviso en features/moderacion/types.ts).
+// resueltas por el hook. La identidad enlaza al detalle y el menú de la última
+// columna reutiliza las mismas acciones administrativas de esa pantalla.
 
-import { MoreVerticalIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -16,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { StudentModerationActions } from "@/features/moderacion/components/students/student-moderation-actions";
 import type { StudentRow } from "@/features/moderacion/types";
 import type { DocumentType } from "@/types";
 
@@ -67,29 +67,36 @@ export function StudentsTable({ rows }: { rows: StudentRow[] }) {
           {rows.map((student) => (
             <TableRow key={student.studentProfileId}>
               <TableCell>
-                <div className="flex items-center gap-3">
+                <Link
+                  href={`/moderacion/estudiantes/${student.studentProfileId}`}
+                  aria-label={`Ver información de ${student.name} ${student.surname}`}
+                  className="group flex items-center gap-3 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
                   <Avatar>
                     <AvatarFallback className={avatarColorFor(student.studentProfileId)}>
                       {initials(student.name, student.surname)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium group-hover:underline group-focus-visible:underline">
                       {student.name} {student.surname}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {DOCUMENT_TYPE_LABEL[student.documentType]} {student.documentNumber}
                     </p>
                   </div>
-                </div>
+                </Link>
               </TableCell>
               <TableCell>{student.degreeName}</TableCell>
               <TableCell className="text-muted-foreground">{student.email}</TableCell>
               <TableCell>{formatDate(student.registeredAt)}</TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="icon" aria-label="Acciones">
-                  <MoreVerticalIcon />
-                </Button>
+                <StudentModerationActions
+                  userId={student.studentProfileId}
+                  status={student.status}
+                  displayName={`${student.name} ${student.surname}`}
+                  presentation="menu"
+                />
               </TableCell>
             </TableRow>
           ))}

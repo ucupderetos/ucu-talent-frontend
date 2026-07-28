@@ -2,6 +2,6 @@
 
 import { StudentsView } from "@/features/moderacion/components/students/students-view";
 
-export default function UsuariosPage() {
+export default function AdminStudentsPage() {
   return <StudentsView />;
 }

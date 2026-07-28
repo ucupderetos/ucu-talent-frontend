@@ -2,24 +2,27 @@
 
 // Datos del listado de vacantes para el Admin.
 //
-// Andamio temporal: la rama todavía representa los estados de `api-dev`
-// (`PENDIENTE | FINALIZADO`) y los fixtures compartidos tienen esa misma
-// forma. No se crea un enum paralelo para anticipar `PUBLICADO`: cuando A-14
-// aterrice en los tipos core, solo cambia `fetchAdminVacancies`; la vista
-// sigue consumiendo TanStack Query.
+// Andamio temporal sobre fixtures para el listado y el detalle. El tipo core
+// ya conserva los tres estados confirmados (`PENDIENTE | PUBLICADO |
+// FINALIZADO`); cuando se conecte el contrato administrativo, solo cambia la
+// fuente de estas queries y las vistas siguen consumiendo la misma forma.
 
 import { useQuery } from "@tanstack/react-query";
 
 import type {
+  AdminVacancyDetail,
   AdminVacancyFilters,
   AdminVacancyRow,
 } from "@/features/moderacion/types";
 import {
   MOCK_APPLICATIONS,
+  MOCK_AREAS,
   MOCK_COMPANIES,
+  MOCK_COMPANY_USERS,
+  MOCK_USERS,
   MOCK_VACANCIES,
 } from "@/lib/fixtures";
-import type { Company, Paginated } from "@/types";
+import type { Company, Paginated, VacancyApplicationStatus } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -31,6 +34,19 @@ export function useAdminVacancies(filters: AdminVacancyFilters) {
   return useQuery({
     queryKey: adminVacanciesQueryKey(filters),
     queryFn: () => fetchAdminVacancies(filters),
+  });
+}
+
+export function adminVacancyDetailQueryKey(vacancyId: string) {
+  return ["moderacion", "ofertas", "detalle", vacancyId] as const;
+}
+
+export function useAdminVacancyDetail(vacancyId: string) {
+  return useQuery({
+    queryKey: adminVacancyDetailQueryKey(vacancyId),
+    queryFn: async (): Promise<AdminVacancyDetail | null> =>
+      allVacancyDetails().find((vacancy) => vacancy.vacancyId === vacancyId) ?? null,
+    enabled: Boolean(vacancyId),
   });
 }
 
@@ -57,7 +73,7 @@ async function fetchAdminVacancies(
 ): Promise<Paginated<AdminVacancyRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
-  const filtered = filterRows(allVacancyRows(), filters);
+  const filtered = filterRows(allVacancyDetails(), filters);
   const sorted = sortByPublicationDate(filtered);
   const start = (page - 1) * perPage;
 
@@ -69,28 +85,55 @@ async function fetchAdminVacancies(
   };
 }
 
-function allVacancyRows(): AdminVacancyRow[] {
+/** El detalle es el superset de la fila, por lo que listado y pantalla de
+ *  detalle se construyen desde la misma fuente y no pueden desfasarse. */
+function allVacancyDetails(): AdminVacancyDetail[] {
   const companiesById = new Map(
     MOCK_COMPANIES.map((company) => [company.companyId, company] as const),
   );
-  const applicationCountByVacancy = new Map<string, number>();
+  const companyUsersById = new Map(
+    [MOCK_USERS.EMPRESA, ...MOCK_COMPANY_USERS].map((user) => [user.userId, user] as const),
+  );
+  const areasById = new Map(MOCK_AREAS.map((area) => [area.areaId, area] as const));
+  const applicationsByVacancy = new Map<
+    string,
+    (typeof MOCK_APPLICATIONS)[number][]
+  >();
 
   for (const application of MOCK_APPLICATIONS) {
-    applicationCountByVacancy.set(
-      application.vacancyId,
-      (applicationCountByVacancy.get(application.vacancyId) ?? 0) + 1,
-    );
+    const applications = applicationsByVacancy.get(application.vacancyId) ?? [];
+    applications.push(application);
+    applicationsByVacancy.set(application.vacancyId, applications);
   }
 
   return MOCK_VACANCIES.map((vacancy) => {
     const company = companiesById.get(vacancy.companyId);
+    const companyUser = companyUsersById.get(vacancy.companyId);
+    const area = areasById.get(vacancy.areaId);
+    const parentArea = area?.parentAreaId ? areasById.get(area.parentAreaId) : undefined;
+    const applications = applicationsByVacancy.get(vacancy.vacancyId) ?? [];
     const companyName = company?.name ?? "Empresa no disponible";
+    const applicationStatusCounts: Record<VacancyApplicationStatus, number> = {
+      PENDIENTE: 0,
+      VISTO: 0,
+      FINALIZADO: 0,
+    };
+
+    for (const application of applications) {
+      applicationStatusCounts[application.status] += 1;
+    }
 
     return {
       ...vacancy,
       companyName,
       companyInitials: initialsOf(companyName),
-      applicationCount: applicationCountByVacancy.get(vacancy.vacancyId) ?? 0,
+      applicationCount: applications.length,
+      company: company ? { ...company } : null,
+      companyUser: companyUser ? { ...companyUser } : null,
+      area: area ? { ...area } : null,
+      parentArea: parentArea ? { ...parentArea } : null,
+      applicationStatusCounts,
+      selectedApplicationCount: applications.filter((application) => application.selected).length,
     };
   });
 }

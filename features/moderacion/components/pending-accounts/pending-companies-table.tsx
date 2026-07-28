@@ -3,6 +3,8 @@
 // tabla de empresas pendientes. recibe las filas ya filtradas. las acciones
 // (Aprobar/Rechazar, con confirmación y motivo) las maneja ReviewActions.
 
+import Link from "next/link";
+
 import {
   Table,
   TableBody,
@@ -60,17 +62,23 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
           {rows.map((company) => (
             <TableRow key={company.companyId}>
               <TableCell>
-                <div className="flex items-center gap-3">
+                <Link
+                  href={`/moderacion/empresas/${company.companyId}`}
+                  aria-label={`Ver información de ${company.name}`}
+                  className="group flex items-center gap-3 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
                   <span
                     className={`flex size-9 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${colorFor(company.companyId)}`}
                   >
                     {companyInitials(company.name)}
                   </span>
                   <div>
-                    <p className="font-medium">{company.name}</p>
+                    <p className="font-medium group-hover:underline group-focus-visible:underline">
+                      {company.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">{company.industry}</p>
                   </div>
-                </div>
+                </Link>
               </TableCell>
               <TableCell className="text-muted-foreground">{company.email}</TableCell>
               <TableCell>{formatDate(company.registeredAt)}</TableCell>
