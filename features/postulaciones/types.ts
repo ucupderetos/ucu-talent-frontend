@@ -14,24 +14,19 @@ import type {
 } from "@/types";
 
 /**
- * Fila de la lista de postulantes que ve la empresa.
+ * Detalle del postulante: la empresa ve el CV completo del candidato.
  *
- * `profile` (`StudentProfile`) ya trae `name`/`surname` directo — a diferencia
- * de la asunción previa a tener el contrato, no hace falta combinarlo con
- * `user`. `user` (`GET /user/{studentProfileId}`) aporta lo que sí es de
- * `User`: `email` y `status` (para saber si el alumno está `APROBADO`).
- * TODO: confirmar si el backend expone esto ya agregado en un solo endpoint o
- * si de verdad hay que pedir `VacancyApplication` + `StudentProfile` + `User`
- * por separado (hoy, según `docs/ENDPOINTS.md`, son 3 requests).
+ * A diferencia de la fila de lista (`ApplicantRow`, más abajo), el detalle SÍ
+ * necesita `StudentProfile` y `User` completos — `GET /vacancy-application/{id}`
+ * devuelve `VacancyApplicationResponse` (`{ vacancyApplicationId, vacancyId,
+ * studentProfileId, status, appliedAt }`, docs/ENDPOINTS.md sección 6), que no
+ * trae ni nombre ni email. Hacen falta requests separados a
+ * `GET /student-profile/{id}` y `GET /user/{id}` para completar la pantalla.
  */
-interface ApplicantListItem {
+interface ApplicantDetail {
   application: VacancyApplication;
   profile: StudentProfile;
   user: User;
-}
-
-/** Detalle del postulante: la empresa ve el CV completo del candidato. */
-interface ApplicantDetail extends ApplicantListItem {
   education: Education[];
   workExperience: WorkExperience[];
 }
@@ -62,11 +57,24 @@ export interface ApplicantFilters {
 }
 
 /**
- * Fila de la tabla de "Postulantes": junta `ApplicantListItem` con el nombre
- * de la oferta a la que corresponde (necesario porque esta vista es cruzada,
- * no de una vacante a la vez).
+ * Fila de la tabla de "Postulantes".
+ *
+ * Wire: `VacancyApplicantResponse` (`GET /vacancy-application?vacancyId={id}`,
+ * docs/ENDPOINTS.md sección 6) — `{ vacancyApplicationId, vacancyId,
+ * studentProfileId, studentName, status, appliedAt }`, más el nombre de la
+ * oferta (esta vista es cruzada a todas las ofertas de la empresa, no de una
+ * vacante a la vez).
+ *
+ * ⚠️ Antes esta fila extendía `ApplicantListItem` (`StudentProfile` + `User`
+ * completos) — el endpoint de LISTA ya resuelve `studentName` directo y no
+ * trae `email` ni el resto del perfil, así que forzar el join completo por
+ * fila era un mismatch contra el contrato real (habría exigido 1+N requests
+ * en vez de uno). Sin `email` acá: no se puede mostrar ni buscar por email en
+ * esta tabla — para eso está el detalle (`ApplicantDetailRow`).
  */
-export interface ApplicantRow extends ApplicantListItem {
+export interface ApplicantRow {
+  application: VacancyApplication;
+  studentName: string;
   vacancyId: string;
   vacancyName: string;
 }

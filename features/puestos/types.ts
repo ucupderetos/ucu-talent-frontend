@@ -73,21 +73,28 @@ export interface VacancyDetail extends Vacancy {
 }
 
 /**
- * Cambio de estado hecho por la EMPRESA dueña de la vacante.
+ * Cambio de estado hecho por la EMPRESA dueña de la vacante — cierre de la
+ * búsqueda.
  *
- * La empresa dueña tiene UNA sola transición: cerrar la búsqueda,
- * `PUBLICADO → FINALIZADO` (RF-PUE-03). Retirar una vacante a `PENDIENTE` es
- * potestad exclusiva del Admin — ver la tabla de `VacancyStatus` en
- * `types/index.ts`. Tampoco hay "pausar": ese estado no existe en el enum.
+ * La empresa dueña cierra desde `PUBLICADO` o desde `PENDIENTE`, siempre
+ * hacia `FINALIZADO` (terminal, RF-PUE-03). Retirar una vacante a
+ * `PENDIENTE` es potestad exclusiva del Admin — ver la tabla de
+ * `VacancyStatus` en `types/index.ts`. Tampoco hay "pausar": ese estado no
+ * existe en el enum.
  *
- * Se manda el objeto completo porque no hay endpoint chico de "solo cambiar
- * status": `PUT /vacancy/{id}` espera `CreateVacancyRequest` entero.
+ * ✅ Resuelto (A-14, `docs/ENDPOINTS.md`) — corrige lo que decía antes este
+ * párrafo (que no había endpoint chico de status y había que mandar el
+ * objeto completo). Hay dos endpoints dedicados a status, separados de
+ * `PUT /vacancy/{id}` (que edita el resto de los campos):
+ * `PATCH /vacancy/status/{id}` (EMPRESA + dueña) y `PUT /vacancy/status/{id}`
+ * (ADMIN, `PUBLICADO ↔ PENDIENTE`). El contrato no detalla el shape exacto de
+ * `UpdateVacancyStatusRequest` más allá del endpoint — se asume `{ status }`
+ * por ser el mínimo que el nombre sugiere; confirmar al conectar.
  *
- * 🔄 `api-dev` todavía expone solo `PENDIENTE | FINALIZADO` (A-14) y su
- * `PUT /vacancy/{id}` es rol `EMPRESA`; el endpoint de ADMIN para mover
- * estados no existe aún. Verificar al integrar.
+ * ⚠️ Sin consumidores hoy — quedó del diseño previo (que sí se usaba con el
+ * objeto completo). El shape de acá abajo ya es el corregido.
  */
-export interface CompanyVacancyStatusChange extends VacancyInput {
+export interface CompanyVacancyStatusChange {
   status: Extract<VacancyStatus, "FINALIZADO">;
 }
 

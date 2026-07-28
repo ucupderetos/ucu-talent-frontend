@@ -5,19 +5,18 @@
 //
 // ⚠️ ANDAMIO TEMPORAL: igual que `features/puestos/hooks/use-company-vacancies.ts`,
 // esto simula un `GET` paginado y filtrado, pero resuelve todo en memoria
-// sobre `lib/fixtures.ts`. TODO(api): cuando el contrato de `vacancy-application`
-// exista, esto pasa a `apiClient.get<Paginated<ApplicantRow>>(...)`.
+// sobre `lib/fixtures.ts`. TODO(api): cuando se conecte, esto pasa a
+// `apiClient.get<VacancyApplicantResponse[]>("/vacancy-application", { vacancyId })`
+// (docs/ENDPOINTS.md, sección 6) — la respuesta real ya trae `studentName`
+// resuelto, sin `StudentProfile`/`User` completos (ver el aviso en
+// `ApplicantRow`, `features/postulaciones/types.ts`). Acá se simula lo mismo:
+// `studentName` sale de `MOCK_STUDENT_PROFILES`, sin tocar `MOCK_APPLICANT_USERS`.
 
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  MOCK_APPLICANT_USERS,
-  MOCK_APPLICATIONS,
-  MOCK_STUDENT_PROFILES,
-  MOCK_VACANCIES,
-} from "@/lib/fixtures";
+import { MOCK_APPLICATIONS, MOCK_STUDENT_PROFILES, MOCK_VACANCIES } from "@/lib/fixtures";
 import type { ApplicantFilters, ApplicantOrder, ApplicantRow } from "@/features/postulaciones/types";
-import type { Paginated, StudentProfile, User, Vacancy, VacancyApplication } from "@/types";
+import type { Paginated, StudentProfile, Vacancy, VacancyApplication } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -59,8 +58,8 @@ async function fetchCompanyApplicants(
   return { items, total: sorted.length, page, perPage };
 }
 
-/** Junta `VacancyApplication` + `StudentProfile` + `User` + nombre de la
- *  oferta para las vacantes de esta empresa. */
+/** Junta `VacancyApplication` + nombre del postulante + nombre de la oferta,
+ *  para las vacantes de esta empresa — mismos campos que `VacancyApplicantResponse`. */
 function buildRows(companyId: string): ApplicantRow[] {
   const ownVacancyIds = new Set(
     MOCK_VACANCIES.filter((v) => v.companyId === companyId).map((v) => v.vacancyId),
@@ -69,10 +68,9 @@ function buildRows(companyId: string): ApplicantRow[] {
   const profileById = new Map<string, StudentProfile>(
     MOCK_STUDENT_PROFILES.map((p) => [p.studentProfileId, p]),
   );
-  const userById = new Map<string, User>(MOCK_APPLICANT_USERS.map((u) => [u.userId, u]));
 
   return MOCK_APPLICATIONS.filter((application) => ownVacancyIds.has(application.vacancyId))
-    .map((application) => toRow(application, vacancyById, profileById, userById))
+    .map((application) => toRow(application, vacancyById, profileById))
     .filter((row): row is ApplicantRow => row !== null);
 }
 
@@ -80,17 +78,14 @@ function toRow(
   application: VacancyApplication,
   vacancyById: Map<string, Vacancy>,
   profileById: Map<string, StudentProfile>,
-  userById: Map<string, User>,
 ): ApplicantRow | null {
   const vacancy = vacancyById.get(application.vacancyId);
   const profile = profileById.get(application.studentProfileId);
-  const user = userById.get(application.studentProfileId);
-  if (!vacancy || !profile || !user) return null;
+  if (!vacancy || !profile) return null;
 
   return {
     application,
-    profile,
-    user,
+    studentName: `${profile.name} ${profile.surname}`,
     vacancyId: vacancy.vacancyId,
     vacancyName: vacancy.name,
   };
@@ -102,10 +97,7 @@ function filterRows(rows: ApplicantRow[], filters: ApplicantFilters): ApplicantR
   return rows.filter((row) => {
     if (filters.vacancyIds?.length && !filters.vacancyIds.includes(row.vacancyId)) return false;
     if (filters.statuses?.length && !filters.statuses.includes(row.application.status)) return false;
-    if (search) {
-      const haystack = `${row.profile.name} ${row.profile.surname} ${row.user.email}`.toLowerCase();
-      if (!haystack.includes(search)) return false;
-    }
+    if (search && !row.studentName.toLowerCase().includes(search)) return false;
     return true;
   });
 }

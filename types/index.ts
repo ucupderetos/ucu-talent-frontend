@@ -41,12 +41,10 @@ export type Role = "ALUMNO" | "EMPRESA" | "ADMIN";
  * `APROBADO` directo). Resuelve la deuda que tenía el booleano: ahora si se
  * puede distinguir "rechazada" de "todavía no revisada".
  *
- * ⚠️ GAP CONFIRMADO: `docs/ENDPOINTS.md` no tiene NINGÚN endpoint para pasar
- * una cuenta de `PENDIENTE` a `APROBADO`/`RECHAZADO`. La sección 1 (`/user`)
- * solo tiene POST/GET/DELETE, sin PUT. Esto bloquea RF-12 y RF-13 tal como
- * están hoy: no hay forma de que Admin UCU apruebe una empresa ni un alumno
- * desde el frontend porque el backend no expone la acción todavía. Confirmar
- * con el equipo de backend antes de construir `(admin)/moderacion`.
+ * ✅ Resuelto (A-02, `docs/ENDPOINTS.md`): `PATCH /user/{id}` (ADMIN) recibe
+ * `UpdateUserStatusRequest { status: APROBADO | RECHAZADO, adminComment? }`
+ * y aprueba/rechaza tanto alumno como empresa. Ver `use-review-account.ts`
+ * (todavía sobre fixtures, con el wire pendiente de conectar).
  */
 export type AccountStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
