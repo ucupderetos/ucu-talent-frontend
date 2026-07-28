@@ -12,7 +12,7 @@
  * Base URL de la API. Se lee en build time — tiene que existir en .env.local.
  * Ver .env.example.
  */
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 /**
  * Error normalizado de la API. Todo lo que falle sale como ApiError, así los
@@ -51,7 +51,7 @@ function buildUrl(path: string, params?: RequestOptions["params"]): string {
   if (!BASE_URL) {
     throw new ApiError(
       0,
-      "Falta NEXT_PUBLIC_API_URL. Copiá .env.example a .env.local y completalo.",
+      "Falta NEXT_PUBLIC_API_BASE_URL. Copiá .env.example a .env.local y completalo.",
     );
   }
 
