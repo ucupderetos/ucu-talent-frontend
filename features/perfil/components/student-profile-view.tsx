@@ -86,7 +86,7 @@ export function StudentProfileView() {
             </TabsContent>
 
             <TabsContent value="habilidades" className="mt-4">
-              <SkillsTab skills={data.profile.skills} />
+              <SkillsTab profile={data.profile} />
             </TabsContent>
           </Tabs>
         </div>

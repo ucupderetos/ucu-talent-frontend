@@ -3,26 +3,23 @@
 //
 // Las entidades core viven en @/types (la empresa ve el perfil de sus postulantes).
 // Acá va lo específico: payloads de edición.
-//
-// 🔴 GAP CONFIRMADO: `docs/ENDPOINTS.md` dice explícitamente "No hay PUT de
-// update para StudentProfile todavía" (sección 2). Los tipos de abajo
-// (`StudentProfileInput`, `PersonalDataInput`) no tienen hoy ningún endpoint
-// al que pegarle — quedan documentados como contrato deseado. Confirmar con
-// backend antes de construir la pantalla de "editar perfil".
 
 import type { DegreeLevel, Department, Education, StudentProfile, WorkExperience } from "@/types";
+
 /**
- * Perfil completo del alumno tal como lo editaría él mismo — nombre, apellido,
- * documento, teléfono, LinkedIn y skills viven TODOS en `StudentProfile`
- * ahora (no en `User`, que quedó como identidad pura tras el refactor del
- * backend). Sin `PUT /student-profile`, no hay forma de mandar esto todavía.
+ * Wire: `UpdateStudentProfileRequest` — `PUT /student-profile/{id}`
+ * (docs/ENDPOINTS.md, sección 3). Reemplaza el objeto entero: SIEMPRE se
+ * mandan los cuatro campos, aunque el usuario solo haya tocado uno (ver el
+ * comentario en `use-update-student-profile.ts`).
+ *
+ * `name`/`surname`/documento NO están acá — el contrato dice explícitamente
+ * que no se editan desde este endpoint.
  */
-export interface StudentProfileInput {
-  name: string;
-  surname: string;
-  phoneNumber?: string;
-  linkedinUrl?: string;
+export interface UpdateStudentProfileInput {
+  phoneNumber: string;
+  linkedinUrl: string;
   skills: string[];
+  description: string;
 }
 
 /**
@@ -45,6 +42,9 @@ export interface StudentProfileData {
 export interface EducationInput {
   degreeLevel: DegreeLevel;
   degreeId: string;
+  /** Obligatoria cuando `Degree.isUcu === false` (docs/ENDPOINTS.md, sección
+   *  4) — el backend valida esto, el front solo replica el gate en el form. */
+  institution?: string;
   description?: string;
   startDate: string; // ISO 8601
   /** null si está en curso. */
@@ -96,7 +96,5 @@ export interface CompanyProfile {
   /** Company.logo_url — bucket. Sin endpoint de upload todavía. */
   logoUrl: string;
 }
-
-export type CompanyProfileInput = CompanyProfile;
 
 export const COMPANY_DESCRIPTION_MAX = 1000;

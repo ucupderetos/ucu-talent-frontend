@@ -18,7 +18,9 @@ import { APPLICATION_STATUS_LABEL } from "@/features/postulaciones/components/ap
 import type { MyApplicationFilters } from "@/features/postulaciones/types";
 import type { Area, VacancyApplicationStatus } from "@/types";
 
-const STATUS_OPTIONS: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADO"];
+type AreaOption = Pick<Area, "areaId" | "name">;
+
+const STATUS_OPTIONS: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADA"];
 
 export function MyApplicationsFilters({
   filters,
@@ -26,7 +28,7 @@ export function MyApplicationsFilters({
   onChange,
 }: {
   filters: MyApplicationFilters;
-  areas: Area[];
+  areas: AreaOption[];
   onChange: (filters: MyApplicationFilters) => void;
 }) {
   const activeCount = (filters.statuses?.length ?? 0) + (filters.areaIds?.length ?? 0);

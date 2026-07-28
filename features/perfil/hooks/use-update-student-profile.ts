@@ -1,47 +1,44 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { apiClient } from "@/lib/api-client";
+import { studentProfileQueryKey } from "@/features/perfil/hooks/use-student-profile";
+import type { UpdateStudentProfileInput } from "@/features/perfil/types";
+import type { StudentProfile } from "@/types";
 
 /**
  * Guardado de "Información personal" y "Habilidades" en Mi perfil.
- *
- * 🔴 A diferencia de `useUpdateCompanyProfile` (que sí tiene un `PUT
- * /company/{id}` real esperando conexión), acá NO HAY ningún endpoint de
- * update para `StudentProfile` en `docs/ENDPOINTS.md` — ni uno parcial ni uno
- * completo (A-08 en AGENTS.md). Esto queda mockeado hasta que backend lo
- * agregue; no hay "conectar acá" posible todavía.
+ * Wire: `PUT /student-profile/{id}`, body `UpdateStudentProfileRequest`
+ * (docs/ENDPOINTS.md, sección 3): `{ phoneNumber, linkedinUrl, skills,
+ * description }` — reemplaza el objeto entero, no es un patch parcial (mismo
+ * criterio que `PUT /vacancy/{id}`). Por eso las dos pestañas que editan este
+ * recurso (`PersonalInfoTab`, `SkillsTab`) mandan SIEMPRE los cuatro campos:
+ * los propios editados más los de la otra pestaña sin tocar, tomados de
+ * `profile`. `name`/`surname`/documento NO viajan acá — el contrato es
+ * explícito en que no se modifican desde este endpoint.
  */
-async function updateStudentProfileRequest(values: {
-  name: string;
-  surname: string;
-  phoneNumber?: string;
-  linkedinUrl?: string;
-}): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
+function updateStudentProfileRequest(
+  studentProfileId: string,
+  payload: UpdateStudentProfileInput,
+): Promise<StudentProfile> {
+  return apiClient.put<StudentProfile>(`/student-profile/${studentProfileId}`, payload);
 }
 
-export function useUpdateStudentProfile() {
-  const mutation = useMutation({ mutationFn: updateStudentProfileRequest });
+export function useUpdateStudentProfile(studentProfileId: string) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (payload: UpdateStudentProfileInput) =>
+      updateStudentProfileRequest(studentProfileId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: studentProfileQueryKey(studentProfileId) });
+    },
+  });
 
   return {
     updateProfile: mutation.mutateAsync,
     isLoading: mutation.isPending,
     error: mutation.isError ? "No se pudo guardar el perfil. Intentá nuevamente." : null,
-  };
-}
-
-/** Mismo gap que arriba (A-08) — `skills` vive en `StudentProfile`, así que
- *  tampoco tiene endpoint propio de update. */
-async function updateSkillsRequest(skills: string[]): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-}
-
-export function useUpdateSkills() {
-  const mutation = useMutation({ mutationFn: updateSkillsRequest });
-
-  return {
-    updateSkills: mutation.mutateAsync,
-    isLoading: mutation.isPending,
-    error: mutation.isError ? "No se pudieron guardar las habilidades. Intentá nuevamente." : null,
   };
 }

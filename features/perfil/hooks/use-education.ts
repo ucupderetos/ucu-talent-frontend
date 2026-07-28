@@ -1,25 +1,35 @@
 "use client";
 
 // CRUD de "Formación académica" en Mi perfil.
-//
-// ⚠️ ANDAMIO TEMPORAL: a diferencia de `StudentProfile` (A-08, sin PUT
-// alguno), `education` sí aparece en docs/ENDPOINTS.md con endpoints propios
-// — pero marcados "⚠️ Sin restricción" (A-12 en AGENTS.md), es decir sin
-// contrato de autorización confirmado todavía. Mientras tanto esto resuelve
-// todo con un delay simulado y un id generado en el cliente; no pega contra
-// la API real.
+// Wire: POST/PUT/DELETE /education + GET /education?studentProfileId={id}
+// (docs/ENDPOINTS.md, sección 4). El catálogo de carreras sale de
+// GET /degree.
 
-import { useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
+import { apiClient } from "@/lib/api-client";
 import type { EducationInput } from "@/features/perfil/types";
-import type { Education } from "@/types";
+import type { Degree, Education } from "@/types";
+
+/** @public para invalidación puntual futura (AGENTS.md). */
+export function degreesQueryKey() {
+  return ["perfil", "degrees"] as const;
+}
+
+/** Catálogo de carreras para el select de "Formación académica". */
+export function useDegrees(): readonly Degree[] {
+  const { data } = useQuery({
+    queryKey: degreesQueryKey(),
+    queryFn: () => apiClient.get<Degree[]>("/degree"),
+  });
+
+  return data ?? [];
+}
 
 export function useCreateEducation() {
   const mutation = useMutation({
-    mutationFn: async (input: EducationInput & { studentProfileId: string }): Promise<Education> => {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      return { ...input, educationId: crypto.randomUUID(), description: input.description ?? null };
-    },
+    mutationFn: (input: EducationInput & { studentProfileId: string }): Promise<Education> =>
+      apiClient.post<Education>("/education", input),
   });
 
   return { createEducation: mutation.mutateAsync, isLoading: mutation.isPending };
@@ -27,9 +37,11 @@ export function useCreateEducation() {
 
 export function useUpdateEducation() {
   const mutation = useMutation({
-    mutationFn: async (input: EducationInput & { educationId: string; studentProfileId: string }): Promise<Education> => {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      return { ...input, description: input.description ?? null };
+    mutationFn: (
+      input: EducationInput & { educationId: string; studentProfileId: string },
+    ): Promise<Education> => {
+      const { educationId, ...payload } = input;
+      return apiClient.put<Education>(`/education/${educationId}`, payload);
     },
   });
 
@@ -38,9 +50,8 @@ export function useUpdateEducation() {
 
 export function useDeleteEducation() {
   const mutation = useMutation({
-    mutationFn: async (educationId: string): Promise<void> => {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-    },
+    mutationFn: (educationId: string): Promise<void> =>
+      apiClient.del<void>(`/education/${educationId}`),
   });
 
   return { deleteEducation: mutation.mutateAsync, isLoading: mutation.isPending };

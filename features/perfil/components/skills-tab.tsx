@@ -3,6 +3,11 @@
 // Pestaña "Habilidades" de Mi perfil: `StudentProfile.skills` (string[]) como
 // chips agregables/removibles. No hay componente de tags en components/ui/
 // todavía — se arma acá mismo, es la primera pantalla que lo necesita.
+//
+// `PUT /student-profile/{id}` reemplaza el objeto entero (ver
+// use-update-student-profile.ts): el submit manda `phoneNumber`/
+// `linkedinUrl`/`description` de `profile` sin tocar, junto con los skills
+// editados acá. Por eso recibe `profile` completo y no solo `skills`.
 
 import { useState } from "react";
 import { XIcon } from "lucide-react";
@@ -18,14 +23,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useUpdateSkills } from "@/features/perfil/hooks/use-update-student-profile";
+import { useUpdateStudentProfile } from "@/features/perfil/hooks/use-update-student-profile";
+import type { StudentProfile } from "@/types";
 
-export function SkillsTab({ skills }: { skills: string[] }) {
+export function SkillsTab({ profile }: { profile: StudentProfile }) {
   const [mode, setMode] = useState<"view" | "edit">("view");
-  const [savedSkills, setSavedSkills] = useState(skills);
-  const [draftSkills, setDraftSkills] = useState(skills);
+  const [savedSkills, setSavedSkills] = useState(profile.skills);
+  const [draftSkills, setDraftSkills] = useState(profile.skills);
   const [inputValue, setInputValue] = useState("");
-  const { updateSkills, isLoading, error } = useUpdateSkills();
+  const { updateProfile, isLoading, error } = useUpdateStudentProfile(profile.studentProfileId);
 
   function startEditing() {
     setDraftSkills(savedSkills);
@@ -48,7 +54,12 @@ export function SkillsTab({ skills }: { skills: string[] }) {
   }
 
   async function save() {
-    await updateSkills(draftSkills);
+    await updateProfile({
+      phoneNumber: profile.phoneNumber ?? "",
+      linkedinUrl: profile.linkedinUrl ?? "",
+      description: profile.description ?? "",
+      skills: draftSkills,
+    });
     setSavedSkills(draftSkills);
     setMode("view");
     toast.success("Habilidades actualizadas.");
