@@ -97,4 +97,21 @@ export interface CompanyProfile {
   logoUrl: string;
 }
 
+/**
+ * Wire: `UpdateCompanyRequest` — `PUT /company/{id}` (docs/ENDPOINTS.md,
+ * sección 3). Es el SUBCONJUNTO de `CompanyProfile` que la API acepta: los
+ * seis campos `@NotBlank`/`@NotNull` del contrato. `rut`, `phoneNumber` y
+ * `logoUrl` del formulario NO viajan acá — el backend todavía no los expone,
+ * viven solo en el view-model (ver `CompanyProfile` arriba).
+ */
+export interface UpdateCompanyInput {
+  /** Company.name (razón social) — el form lo llama `legalName`. */
+  name: string;
+  industry: string;
+  description: string;
+  webUrl: string;
+  linkedinUrl: string;
+  location: Department;
+}
+
 export const COMPANY_DESCRIPTION_MAX = 1000;

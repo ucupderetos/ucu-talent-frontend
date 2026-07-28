@@ -3,12 +3,13 @@
 // Estado del formulario de perfil de empresa (MER: `Company`).
 //
 // ⚠️ Alineado al modelo de vista `CompanyProfile` (features/perfil/types.ts),
-// que ya refleja el MER con `legalName` en inglés (AGENTS.md). Arranca
-// sembrado con useCompanyProfile() en vez de vacío, para que ReadOnly y
-// Preview se puedan revisar con contenido real (ver review del PR).
+// que refleja el MER con `legalName` en inglés (AGENTS.md). Se siembra con
+// `useCompanyProfile()` — que hoy trae la `Company` REAL del backend
+// (`GET /company?userId=`), asíncrono: mientras carga, `profile` es undefined
+// y el form arranca vacío (la vista muestra un skeleton, no el form vacío).
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import type { Department } from "@/types";
@@ -40,30 +41,56 @@ const companyProfileSchema = z.object({
 
 export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
 
+const EMPTY_VALUES: CompanyProfileFormValues = {
+  legalName: "",
+  rut: "",
+  phoneNumber: "",
+  industry: "",
+  description: "",
+  webUrl: "",
+  linkedinUrl: "",
+  location: undefined as unknown as Department,
+  logoUrl: "",
+};
+
 export function useCompanyProfileForm() {
-  const seedValues = useCompanyProfile();
+  const { profile, isLoading, isError } = useCompanyProfile();
   const [mode, setMode] = useState<"view" | "edit">("view");
-  const [savedValues, setSavedValues] = useState<CompanyProfileFormValues>(seedValues);
+  // "Último guardado real": null hasta el primer submit. Antes de eso el form se
+  // siembra con lo que trajo el GET; después, con lo último que guardó el
+  // usuario. Esto también preserva rut/phoneNumber/logoUrl: la API no los
+  // persiste, así que el refetch los volvería a los valores de muestra —
+  // committedValues los mantiene como los dejó la persona.
+  const [committedValues, setCommittedValues] = useState<CompanyProfileFormValues | null>(null);
+
+  const seedValues = committedValues ?? profile ?? null;
 
   const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
-    defaultValues: seedValues,
+    defaultValues: EMPTY_VALUES,
   });
+
+  // Sincroniza el form (RHF, sistema externo a React) con la semilla cuando
+  // llega del backend o cambia — para esto está pensado useEffect.
+  useEffect(() => {
+    if (seedValues) form.reset(seedValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- form es estable (RHF), no va en deps
+  }, [seedValues]);
 
   function startEditing() {
     setMode("edit");
   }
 
   function commitSave(values: CompanyProfileFormValues) {
-    setSavedValues(values);
+    setCommittedValues(values);
     form.reset(values);
     setMode("view");
   }
 
   function cancelEditing() {
-    form.reset(savedValues);
+    if (seedValues) form.reset(seedValues);
     setMode("view");
   }
 
-  return { form, mode, startEditing, commitSave, cancelEditing };
+  return { form, mode, startEditing, commitSave, cancelEditing, isLoading, isError };
 }
