@@ -8,7 +8,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { PlusIcon } from "lucide-react";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
 import { ListPagination } from "@/components/pagination/list-pagination";
 import { Button } from "@/components/ui/button";
@@ -55,26 +54,26 @@ export function CompanyVacanciesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        actions={
-          // CTA principal de la pantalla: color de marca explícito
-          // (`bg-ucu-blue`), no un token — ver "Colores" en AGENTS.md.
-          <Button asChild className="bg-ucu-blue text-white hover:bg-ucu-blue/90">
-            <Link href="/crear-oferta/informacion-basica">
-              <PlusIcon />
-              Crear nueva oferta
-            </Link>
-          </Button>
-        }
-      />
 
-      <VacancyFilters
-        filters={filters}
-        areas={areas}
-        locations={locations}
-        onChange={updateFilters}
-        onOrderChange={changeOrder}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <VacancyFilters
+          filters={filters}
+          areas={areas}
+          locations={locations}
+          onChange={updateFilters}
+          onOrderChange={changeOrder}
+        />
+
+        <Button
+          asChild
+          className="bg-ucu-blue text-white hover:bg-ucu-blue/90"
+        >
+          <Link href="/crear-oferta/informacion-basica">
+            <PlusIcon />
+            Crear nueva oferta
+          </Link>
+        </Button>
+      </div>
 
       {isLoading && <TableSkeleton />}
 
@@ -116,11 +115,11 @@ export function CompanyVacanciesView() {
 function hasActiveFilters(filters: CompanyVacancyFilters): boolean {
   return Boolean(
     filters.search ||
-      filters.statuses?.length ||
-      filters.areaIds?.length ||
-      filters.locations?.length ||
-      filters.publishedFrom ||
-      filters.publishedTo,
+    filters.statuses?.length ||
+    filters.areaIds?.length ||
+    filters.locations?.length ||
+    filters.publishedFrom ||
+    filters.publishedTo,
   );
 }
 
