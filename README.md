@@ -100,9 +100,9 @@ cp .env.example .env.local
 
 Variables relevantes:
 
-- `NEXT_PUBLIC_API_URL`: URL base pública de la API de Spring Boot.
+- `NEXT_PUBLIC_API_URL`: URL base pública de la API de Spring Boot (la usa `lib/api-client.ts`).
+- `NEXT_PUBLIC_API_BASE_URL`: build arg usado por `Dockerfile`/`docker-compose.yml` para inyectar la URL de API en build time.
 - `NEXT_PUBLIC_MOCK_SESSION`: modo temporal de desarrollo sin backend. Valores válidos: `ALUMNO`, `EMPRESA`, `ADMIN`.
-
 ## Cómo ejecutar
 
 ```bash
