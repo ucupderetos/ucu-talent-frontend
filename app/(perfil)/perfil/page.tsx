@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 import { CompanyProfileView } from "@/features/perfil/components/company-profile-view";
 import { StudentProfileView } from "@/features/perfil/components/student-profile-view";
 

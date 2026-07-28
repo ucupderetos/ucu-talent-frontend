@@ -16,7 +16,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 import { homeRouteFor } from "@/lib/auth";
 
 export function HomeRedirect() {

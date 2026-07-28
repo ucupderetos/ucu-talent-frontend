@@ -1,5 +1,5 @@
 // Helpers de autenticación y sesión. Lógica pura, sin UI ni React.
-// El hook que consume esto es features/auth/hooks/use-session.ts.
+// El hook que consume esto es hooks/use-session.ts.
 //
 // Confirmado por docs/ENDPOINTS.md del backend: el login (`POST /auth/login`)
 // setea un JWT en cookie httpOnly y `GET /me` devuelve `MeResponse`. El cliente

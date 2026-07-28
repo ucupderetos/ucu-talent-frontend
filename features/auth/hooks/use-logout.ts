@@ -10,7 +10,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-import { SESSION_QUERY_KEY } from "@/features/auth/hooks/use-session";
+import { SESSION_QUERY_KEY } from "@/hooks/use-session";
 import { apiClient } from "@/lib/api-client";
 
 const LOGOUT_ENDPOINT = "/auth/logout";

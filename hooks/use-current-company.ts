@@ -2,11 +2,11 @@
 
 // Resuelve la `Company` del usuario logueado (rol empresa).
 //
-// Vive en features/auth/ (no en features/puestos/) porque no es un concepto
-// del dominio "puestos": lo necesitan por igual "Mis ofertas" (puestos) y
+// Vive en hooks/ (no en features/puestos/) porque no es un concepto del
+// dominio "puestos": lo necesitan por igual "Mis ofertas" (puestos) y
 // "Postulantes" (postulaciones), y la regla del equipo es no importar
-// features/ de otro dominio — por eso este accesor sube a la capa de sesión,
-// junto a use-session.ts.
+// features/ de otro dominio — por eso este accesor, como toda la capa de
+// sesión, sube al bucket `hooks/` de nivel raíz, junto a use-session.ts.
 //
 // ⚠️ ANDAMIO TEMPORAL: el MER separa `User` de `Company` (`Company.userId` es
 // la FK), pero todavía no existe un endpoint tipo `GET /companies/me` — el
@@ -21,7 +21,7 @@
 // fixtures.
 
 import { MOCK_COMPANIES } from "@/lib/fixtures";
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 import type { Company } from "@/types";
 
 interface CurrentCompany {

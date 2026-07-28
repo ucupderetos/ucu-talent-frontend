@@ -13,7 +13,7 @@ import { useEffect } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 import { canAccess, homeRouteFor } from "@/lib/auth";
 import type { Role } from "@/types";
 

@@ -5,7 +5,7 @@
 // más campos, así que dejó de ser mock.
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 export function JobReviewCompanyInfo() {
   const { company } = useCurrentCompany();

@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, ApiError } from "@/lib/api-client";
 import type { Credentials } from "@/features/auth/types";
-import { SESSION_QUERY_KEY } from "@/features/auth/hooks/use-session";
+import { SESSION_QUERY_KEY } from "@/hooks/use-session";
 import type { User } from "@/types";
 
 /**

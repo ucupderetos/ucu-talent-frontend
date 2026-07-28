@@ -16,7 +16,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 
 export function ProfileGuard({ children }: { children: React.ReactNode }) {
   const { hasProfile, isLoading, error } = useSession();

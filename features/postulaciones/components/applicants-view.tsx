@@ -17,7 +17,7 @@ import { useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/layout/empty-state";
 import { ListPagination } from "@/components/pagination/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { useCompanyApplicants } from "@/features/postulaciones/hooks/use-company-applicants";
 import { useCompanyVacancyOptions } from "@/features/postulaciones/hooks/use-company-vacancy-options";
 import { ApplicantFiltersBar } from "@/features/postulaciones/components/applicant-filters";

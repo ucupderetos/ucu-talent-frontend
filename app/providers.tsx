@@ -46,7 +46,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   // No hay SessionProvider: TanStack Query ya deduplica el GET /me por queryKey,
   // así que un context propio para la sesión sería redundante. Ver
-  // features/auth/hooks/use-session.ts.
+  // hooks/use-session.ts.
   //
   // TooltipProvider global: lo necesita el Sidebar colapsado (tooltips con el
   // label al pasar el mouse por los íconos).
