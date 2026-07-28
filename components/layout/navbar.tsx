@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useLogout } from "@/features/auth/hooks/use-logout";
+import { useLogout } from "@/hooks/use-logout";
 import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 

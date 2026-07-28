@@ -759,9 +759,9 @@ features/<dominio>/         # auth, perfil, puestos, postulaciones, moderacion
 ├── hooks/                  # Hooks de datos (useQuery/useMutation) del dominio
 └── types.ts                # Tipos ESPECÍFICOS del dominio (no las entidades core)
 hooks/                      # ⚠️ Hooks app-wide (React) que cruzan dominios: capa de
-│                           #    sesión (use-session, use-current-company). NO van en
-│                           #    lib/ (sin React) ni en components/ (no lee sesión).
-│                           #    Un hook de UN solo dominio va en features/<x>/hooks/
+│                           #    sesión (use-session, use-current-company, use-logout).
+│                           #    NO van en lib/ (sin React) ni en components/. Un hook de
+│                           #    UN solo dominio va en features/<x>/hooks/
 lib/
 ├── api-client.ts           # ⚠️ Wrapper de fetch hacia la API de Spring Boot
 ├── auth.ts                 # ⚠️ Sesión, usuario actual, guards de rol
@@ -784,18 +784,24 @@ Qué va en cada lado:
 - **`features/<dominio>/`** — el default: ante la duda, va acá y no en `app/` ni en
   `components/`.
 - **`components/layout/`** — UI compartida entre roles, **sin lógica de dominio**. En la
-  práctica: no lee la sesión. `Navbar` recibe el usuario **por props**, y se lo pasa el
-  layout del route group. Por eso `components/` no importa nunca desde `features/`.
+  práctica: no lee *quién* está logueado — `Navbar` recibe el usuario **por props**, y se
+  lo pasa el layout del route group. **Nunca importa desde `features/`.** Sí puede usar
+  hooks de infra app-wide de `hooks/` (ej. `useLogout` en el botón de "Cerrar sesión" del
+  Navbar/Sidebar): esos son infra transversal, no un dominio — la línea que no se cruza es
+  `features/`, no `hooks/`. Leer la identidad sigue llegando por props; disparar una acción
+  de sesión (logout) es distinto de leer la sesión.
 - **`components/ui/`** — la genera el CLI de shadcn; no crearla a mano.
 - **`lib/`** — infraestructura transversal, **sin UI ni React**. Por eso `lib/auth.ts`
   tiene solo funciones puras (`obtenerUsuarioActual`, `puedeAcceder`), y el hook que las
   consume vive en `hooks/use-session.ts`.
 - **`hooks/`** — hooks **app-wide** (transversales a los dominios) que dependen de React,
   así que no pueden vivir en `lib/` (sin React) ni en `components/` (UI que no lee la
-  sesión). Hoy: la capa de sesión (`use-session.ts`, `use-current-company.ts`). No es un
-  cajón para cualquier hook: si un hook es de un solo dominio, va en
-  `features/<x>/hooks/`. Solo sube acá lo que **lo consumen varios dominios** y no tiene
-  otro hogar legal — es lo que evita el import cruzado `features/A → features/B`.
+  sesión). Hoy: la capa de sesión (`use-session.ts`, `use-current-company.ts`,
+  `use-logout.ts`). No es un cajón para cualquier hook: si un hook es de un solo dominio,
+  va en `features/<x>/hooks/`. Solo sube acá lo que lo consumen **varios dominios o
+  `components/`** y no tiene otro hogar legal — es lo que evita tanto el import cruzado
+  `features/A → features/B` como el `components/ → features/` (ese fue el caso de
+  `use-logout.ts`: lo consumen `navbar`/`sidebar`, que no pueden importar de `features/`).
 - **`types/index.ts`** — **entidades core del modelo de datos**: las que cruzan dominios.
 
 ### Dónde va cada tipo: `types/` vs `features/<x>/types.ts`
@@ -1053,7 +1059,7 @@ cambia lo que el frontend *cree* que sos, el backend no lo mira.
 
 **Ahora que la API existe, esto es deuda con fecha de vencimiento.** Apenas el login real
 funcione contra `api-dev`, se borran `lib/fixtures.ts`, `NEXT_PUBLIC_MOCK_SESSION` y sus
-usos en `lib/auth.ts` y `features/auth/hooks/use-logout.ts`.
+usos en `lib/auth.ts` y `hooks/use-logout.ts`.
 
 ✅ **La migración a `Role: ALUMNO|EMPRESA|ADMIN` ya se hizo** en `lib/auth.ts`,
 `lib/fixtures.ts` y `.env.example` (ver *Idioma del código*) — ya no queda código usando
