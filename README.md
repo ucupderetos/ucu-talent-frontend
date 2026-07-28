@@ -128,7 +128,7 @@ Requiere Docker instalado localmente. Si se usa Docker, la URL base de la API de
 ### Build y ejecución manual
 
 ```bash
-docker build -t ucu-talent-frontend .
+docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.ejemplo.com -t ucu-talent-frontend .
 docker run -p 3000:3000 ucu-talent-frontend
 ```
 
