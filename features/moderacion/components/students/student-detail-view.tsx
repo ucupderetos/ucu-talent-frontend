@@ -307,7 +307,7 @@ function BackLink() {
       className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <ArrowLeftIcon className="size-4" aria-hidden />
-      Volver a usuarios
+      Volver a estudiantes
     </Link>
   );
 }

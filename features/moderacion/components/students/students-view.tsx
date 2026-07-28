@@ -1,6 +1,6 @@
 "use client";
 
-// Orquestador de "Usuarios" (vista admin, RF-MOD-05): arma el estado de
+// Orquestador de "Estudiantes" (vista admin, RF-MOD-05): arma el estado de
 // filtros/paginación que consumen los componentes de presentación. La
 // page.tsx solo renderiza esto. Mismo patrón que
 // `features/puestos/components/company-vacancies-view.tsx`.
@@ -59,14 +59,14 @@ export function StudentsView() {
 
       {!isLoading && isError && (
         <EmptyState
-          title="No pudimos cargar los usuarios"
+          title="No pudimos cargar los alumnos"
           description="Revisá tu conexión y volvé a intentar."
         />
       )}
 
       {!isLoading && !isError && data && data.items.length === 0 && (
         <EmptyState
-          title={hasAnyStudent ? "No hay usuarios con esos filtros" : "Todavía no hay alumnos registrados"}
+          title={hasAnyStudent ? "No hay alumnos con esos filtros" : "Todavía no hay alumnos registrados"}
           description={
             hasAnyStudent
               ? "Probá ajustando la búsqueda o los filtros."
@@ -82,7 +82,7 @@ export function StudentsView() {
             page={data.page}
             perPage={data.perPage}
             total={data.total}
-            itemLabel="usuarios"
+            itemLabel="alumnos"
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
             onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
