@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 
-export const JOB_WIZARD_STEPS = [
+const JOB_WIZARD_STEPS = [
   { number: 1, label: "Información básica", href: "/crear-oferta/informacion-basica" },
   { number: 2, label: "Detalles del puesto", href: "/crear-oferta/detalles-puesto" },
   { number: 3, label: "Revisión y publicación", href: "/crear-oferta/revision" },
@@ -20,7 +20,7 @@ export const JOB_WIZARD_STEPS = [
  *
  *  En mobile (<640px) el label de los pasos no actuales se oculta, para no
  *  desbordar el contenedor; el conector también se achica. */
-export function JobWizardSteps({ currentStep }: { currentStep: number }) {
+function JobWizardSteps({ currentStep }: { currentStep: number }) {
   const { furthestStep } = useCreateJobForm();
 
   return (

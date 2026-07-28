@@ -146,6 +146,9 @@ export const MOCK_COMPANIES: Company[] = [
     webUrl: "https://datalab.com.uy",
     linkedinUrl: "https://linkedin.com/company/datalab",
     location: "MONTEVIDEO",
+    status: "APROBADO",
+    reviewedAt: "2026-02-16T09:00:00.000Z",
+    adminComment: null,
   },
   {
     // Para probar el gate de RF-13: el `User` u-5 (no incluido en MOCK_USERS
@@ -157,6 +160,9 @@ export const MOCK_COMPANIES: Company[] = [
     webUrl: "https://startup.com.uy",
     linkedinUrl: "",
     location: "CANELONES",
+    status: "PENDIENTE",
+    reviewedAt: null,
+    adminComment: null,
   },
   // empresas para la cola de validaciones del admin
   {
@@ -167,6 +173,9 @@ export const MOCK_COMPANIES: Company[] = [
     webUrl: "https://agrosustentable.com.uy",
     linkedinUrl: "",
     location: "CANELONES",
+    status: "PENDIENTE",
+    reviewedAt: null,
+    adminComment: null,
   },
   {
     companyId: "c-4",
@@ -176,6 +185,9 @@ export const MOCK_COMPANIES: Company[] = [
     webUrl: "https://comercialeste.com.uy",
     linkedinUrl: "",
     location: "MALDONADO",
+    status: "PENDIENTE",
+    reviewedAt: null,
+    adminComment: null,
   },
 ];
 
@@ -219,6 +231,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "099123456",
     linkedinUrl: "https://linkedin.com/in/lucia-fernandez",
     skills: ["React", "TypeScript", "SQL"],
+    description: "Estudiante de Ingeniería en Informática, interesada en desarrollo frontend.",
+    status: "APROBADO",
+    reviewedAt: "2026-03-02T09:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "sp-2",
@@ -229,6 +245,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: null,
     linkedinUrl: null,
     skills: ["Python", "SQL"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-02-21T09:00:00.000Z",
+    adminComment: null,
   },
   // perfiles de MOCK_STUDENT_USERS, para el listado de "Usuarios" del admin
   {
@@ -240,6 +260,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "099000010",
     linkedinUrl: null,
     skills: ["React", "TypeScript"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-07-15T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "u-11",
@@ -250,6 +274,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "099000011",
     linkedinUrl: null,
     skills: ["Excel", "Contabilidad"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-07-13T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "u-12",
@@ -260,6 +288,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "099000012",
     linkedinUrl: null,
     skills: ["Redacción", "Redes sociales"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-07-11T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "u-13",
@@ -270,6 +302,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "099000013",
     linkedinUrl: null,
     skills: ["Python", "SQL"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-07-09T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "u-14",
@@ -280,6 +316,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "099000014",
     linkedinUrl: null,
     skills: ["Contabilidad"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-07-08T10:00:00.000Z",
+    adminComment: null,
   },
   // Perfiles de "otros alumnos" que existen para maquetar una lista de
   // postulantes con más de una persona (ver MOCK_APPLICANT_USERS abajo).
@@ -292,6 +332,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "099123456",
     linkedinUrl: "https://linkedin.com/in/maria-fernandez",
     skills: ["Marketing Digital", "Redes Sociales", "Canva"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-03-06T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "sp-4",
@@ -302,6 +346,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: null,
     linkedinUrl: "https://linkedin.com/in/juan-perez",
     skills: ["Excel", "Atención al cliente"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-03-11T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "sp-5",
@@ -312,6 +360,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "098765432",
     linkedinUrl: null,
     skills: ["Illustrator", "Photoshop", "Diseño gráfico"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-03-13T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "sp-6",
@@ -322,6 +374,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "097654321",
     linkedinUrl: "https://linkedin.com/in/agustin-rodriguez",
     skills: ["Comunicación", "SEO", "Redacción"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-03-16T10:00:00.000Z",
+    adminComment: null,
   },
   {
     studentProfileId: "sp-7",
@@ -332,6 +388,12 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: null,
     linkedinUrl: null,
     skills: ["Community Management", "Canva"],
+    // Todavía PENDIENTE (ver MOCK_APPLICANT_USERS): sirve para maquetar un
+    // postulante sin aprobar en la vista de "Postulantes" de la empresa.
+    description: null,
+    status: "PENDIENTE",
+    reviewedAt: null,
+    adminComment: null,
   },
   {
     studentProfileId: "sp-8",
@@ -342,6 +404,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: "096543210",
     linkedinUrl: null,
     skills: ["Atención al cliente", "Ventas"],
+    description: null,
+    status: "APROBADO",
+    reviewedAt: "2026-03-19T10:00:00.000Z",
+    adminComment: null,
   },
   // alumnos para la cola de validaciones (cedula no encontrada en el padron)
   {
@@ -353,6 +419,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: null,
     linkedinUrl: null,
     skills: [],
+    description: null,
+    status: "PENDIENTE",
+    reviewedAt: null,
+    adminComment: null,
   },
   {
     studentProfileId: "sp-11",
@@ -363,6 +433,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: null,
     linkedinUrl: null,
     skills: [],
+    description: null,
+    status: "PENDIENTE",
+    reviewedAt: null,
+    adminComment: null,
   },
   {
     studentProfileId: "sp-12",
@@ -373,6 +447,10 @@ export const MOCK_STUDENT_PROFILES: StudentProfile[] = [
     phoneNumber: null,
     linkedinUrl: null,
     skills: [],
+    description: null,
+    status: "PENDIENTE",
+    reviewedAt: null,
+    adminComment: null,
   },
 ];
 
@@ -489,6 +567,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-1",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-1",
+    institution: null,
     description:
       "Cursando el 4º año de la carrera, con foco en desarrollo de software y bases de " +
       "datos. Participé en el equipo de programación competitiva de la facultad y cursé " +
@@ -501,6 +580,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-1",
     degreeLevel: "TECNICATURA",
     degreeId: "d-2",
+    institution: null,
     description:
       "Tecnicatura completa como primer paso antes de continuar con la Licenciatura en " +
       "Ingeniería en Informática. Trabajo final sobre optimización de consultas SQL en " +
@@ -514,6 +594,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-10",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-1",
+    institution: null,
     description: "Cursando.",
     startDate: "2023-03-01T00:00:00.000Z",
     endDate: null,
@@ -523,6 +604,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-11",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-3",
+    institution: null,
     description: "Cursando.",
     startDate: "2022-03-01T00:00:00.000Z",
     endDate: null,
@@ -532,6 +614,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-12",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-4",
+    institution: null,
     description: "Cursando.",
     startDate: "2023-03-01T00:00:00.000Z",
     endDate: null,
@@ -541,6 +624,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-13",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-2",
+    institution: null,
     description: "Cursando.",
     startDate: "2021-03-01T00:00:00.000Z",
     endDate: null,
@@ -550,6 +634,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "u-14",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-3",
+    institution: null,
     description: "Cursando.",
     startDate: "2022-03-01T00:00:00.000Z",
     endDate: null,
@@ -560,6 +645,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "sp-3",
     degreeLevel: "LICENCIATURA",
     degreeId: "d-4",
+    institution: null,
     description: "Cursando 3º año.",
     startDate: "2024-03-01T00:00:00.000Z",
     endDate: null,
@@ -569,6 +655,7 @@ export const MOCK_EDUCATION: Education[] = [
     studentProfileId: "sp-4",
     degreeLevel: "TECNICATURA",
     degreeId: "d-3",
+    institution: null,
     description: null,
     startDate: "2022-03-01T00:00:00.000Z",
     endDate: "2025-12-01T00:00:00.000Z",
@@ -675,8 +762,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "HIBRIDO",
     status: "PUBLICADO",
     location: "MONTEVIDEO",
-    publicationDate: RECENTLY_PUBLISHED,
-    closingDate: null,
+    publishedAt: RECENTLY_PUBLISHED,
+    finalizedAt: null,
+    reviewedAt: null,
+    updatedAt: RECENTLY_PUBLISHED,
   },
   {
     vacancyId: "v-2",
@@ -702,8 +791,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "REMOTO",
     status: "FINALIZADO",
     location: "MONTEVIDEO",
-    publicationDate: "2026-06-01T14:00:00.000Z",
-    closingDate: "2026-07-10T00:00:00.000Z",
+    publishedAt: "2026-06-01T14:00:00.000Z",
+    finalizedAt: "2026-07-10T00:00:00.000Z",
+    reviewedAt: null,
+    updatedAt: "2026-07-10T00:00:00.000Z",
   },
   {
     vacancyId: "v-3",
@@ -729,8 +820,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "HIBRIDO",
     status: "PUBLICADO",
     salaryRange: "$38.000 - $48.000",
-    publicationDate: "2026-07-08T09:30:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-07-08T09:30:00.000Z",
+    finalizedAt: null,
+    reviewedAt: null,
+    updatedAt: "2026-07-08T09:30:00.000Z",
     location: "MONTEVIDEO",
   },
   {
@@ -757,8 +850,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "HIBRIDO",
     status: "PUBLICADO",
     salaryRange: "$40.000 - $50.000",
-    publicationDate: "2026-07-20T09:00:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-07-20T09:00:00.000Z",
+    finalizedAt: null,
+    reviewedAt: null,
+    updatedAt: "2026-07-20T09:00:00.000Z",
     location: "MONTEVIDEO",
   },
   {
@@ -785,8 +880,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "REMOTO",
     status: "FINALIZADO",
     salaryRange: "$90.000 - $120.000",
-    publicationDate: "2026-05-20T10:00:00.000Z",
-    closingDate: "2026-07-02T18:00:00.000Z",
+    publishedAt: "2026-05-20T10:00:00.000Z",
+    finalizedAt: "2026-07-02T18:00:00.000Z",
+    reviewedAt: null,
+    updatedAt: "2026-07-02T18:00:00.000Z",
     location: "MONTEVIDEO",
   },
   {
@@ -812,8 +909,12 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "PRESENCIAL",
     status: "PENDIENTE",
     salaryRange: "$25.000 - $30.000",
-    publicationDate: "2026-07-18T15:00:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-07-18T15:00:00.000Z",
+    finalizedAt: null,
+    // El Admin la retiró para revisión (RF-MOD-01/02): "dar de baja" acá es
+    // PUBLICADO → PENDIENTE, no un cierre terminal.
+    reviewedAt: "2026-07-21T10:00:00.000Z",
+    updatedAt: "2026-07-21T10:00:00.000Z",
     location: "MONTEVIDEO",
   },
   {
@@ -838,8 +939,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "PRESENCIAL",
     status: "PUBLICADO",
     salaryRange: "$30.000 - $35.000",
-    publicationDate: "2026-07-14T11:00:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-07-14T11:00:00.000Z",
+    finalizedAt: null,
+    reviewedAt: null,
+    updatedAt: "2026-07-14T11:00:00.000Z",
     location: "MONTEVIDEO",
   },
   {
@@ -865,8 +968,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "REMOTO",
     status: "PUBLICADO",
     salaryRange: "$45.000 - $60.000",
-    publicationDate: "2026-06-15T13:00:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-06-15T13:00:00.000Z",
+    finalizedAt: null,
+    reviewedAt: null,
+    updatedAt: "2026-06-15T13:00:00.000Z",
     location: "CANELONES",
   },
   // Vacantes de otras empresas: sin esto el filtro por empresa de la bandeja
@@ -885,8 +990,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "REMOTO",
     status: "PUBLICADO",
     location: "CANELONES",
-    publicationDate: "2026-07-22T10:00:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-07-22T10:00:00.000Z",
+    finalizedAt: null,
+    reviewedAt: null,
+    updatedAt: "2026-07-22T10:00:00.000Z",
   },
   {
     vacancyId: "v-10",
@@ -902,8 +1009,10 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "PRESENCIAL",
     status: "PUBLICADO",
     location: "CANELONES",
-    publicationDate: "2026-07-19T08:30:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-07-19T08:30:00.000Z",
+    finalizedAt: null,
+    reviewedAt: null,
+    updatedAt: "2026-07-19T08:30:00.000Z",
   },
   {
     vacancyId: "v-11",
@@ -919,16 +1028,19 @@ export const MOCK_VACANCIES: Vacancy[] = [
     modality: "HIBRIDO",
     status: "PENDIENTE",
     location: "MALDONADO",
-    publicationDate: "2026-07-17T12:00:00.000Z",
-    closingDate: null,
+    publishedAt: "2026-07-17T12:00:00.000Z",
+    finalizedAt: null,
+    reviewedAt: "2026-07-20T09:00:00.000Z",
+    updatedAt: "2026-07-20T09:00:00.000Z",
   },
 ];
 
 /**
- * Postulaciones de prueba. `va-1`–`va-7` cubren un caso por estado (y por valor
- * de `selected` en FINALIZADO) para maquetar la barra de progreso de "Mis
- * postulaciones". `va-8`–`va-15` concentran volumen en `v-7` ("Pasante de
- * Marketing") para la vista de postulantes de la empresa.
+ * Postulaciones de prueba. `va-1`–`va-7` cubren un caso por estado para
+ * maquetar la barra de progreso de "Mis postulaciones" (sin `selected` — ver
+ * el aviso en `VacancyApplication`, `types/index.ts`). `va-8`–`va-15`
+ * concentran volumen en `v-7` ("Pasante de Marketing") para la vista de
+ * postulantes de la empresa.
  */
 export const MOCK_APPLICATIONS: VacancyApplication[] = [
   {
@@ -936,7 +1048,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-1",
     studentProfileId: "u-1",
     status: "PENDIENTE",
-    selected: false,
     appliedAt: "2026-07-12T11:00:00.000Z",
   },
   {
@@ -944,15 +1055,13 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-1",
     studentProfileId: "sp-2",
     status: "VISTO",
-    selected: false,
     appliedAt: "2026-07-11T16:45:00.000Z",
   },
   {
     vacancyApplicationId: "va-3",
     vacancyId: "v-2",
     studentProfileId: "u-1",
-    status: "FINALIZADO",
-    selected: true,
+    status: "FINALIZADA",
     appliedAt: "2026-07-01T08:15:00.000Z",
   },
   {
@@ -960,7 +1069,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-3",
     studentProfileId: "u-1",
     status: "PENDIENTE",
-    selected: false,
     appliedAt: "2026-07-15T10:00:00.000Z",
   },
   {
@@ -968,7 +1076,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-3",
     studentProfileId: "sp-2",
     status: "VISTO",
-    selected: false,
     appliedAt: "2026-07-09T12:00:00.000Z",
   },
   {
@@ -976,15 +1083,13 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-7",
     studentProfileId: "sp-2",
     status: "PENDIENTE",
-    selected: false,
     appliedAt: "2026-07-16T09:00:00.000Z",
   },
   {
     vacancyApplicationId: "va-7",
     vacancyId: "v-8",
     studentProfileId: "u-1",
-    status: "FINALIZADO",
-    selected: false,
+    status: "FINALIZADA",
     appliedAt: "2026-06-20T09:00:00.000Z",
   },
   {
@@ -992,7 +1097,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-7",
     studentProfileId: "sp-3",
     status: "VISTO",
-    selected: false,
     appliedAt: "2026-07-14T10:00:00.000Z",
   },
   {
@@ -1000,7 +1104,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-7",
     studentProfileId: "sp-4",
     status: "PENDIENTE",
-    selected: false,
     appliedAt: "2026-07-16T08:30:00.000Z",
   },
   {
@@ -1008,7 +1111,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-7",
     studentProfileId: "sp-5",
     status: "VISTO",
-    selected: false,
     appliedAt: "2026-07-13T09:15:00.000Z",
   },
   {
@@ -1016,7 +1118,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-7",
     studentProfileId: "sp-6",
     status: "VISTO",
-    selected: false,
     appliedAt: "2026-07-13T14:00:00.000Z",
   },
   {
@@ -1024,15 +1125,13 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-7",
     studentProfileId: "sp-7",
     status: "PENDIENTE",
-    selected: false,
     appliedAt: "2026-07-15T17:20:00.000Z",
   },
   {
     vacancyApplicationId: "va-13",
     vacancyId: "v-7",
     studentProfileId: "sp-8",
-    status: "FINALIZADO",
-    selected: true,
+    status: "FINALIZADA",
     appliedAt: "2026-07-12T09:00:00.000Z",
   },
   {
@@ -1040,7 +1139,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-8",
     studentProfileId: "sp-4",
     status: "PENDIENTE",
-    selected: false,
     appliedAt: "2026-07-17T11:00:00.000Z",
   },
   {
@@ -1048,7 +1146,6 @@ export const MOCK_APPLICATIONS: VacancyApplication[] = [
     vacancyId: "v-8",
     studentProfileId: "sp-2",
     status: "VISTO",
-    selected: false,
     appliedAt: "2026-07-16T15:00:00.000Z",
   },
 ];

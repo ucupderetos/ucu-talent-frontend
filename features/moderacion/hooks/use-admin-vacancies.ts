@@ -2,10 +2,11 @@
 
 // Datos del listado de vacantes para el Admin.
 //
-// Andamio temporal sobre fixtures para el listado y el detalle. El tipo core
-// ya conserva los tres estados confirmados (`PENDIENTE | PUBLICADO |
-// FINALIZADO`); cuando se conecte el contrato administrativo, solo cambia la
-// fuente de estas queries y las vistas siguen consumiendo la misma forma.
+// Andamio temporal: resuelve todo sobre `lib/fixtures.ts`. El endpoint real
+// (`GET /vacancy` + `PUT /vacancy/status/{id}` para moderar, ver
+// docs/ENDPOINTS.md) ya está confirmado con los 3 estados de `VacancyStatus`
+// — cuando se enchufe, solo cambia `fetchAdminVacancies`; la vista sigue
+// consumiendo TanStack Query.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -26,6 +27,7 @@ import type { Company, Paginated, VacancyApplicationStatus } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function adminVacanciesQueryKey(filters: AdminVacancyFilters) {
   return ["moderacion", "ofertas", filters] as const;
 }
@@ -169,8 +171,8 @@ function filterRows(
  * tienen fecha quedan al final y se ordenan por nombre. */
 function sortByPublicationDate(rows: AdminVacancyRow[]): AdminVacancyRow[] {
   return [...rows].sort((a, b) => {
-    const aTime = a.publicationDate ? new Date(a.publicationDate).getTime() : -1;
-    const bTime = b.publicationDate ? new Date(b.publicationDate).getTime() : -1;
+    const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : -1;
+    const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : -1;
 
     return bTime - aTime || a.name.localeCompare(b.name, "es");
   });

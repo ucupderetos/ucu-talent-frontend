@@ -90,10 +90,10 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
 export function AuthHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-8">
-      <h1 className="text-[2.618rem] font-bold leading-[1.1] tracking-tight text-neutral-900">
+      <h1 className="text-[2.618rem] font-bold leading-[1.1] tracking-tight text-foreground">
         {title}
       </h1>
-      <p className="mt-2 text-base leading-[1.618] text-neutral-400">{subtitle}</p>
+      <p className="mt-2 text-base leading-[1.618] text-muted-foreground">{subtitle}</p>
     </div>
   );
 }

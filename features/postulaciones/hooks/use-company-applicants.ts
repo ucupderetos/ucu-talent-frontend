@@ -21,6 +21,7 @@ import type { Paginated, StudentProfile, User, Vacancy, VacancyApplication } fro
 
 const DEFAULT_PER_PAGE = 10;
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function companyApplicantsQueryKey(
   companyId: string | undefined,
   filters: ApplicantFilters,

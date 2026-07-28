@@ -94,13 +94,13 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
               <TableCell>
                 <span className="font-medium">{vacancy.applicantsCount}</span>
                 {vacancy.newApplicantsThisWeek > 0 && (
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                  <p className="text-xs text-success">
                     +{vacancy.newApplicantsThisWeek} esta semana
                   </p>
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {formatDate(vacancy.publicationDate)}
+                {formatDate(vacancy.publishedAt)}
               </TableCell>
               <TableCell>
                 <VacancyRowActions vacancy={vacancy} />

@@ -24,20 +24,20 @@ import type {
  * si de verdad hay que pedir `VacancyApplication` + `StudentProfile` + `User`
  * por separado (hoy, según `docs/ENDPOINTS.md`, son 3 requests).
  */
-export interface ApplicantListItem {
+interface ApplicantListItem {
   application: VacancyApplication;
   profile: StudentProfile;
   user: User;
 }
 
 /** Detalle del postulante: la empresa ve el CV completo del candidato. */
-export interface ApplicantDetail extends ApplicantListItem {
+interface ApplicantDetail extends ApplicantListItem {
   education: Education[];
   workExperience: WorkExperience[];
 }
 
 /** Fila de "mis postulaciones" que ve el alumno. */
-export interface MyApplication {
+interface MyApplication {
   application: VacancyApplication;
   vacancy: Vacancy;
 }

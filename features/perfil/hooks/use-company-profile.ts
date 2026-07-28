@@ -16,7 +16,7 @@ import type { CompanyProfile } from "@/features/perfil/types";
  * expone (razonSocial → legalName, rut, phoneNumber, logoUrl) — ver el
  * comentario de CompanyProfile en features/perfil/types.ts.
  */
-export function toCompanyProfile(company: Company): CompanyProfile {
+function toCompanyProfile(company: Company): CompanyProfile {
   return {
     legalName: company.name,
     rut: "210000000000", // TODO: sin respaldo en la API todavía

@@ -17,14 +17,14 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
-import { DEPARTMENTS } from "@/features/puestos/types";
+import { DEPARTMENTS } from "@/lib/departments";
 import type { Modality, Department } from "@/types";
 
 const TITLE_MAX = 100;
 
 // satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto
 // rompe la build en vez de quedar desincronizado en silencio.
-export const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readonly Modality[];
+const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readonly Modality[];
 
 // Reglas de validación. Reflejan `VacancyInput` (features/puestos/types.ts),
 // sin `companyId` (se agrega al armar el payload, no lo carga el usuario).

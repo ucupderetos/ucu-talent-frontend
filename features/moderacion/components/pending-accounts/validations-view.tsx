@@ -61,7 +61,7 @@ function CompaniesTab() {
   const [filters, setFilters] = useState<PendingCompaniesFilters>(DEFAULT_COMPANY_FILTERS);
 
   const { data, isLoading, isError } = usePendingCompanies(filters);
-  const { data: industries = [] } = usePendingCompanyIndustries();
+  const industries = usePendingCompanyIndustries();
 
   const hasAny = (data?.total ?? 0) > 0 || hasCompanyFilters(filters);
 

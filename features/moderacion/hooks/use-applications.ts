@@ -9,6 +9,7 @@
 // como query params — el resto (la forma del hook, `AdminApplicationRow`) no
 // cambia.
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import {
@@ -23,10 +24,11 @@ import type {
   AdminApplicationOrder,
   AdminApplicationRow,
 } from "@/features/moderacion/types";
-import type { Paginated } from "@/types";
+import type { Company, Paginated, Vacancy } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function applicationsQueryKey(filters: AdminApplicationFilters) {
   return ["moderacion", "postulaciones", filters] as const;
 }
@@ -134,4 +136,18 @@ function sortRows(
     new Date(a.appliedAt).getTime() - new Date(b.appliedAt).getTime();
 
   return order === "oldest" ? sorted.sort(delta) : sorted.sort((a, b) => -delta(a, b));
+}
+
+/** Opciones de los MultiSelect: solo las ofertas/empresas que realmente
+ *  tienen alguna postulación, para que el dropdown no ofrezca opciones
+ *  vacías. Mismo criterio que `useCompanyVacancyFilterOptions` en puestos. */
+export function useApplicationFilterOptions(): { vacancies: Vacancy[]; companies: Company[] } {
+  return useMemo(() => {
+    const vacancyIds = new Set(MOCK_APPLICATIONS.map((a) => a.vacancyId));
+    const vacancies = MOCK_VACANCIES.filter((v) => vacancyIds.has(v.vacancyId));
+    const companyIds = new Set(vacancies.map((v) => v.companyId));
+    const companies = MOCK_COMPANIES.filter((c) => companyIds.has(c.companyId));
+
+    return { vacancies, companies };
+  }, []);
 }

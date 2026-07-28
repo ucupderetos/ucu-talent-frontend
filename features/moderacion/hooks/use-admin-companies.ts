@@ -24,6 +24,7 @@ import type { Paginated, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function adminCompaniesQueryKey(filters: AdminCompanyFilters) {
   return ["moderacion", "empresas", filters] as const;
 }
@@ -35,6 +36,7 @@ export function useAdminCompanies(filters: AdminCompanyFilters) {
   });
 }
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function adminCompanyDetailQueryKey(companyId: string) {
   return ["moderacion", "empresas", "detalle", companyId] as const;
 }
@@ -47,7 +49,8 @@ export function useAdminCompanyDetail(companyId: string) {
   });
 }
 
-/** Rubros presentes en los datos, para poblar el filtro. Va por `useQuery` y
+/** @public para invalidación puntual futura (AGENTS.md).
+ *  Rubros presentes en los datos, para poblar el filtro. Va por `useQuery` y
  *  no por un `useMemo` sobre el mock para que el día que haya endpoint sea el
  *  mismo cambio que el resto. */
 export function adminCompanyIndustriesQueryKey() {

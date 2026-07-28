@@ -4,7 +4,7 @@
 // vacantes, y arma el estado de filtros/paginación que consumen los
 // componentes de presentación. La page.tsx solo renderiza esto.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { PlusIcon } from "lucide-react";
 
@@ -14,11 +14,13 @@ import { ListPagination } from "@/components/pagination/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
-import { useCompanyVacancies } from "@/features/puestos/hooks/use-company-vacancies";
+import {
+  useCompanyVacancies,
+  useCompanyVacancyFilterOptions,
+} from "@/features/puestos/hooks/use-company-vacancies";
 import { VacancyFilters } from "@/features/puestos/components/vacancy-filters";
 import { VacancyTable } from "@/features/puestos/components/vacancy-table";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
-import { MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
 
 const DEFAULT_FILTERS: CompanyVacancyFilters = { order: "recent", page: 1, perPage: 5 };
 
@@ -35,7 +37,7 @@ export function CompanyVacanciesView() {
     filters,
   );
 
-  const { areas, locations } = useCompanyVacancyOptions(company?.companyId);
+  const { areas, locations } = useCompanyVacancyFilterOptions(company?.companyId);
 
   const isLoading = isLoadingCompany || isLoadingVacancies;
   const hasAnyVacancy = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
@@ -120,27 +122,6 @@ function hasActiveFilters(filters: CompanyVacancyFilters): boolean {
       filters.publishedFrom ||
       filters.publishedTo,
   );
-}
-
-/**
- * Opciones de los selects de área/ubicación: se calculan sobre TODAS las
- * vacantes de la empresa (sin aplicar los filtros activos), para que el
- * dropdown no vaya perdiendo opciones a medida que se filtra.
- *
- * TODO(api): cuando exista el contrato, esto probablemente lo devuelva el
- * propio endpoint de filtros (facets) en vez de calcularse en el cliente.
- */
-function useCompanyVacancyOptions(companyId: string | undefined) {
-  return useMemo(() => {
-    const ownVacancies = MOCK_VACANCIES.filter((v) => v.companyId === companyId);
-    const areaIds = new Set(ownVacancies.map((v) => v.areaId));
-    const locations = Array.from(new Set(ownVacancies.map((v) => v.location))).sort();
-
-    return {
-      areas: MOCK_AREAS.filter((area) => areaIds.has(area.areaId)),
-      locations,
-    };
-  }, [companyId]);
 }
 
 function TableSkeleton() {

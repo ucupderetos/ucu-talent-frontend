@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DEPARTMENT_LABELS, type CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
+import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
+import { DEPARTMENT_LABELS } from "@/lib/departments";
 
 function ReadOnlyField({
   label,

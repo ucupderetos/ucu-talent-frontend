@@ -131,7 +131,7 @@ export function canAccess(role: Role | undefined, allowed: readonly Role[]): boo
 /** Landing de cada rol después del login, y destino del redirect cuando alguien
  *  cae en una sección que no le corresponde.
  *  Las URLs quedan en español: son cara al usuario. */
-export const HOME_ROUTE_BY_ROLE: Record<Role, string> = {
+const HOME_ROUTE_BY_ROLE: Record<Role, string> = {
   ALUMNO: "/feed",
   EMPRESA: "/puestos",
   // Las pantallas de admin cuelgan de /moderacion/*; se apunta directo al

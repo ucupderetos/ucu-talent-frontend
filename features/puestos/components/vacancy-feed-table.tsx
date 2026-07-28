@@ -75,8 +75,8 @@ export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
               </TableCell>
               <TableCell className="text-muted-foreground">{vacancy.contractType}</TableCell>
               <TableCell className="text-muted-foreground">
-                {vacancy.publicationDate
-                  ? dateFormatter.format(new Date(vacancy.publicationDate))
+                {vacancy.publishedAt
+                  ? dateFormatter.format(new Date(vacancy.publishedAt))
                   : "—"}
               </TableCell>
               <TableCell>

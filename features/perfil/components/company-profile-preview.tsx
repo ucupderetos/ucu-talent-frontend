@@ -12,7 +12,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MapPinIcon, TagIcon } from "lucide-react";
-import { DEPARTMENT_LABELS, type CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
+import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
+import { DEPARTMENT_LABELS } from "@/lib/departments";
 
 export function CompanyProfilePreview({
   form,

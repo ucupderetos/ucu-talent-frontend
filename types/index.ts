@@ -125,9 +125,10 @@ export interface Area {
 
 /**
  * Wire: `CompanyResponse`. No expone `userId` (la PK ya lo es: `companyId` =
- * `userId`) ni un campo de aprobación — la aprobación vive en
- * `User.status` (`AccountStatus`), no acá. Para saber si una empresa está
- * aprobada hay que pedir su `User` (`GET /user/{companyId}`) y mirar `status`.
+ * `userId`). `status`/`reviewedAt`/`adminComment` SÍ vienen acá (confirmado en
+ * `docs/ENDPOINTS.md`) además de en `User.status` — es la misma aprobación,
+ * duplicada en la respuesta para que la pantalla de perfil no necesite un
+ * segundo fetch a `/user/{companyId}` solo para mostrarla.
  */
 export interface Company {
   companyId: string;
@@ -139,6 +140,11 @@ export interface Company {
   webUrl: string;
   linkedinUrl: string;
   location: Department;
+  status: AccountStatus;
+  /** null hasta que un Admin la revise. */
+  reviewedAt: string | null;
+  /** Motivo del rechazo o nota de revisión, si el Admin la cargó. */
+  adminComment: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,6 +166,10 @@ export interface Admin {
  * Wire: `StudentProfileResponse`. Entidad distinta de `User`, con PK
  * compartida (`studentProfileId` = `userId`). `VacancyApplication` apunta a
  * `studentProfileId`, NO a `userId`.
+ *
+ * `status`/`reviewedAt`/`adminComment` — mismo criterio que en `Company`:
+ * duplican la aprobación de `User.status` acá para no requerir un segundo
+ * fetch a `/user/{studentProfileId}` solo para mostrarla en el perfil.
  */
 export interface StudentProfile {
   studentProfileId: string;
@@ -170,6 +180,12 @@ export interface StudentProfile {
   phoneNumber: string | null;
   linkedinUrl: string | null;
   skills: string[];
+  description: string | null;
+  status: AccountStatus;
+  /** null hasta que un Admin lo revise. */
+  reviewedAt: string | null;
+  /** Motivo del rechazo o nota de revisión, si el Admin la cargó. */
+  adminComment: string | null;
 }
 
 export interface Degree {
@@ -194,6 +210,8 @@ export interface Education {
   studentProfileId: string;
   degreeLevel: DegreeLevel;
   degreeId: string;
+  /** Obligatoria cuando `Degree.isUcu === false` — null en carreras UCU. */
+  institution: string | null;
   description: string | null;
   startDate: string; // ISO 8601
   /** null si está en curso. */
@@ -241,19 +259,18 @@ export type Modality = "PRESENCIAL" | "HIBRIDO" | "REMOTO";
  *
  * | Estado | Significa | Quién puede ponerlo |
  * |---|---|---|
- * | `PUBLICADO` | Viva y visible en el feed del alumno. Es el default al crearla | Admin |
- * | `PENDIENTE` | Retirada por el Admin para revisar o corregir algo. NO visible | Admin |
- * | `FINALIZADO` | Terminal. Cierre de la búsqueda | Admin, y la empresa dueña (solo `PUBLICADO → FINALIZADO`, RF-PUE-03) |
+ * | `PUBLICADO` | Viva y visible en el feed del alumno. Es el default al crearla | Empresa (al crear), Admin (`PENDIENTE → PUBLICADO`) |
+ * | `PENDIENTE` | Retirada del feed para revisar o corregir algo. NO visible | Admin (`PUBLICADO → PENDIENTE`, "dar de baja") |
+ * | `FINALIZADO` | Terminal. Cierre de la búsqueda | **Solo la empresa dueña**, desde `PUBLICADO` o desde `PENDIENTE` (RF-PUE-03) |
  *
- * El Admin es el único que puede mover una vacante a cualquiera de los tres.
- * La empresa dueña únicamente la cierra.
- *
- * 🔄 **Confirmado por backend, todavía no en `api-dev`**, que hoy expone solo
- * `PENDIENTE | FINALIZADO` (A-14 en AGENTS.md). Se programa contra estos tres
- * valores —es el contrato vigente— y se verifica al integrar. Antes este tipo
- * decía lo contrario ("no inventar esos estados"), y eso llevó a que el feed
- * filtrara por `PENDIENTE` y a que la empresa viera `PENDIENTE` como "Activa":
- * al no existir `PUBLICADO`, se usó `PENDIENTE` como si lo fuera.
+ * ⚠️ **El Admin NUNCA mueve una vacante a `FINALIZADO`.** Sus únicas dos
+ * transiciones son `PUBLICADO ↔ PENDIENTE` (`PUT /vacancy/status/{id}`,
+ * confirmado en `docs/ENDPOINTS.md`) — "dar de baja" para el Admin significa
+ * `PUBLICADO → PENDIENTE`, no el cierre terminal. Cerrar la vacante
+ * (`FINALIZADO`) es una acción exclusiva de la empresa dueña
+ * (`PATCH /vacancy/status/{id}`), desde cualquiera de los otros dos estados.
+ * Este párrafo antes decía lo contrario (que el Admin daba de baja a
+ * `FINALIZADO`) — corregido contra el contrato cerrado.
  */
 export type VacancyStatus = "PENDIENTE" | "PUBLICADO" | "FINALIZADO";
 
@@ -271,8 +288,13 @@ export interface Vacancy {
   modality: Modality;
   status: VacancyStatus;
   location: Department;
-  publicationDate: string | null; // ISO 8601
-  closingDate: string | null; // ISO 8601
+  publishedAt: string | null; // ISO 8601, se sella al crearse (nace PUBLICADO)
+  /** Se sella cada vez que el Admin mueve la vacante PUBLICADO ↔ PENDIENTE. */
+  reviewedAt: string | null; // ISO 8601
+  updatedAt: string | null; // ISO 8601
+  finalizedAt: string | null; // ISO 8601, terminal
+  /** Nota del Admin, si la cargó al pasarla a `PENDIENTE`. */
+  adminComment?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -281,19 +303,25 @@ export interface Vacancy {
 
 /**
  * Wire: `VacancyApplicationStatus`. La transición NO retrocede (lo valida el
- * backend, `409` si se intenta).
+ * backend, `409` si se intenta). ⚠️ El valor terminal es `FINALIZADA`
+ * (femenino, por "postulación") — no confundir con `VacancyStatus.FINALIZADO`.
  */
-export type VacancyApplicationStatus = "PENDIENTE" | "VISTO" | "FINALIZADO";
+export type VacancyApplicationStatus = "PENDIENTE" | "VISTO" | "FINALIZADA";
 
 /**
- * Wire: `VacancyApplicationResponse`.
+ * Wire: `VacancyApplicationResponse` — `{ vacancyApplicationId, vacancyId,
+ * studentProfileId, status, appliedAt }`, confirmado en `docs/ENDPOINTS.md`.
  *
- * 🔴 `selected` está en el MER aprobado (ver AGENTS.md — "Postulaciones:
- * máquina de estados y selected") pero A-17 confirma que todavía no está en
- * `VacancyApplicationResponse`/`UpdateVacancyApplicationRequest` del backend
- * real. Se agrega acá porque `features/postulaciones` ya lo necesita para el
- * tramo final de la barra de progreso de "Mis postulaciones" — hoy solo vive
- * en `lib/fixtures.ts`, hay que revisar cuando el contrato real lo exponga.
+ * ⚠️ **`selected` SE ELIMINÓ.** Estaba en el MER aprobado (ver AGENTS.md —
+ * "Postulaciones: máquina de estados") y A-17 lo daba como "confirmado por
+ * backend, todavía no en api-dev", pero el contrato cerrado no lo incluye en
+ * ningún lado: ni en esta response ni en `UpdateVacancyApplicationRequest`
+ * (`{ status: VISTO | FINALIZADA }`, sin más campos). Se trata como una
+ * reversión de esa confirmación previa, no como un olvido del documento — si
+ * el backend lo reintroduce más adelante, revisar acá primero. Esto también
+ * significa que no hay forma de distinguir "seleccionado" de "no
+ * seleccionado" en una postulación `FINALIZADA` — ver
+ * `features/postulaciones/components/application-progress.tsx`.
  */
 export interface VacancyApplication {
   vacancyApplicationId: string;
@@ -301,8 +329,6 @@ export interface VacancyApplication {
   /** Apunta a `StudentProfile.studentProfileId`, NO a `User.userId`. */
   studentProfileId: string;
   status: VacancyApplicationStatus;
-  /** Solo tiene sentido cuando `status === "FINALIZADO"` (RN: se setea en `VISTO`, queda congelado al finalizar). */
-  selected: boolean;
   appliedAt: string; // ISO 8601
 }
 

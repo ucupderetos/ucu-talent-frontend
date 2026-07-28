@@ -13,10 +13,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablePagination } from "@/components/filters/table-pagination";
-import {
-  useStudentFilterOptions,
-  useStudents,
-} from "@/features/moderacion/hooks/use-students";
+import { useStudentFilterOptions, useStudents } from "@/features/moderacion/hooks/use-students";
 import { StudentsFilters } from "@/features/moderacion/components/students/students-filters";
 import { StudentsTable } from "@/features/moderacion/components/students/students-table";
 import type { StudentFilters } from "@/features/moderacion/types";

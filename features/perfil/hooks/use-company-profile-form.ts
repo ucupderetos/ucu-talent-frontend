@@ -15,23 +15,7 @@ import type { Department } from "@/types";
 
 import { COMPANY_DESCRIPTION_MAX } from "@/features/perfil/types";
 import { useCompanyProfile } from "@/features/perfil/hooks/use-company-profile";
-
-const DEPARTMENTS: readonly Department[] = [
-  "ARTIGAS", "CANELONES", "CERRO_LARGO", "COLONIA", "DURAZNO", "FLORES",
-  "FLORIDA", "LAVALLEJA", "MALDONADO", "MONTEVIDEO", "PAYSANDU", "RIO_NEGRO",
-  "RIVERA", "ROCHA", "SALTO", "SAN_JOSE", "SORIANO", "TACUAREMBO", "TREINTA_Y_TRES",
-];
-
-const DEPARTMENT_LABELS: Record<Department, string> = {
-  ARTIGAS: "Artigas", CANELONES: "Canelones", CERRO_LARGO: "Cerro Largo",
-  COLONIA: "Colonia", DURAZNO: "Durazno", FLORES: "Flores", FLORIDA: "Florida",
-  LAVALLEJA: "Lavalleja", MALDONADO: "Maldonado", MONTEVIDEO: "Montevideo",
-  PAYSANDU: "Paysandú", RIO_NEGRO: "Río Negro", RIVERA: "Rivera", ROCHA: "Rocha",
-  SALTO: "Salto", SAN_JOSE: "San José", SORIANO: "Soriano",
-  TACUAREMBO: "Tacuarembó", TREINTA_Y_TRES: "Treinta y Tres",
-};
-
-export { DEPARTMENTS, DEPARTMENT_LABELS };
+import { DEPARTMENTS } from "@/lib/departments";
 
 const companyProfileSchema = z.object({
   legalName: z.string().trim().min(1, "Ingresá la razón social."),
