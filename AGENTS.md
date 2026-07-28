@@ -1016,10 +1016,16 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   contra `ENDPOINTS.md`. `hooks/use-session.ts` (capa de sesión app-wide, en el bucket
   `hooks/` de raíz — ver *Estructura de carpetas*) sirve de plantilla del patrón.
 - ✅ **`app/(empresa)/puestos/page.tsx`** — ya existe ("Mis ofertas"), construida por el
-  grupo de empresa. 🔄 Ver `VacancyStatus` en *Roles y control de acceso*: el enum
-  confirmado es `PENDIENTE, PUBLICADO, FINALIZADO` (default `PUBLICADO`), pero `api-dev`
-  todavía expone solo `PENDIENTE, FINALIZADO` — la pantalla los colapsa por ahora; revisar
-  labels/acciones cuando el backend publique el estado `PUBLICADO` (A-14).
+  grupo de empresa. Ver `VacancyStatus` en *Roles y control de acceso*: el enum es
+  `PENDIENTE, PUBLICADO, FINALIZADO` (default `PUBLICADO`, A-14 ✅). **Ya NO colapsa
+  estados** — corrige una versión anterior de esta nota, escrita cuando `api-dev` todavía
+  exponía solo `PENDIENTE, FINALIZADO`: `vacancy-table.tsx` hoy pinta los tres estados
+  distintos vía `VacancyStatusBadge` + `VACANCY_STATUS_DESCRIPTION`, y la acción "Cerrar"
+  sale solo para `PUBLICADO`. ⚠️ Pendiente real, sin nota previa: `ENDPOINTS.md` (sección
+  5) confirma que la empresa también puede cerrar desde `PENDIENTE → FINALIZADO`
+  (`PATCH /vacancy/status/{id}`), pero `VacancyRowActions` solo ofrece "Cerrar" cuando
+  `status === "PUBLICADO"` — falta ese caso. Además "Cerrar" hoy es un stub
+  (`notImplemented(...)`), sin mutación real todavía.
 - Las `page.tsx` de `/feed`, `/postulaciones` y `/puestos/[id]/postulantes` siguen siendo
   placeholders.
 - ✅ **`/perfil` es una ruta COMPARTIDA entre alumno y empresa** (route group `(perfil)`,
@@ -1039,17 +1045,34 @@ cp .env.example .env.local
 NEXT_PUBLIC_API_BASE_URL=https://api-dev.ucutalent.tech
 ```
 
-⚠️ **La cookie cross-origin es el primer problema a resolver.** El front corre en
-`http://localhost:3000` y la API en `https://api-dev.ucutalent.tech` — dominios distintos.
-Para que el browser acepte y reenvíe la cookie de sesión hacen falta **las dos puntas**:
+⚠️ **La cookie cross-origin es el primer problema a resolver — y hoy hay DOS orígenes
+de frontend, no uno.** Además de `http://localhost:3000` (local), el frontend también
+está deployado en **`https://dev.ucutalent.tech/`** — dominios distintos de la API
+(`https://api-dev.ucutalent.tech`) en los dos casos. Por eso, desde 2026-07-28, probar
+un cambio ya no alcanza con local: hay que verificarlo **también** contra
+`https://dev.ucutalent.tech/`. Para que el browser acepte y reenvíe la cookie de sesión
+hacen falta **las dos puntas**:
 
 - Backend: `Set-Cookie` con `SameSite=None; Secure`, y CORS con
   `Access-Control-Allow-Credentials: true` + `Allow-Origin` explícito
-  (con credenciales, `*` no sirve).
+  **para cada origen que necesite acceso** (con credenciales, `*` no sirve).
 - Front: `credentials: "include"` — eso ya lo hace `lib/api-client.ts`.
 
 Si el login "funciona" pero `GET /me` devuelve 401 en la llamada siguiente, es esto y no
 otra cosa. Ver `A-13`.
+
+🔴 **`https://dev.ucutalent.tech` confirmado FUERA de la whitelist de CORS (2026-07-28).**
+`localhost:3000` sí está permitido (`OPTIONS` preflight → `200` +
+`Access-Control-Allow-Origin: http://localhost:3000`), pero cualquier request con
+`Origin: https://dev.ucutalent.tech` — incluido un `GET` simple sin preflight, tipo
+`GET /area` — devuelve `403 Invalid CORS request` antes de llegar a autenticación.
+Bloquea TODA la app deployada en ese dominio (login, feed, postularse, todo), no una
+pantalla puntual: así se detectó, QA reportó que no podían postularse a una vacante, pero
+el problema real es transversal. Probadas variantes del origin (`www.`, con puerto,
+`http://` en vez de `https://`) — ninguna pasa; parece que el dominio simplemente no está
+en la whitelist todavía. Reportado a backend, sigue sin resolverse pese a un aviso previo
+de que ya estaba arreglado — no asumir que un "ya está" de backend está confirmado sin
+volver a probar con `curl` (ver A-13).
 
 ### Modo mock (en retirada)
 
@@ -1091,7 +1114,7 @@ los literales viejos (`student`/`company`/`admin`).
 | **A-01** | 🔄 | **Confirmado: el alumno nace `PENDIENTE`** (igual que la empresa). Hace todo lo normal (perfil, feed, detalle) **excepto postularse**; un **Admin lo aprueba a mano** contra el padrón (`UniversityRegistry`) → `APROBADO` o `RECHAZADO`, vía `PATCH /user/{id}`. Solo `APROBADO` puede postularse. Implica que el admin construye la **cola de aprobación de alumnos** (RF-MOD-05/06). ⚠️ `api-dev` hoy hace nacer al alumno `APROBADO` en `POST /user` — **falta el cambio de backend**. El RBAC de arriba queda **correcto**. |
 | **A-02** | ✅ | Moderación **existe**: `PATCH /user/{id}` (status + `adminComment`, se guarda en `StudentProfile`/`Company`), `PUT /vacancy/status/{id}` (admin), `reviewedAt`, y `*/status-summary`. El dominio `moderacion` ya puede escribir hooks. |
 | **A-03** | ✅ | `skills` es `string[]` (solo en `StudentProfile`). El orden por coincidencia (RF-FEED-01) **se descarta** — `Vacancy` no lleva `skills`. |
-| **A-04** | 🔄 | El feed **va a ir paginado** (backend lo está implementando). Tratar `Paginated<T>` como contrato futuro; revisar nombres de params/envoltorio al salir. |
+| **A-04** | ✅ | **Reversión de la asunción anterior**: el feed **NO** se pagina en Backend — `docs/ENDPOINTS.md` es explícito (secciones 1 y 5): `GET /vacancy` devuelve la colección completa sin paginación de servidor, y así se queda (no hay paginación de Backend "en camino"). Front resuelve filtro, orden y paginación visual enteramente en memoria — ya implementado así en `use-feed-vacancies.ts`, con el comentario citando esta misma sección de `ENDPOINTS.md`. `Paginated<T>` (`types/index.ts`) sigue existiendo, pero es un view model **in-memory del front** (tablas de postulantes, moderación, "Mis ofertas"), no un envoltorio que vaya a llegar del backend. |
 | **A-05** | ✅ | El **filtrado del feed queda en el front** por ahora (fetch-all + en memoria, ver *Barras de filtros*). No esperar endpoint de filtros del backend. |
 | **A-08** | ✅ | `PUT /student-profile/{id}` existe (dueño): edita `phoneNumber`, `linkedinUrl`, `skills`, `description`. `name`/`surname`/documento **no** se editan por ahí. |
 | **A-09** | ✅ | `hasProfile: boolean` confirmado en `MeResponse` (`docs/ENDPOINTS.md`). `use-session.ts` hoy lo deriva del `404` del perfil — sigue siendo correcto, es candidato a simplificarse leyendo el campo directo. `name` **no** se agrega — el navbar sigue con el 2º fetch al perfil, es el diseño definitivo. |
@@ -1108,7 +1131,7 @@ los literales viejos (`student`/`company`/`admin`).
 | # | Qué falta |
 |---|---|
 | **A-11** | **Subida de archivos** — **queda confirmar** el mecanismo (multipart vs. URL prefirmada) y los límites. Sin endpoint todavía. |
-| **A-13** | **Cookie cross-origin.** CORS del servidor **confirmado OK** (origin explícito + `Allow-Credentials`); faltan los atributos del `Set-Cookie` (`SameSite=None; Secure`), que se ven con un login. Prueba definitiva: front real contra `api-dev` (que `GET /me` no dé 401 tras el login). |
+| **A-13** | **Cookie cross-origin.** CORS confirmado OK para `http://localhost:3000` (origin explícito + `Allow-Credentials`), pero **`https://dev.ucutalent.tech` (el frontend deployado) NO está en la whitelist** — confirmado con `curl` el 2026-07-28: preflight y hasta `GET` simples devuelven `403 Invalid CORS request` para ese origen, en cualquier endpoint. Bloquea toda la app en ese dominio, no una acción puntual. Además faltan los atributos del `Set-Cookie` (`SameSite=None; Secure`) — se ven con un login real una vez que el origen esté permitido. Prueba definitiva: front real contra `api-dev` desde `https://dev.ucutalent.tech` (que `GET /me` no dé 403/401 tras el login). |
 | **A-16** | **Nombre de la cookie de sesión** — se confirma leyendo el `Set-Cookie` de un login (necesario para `proxy.ts`). |
 | **A-20** | **Semilla de `Area`/`Degree` en `api-dev`** — se confirma con `GET /area`/`GET /degree` logueado. |
 
