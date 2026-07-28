@@ -1,16 +1,18 @@
 "use client";
 
-// trae las empresas pendientes de aprobar. el contrato ya tiene lo necesario
-// (PATCH /user/{id} para aprobar/rechazar, status en CompanyResponse — A-02
-// y A-18 en AGENTS.md), pero el wire todavia no esta conectado: por ahora
-// junta todo en memoria sobre lib/fixtures.ts. cuando se conecte se cambia
-// fetchPendingCompanies por el fetch real y listo.
+// trae las empresas pendientes de aprobar, ya contra el back real.
+//
+// GET /company te tira todas las empresas con el status adentro, asi que no
+// hace falta ir fila por fila. lo unico que le falta son email y fecha de
+// registro, que viven en User, entonces pedimos GET /user?status=PENDIENTE&
+// role=EMPRESA aparte y cruzamos por companyId === userId (misma pk). dos
+// requests y listo, nada de loopear por usuario como habiamos armado antes.
 
 import { useQuery } from "@tanstack/react-query";
 
-import { MOCK_COMPANIES, MOCK_COMPANY_USERS } from "@/lib/fixtures";
+import { apiClient } from "@/lib/api-client";
 import type { PendingCompaniesFilters, PendingCompanyRow } from "@/features/moderacion/types";
-import type { Paginated } from "@/types";
+import type { Company, Paginated, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -26,17 +28,15 @@ export function usePendingCompanies(filters: PendingCompaniesFilters) {
   });
 }
 
-/** Opciones del multiselect de industria: solo las de empresas PENDIENTES,
- *  para no ofrecer opciones que no filtran nada. */
+/** opciones del multiselect de industria: solo las de empresas pendientes,
+ *  asi el dropdown no ofrece cosas que no van a filtrar nada. */
 export function usePendingCompanyIndustries() {
   const { data } = useQuery({
     queryKey: ["moderacion", "empresas-industrias"],
-    queryFn: () => {
-      const pendingIds = new Set(
-        MOCK_COMPANY_USERS.filter((u) => u.status === "PENDIENTE").map((u) => u.userId),
-      );
+    queryFn: async () => {
+      const companies = await apiClient.get<Company[]>("/company");
       return Array.from(
-        new Set(MOCK_COMPANIES.filter((c) => pendingIds.has(c.companyId)).map((c) => c.industry)),
+        new Set(companies.filter((c) => c.status === "PENDIENTE").map((c) => c.industry)),
       ).sort();
     },
   });
@@ -49,11 +49,15 @@ async function fetchPendingCompanies(
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
-  // solo las empresas cuyo user esta pendiente
-  const pendingUserIds = new Set(
-    MOCK_COMPANY_USERS.filter((u) => u.status === "PENDIENTE").map((u) => u.userId),
-  );
-  const rows = MOCK_COMPANIES.filter((c) => pendingUserIds.has(c.companyId)).map(toRow);
+  const [pendingUsers, companies] = await Promise.all([
+    apiClient.get<User[]>("/user", { params: { status: "PENDIENTE", role: "EMPRESA" } }),
+    apiClient.get<Company[]>("/company"),
+  ]);
+
+  const pendingUsersById = new Map(pendingUsers.map((u) => [u.userId, u]));
+  const rows = companies
+    .filter((c) => c.status === "PENDIENTE" && pendingUsersById.has(c.companyId))
+    .map((c) => toRow(c, pendingUsersById.get(c.companyId)!));
   const filtered = filterRows(rows, filters);
 
   const start = (page - 1) * perPage;
@@ -62,13 +66,11 @@ async function fetchPendingCompanies(
   return { items, total: filtered.length, page, perPage };
 }
 
-function toRow(company: (typeof MOCK_COMPANIES)[number]): PendingCompanyRow {
-  const user = MOCK_COMPANY_USERS.find((u) => u.userId === company.companyId);
-
+function toRow(company: Company, user: User): PendingCompanyRow {
   return {
     ...company,
-    email: user?.email ?? "—",
-    registeredAt: user?.registeredAt ?? "",
+    email: user.email,
+    registeredAt: user.registeredAt,
   };
 }
 
