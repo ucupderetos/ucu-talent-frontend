@@ -15,9 +15,8 @@ import type { Company } from "@/types";
  * (`companyId === userId`), así que el `userId` de la sesión es el `{id}` del
  * path — y el candado "🔒 + dueño" del endpoint se cumple solo.
  *
- * `rut`, `phoneNumber` y `logoUrl` del formulario NO se mandan: no están en el
- * contrato. Cuando el backend los exponga se agregan acá y en
- * `UpdateCompanyInput`/`toCompanyProfile`.
+ * `toUpdateCompanyRequest` solo renombra `legalName` → `name`; el resto del
+ * form ya son los seis campos del contrato.
  */
 function toUpdateCompanyRequest(values: CompanyProfileFormValues): UpdateCompanyInput {
   return {

@@ -37,7 +37,7 @@ export function CompanyProfileForm({
   form: UseFormReturn<CompanyProfileFormValues>;
   mode: "view" | "edit";
   startEditing: () => void;
-  commitSave: (values: CompanyProfileFormValues) => void;
+  commitSave: () => void;
   cancelEditing: () => void;
 }) {
   const { updateProfile, isLoading, error } = useUpdateCompanyProfile();
@@ -57,7 +57,7 @@ export function CompanyProfileForm({
       // El mensaje de error ya se muestra abajo (`error`, de useUpdateCompanyProfile).
       return;
     }
-    commitSave(values);
+    commitSave();
     toast.success("Perfil de empresa actualizado.");
   });
 
@@ -76,12 +76,6 @@ export function CompanyProfileForm({
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            {/* A-11: sin endpoint de upload todavía — campo de texto por ahora */}
-            <Field>
-              <FieldLabel htmlFor="logoUrl">Logo (URL)</FieldLabel>
-              <Input id="logoUrl" placeholder="https://..." {...register("logoUrl")} />
-            </Field>
-
             <div className="grid gap-6 sm:grid-cols-2">
               <Field data-invalid={Boolean(errors.legalName)}>
                 <FieldLabel htmlFor="legalName">Razón social *</FieldLabel>
@@ -92,30 +86,6 @@ export function CompanyProfileForm({
                   {...register("legalName")}
                 />
                 <FieldError errors={[errors.legalName]} />
-              </Field>
-
-              <Field data-invalid={Boolean(errors.rut)}>
-                <FieldLabel htmlFor="rut">RUT *</FieldLabel>
-                <Input
-                  id="rut"
-                  placeholder="210000000000"
-                  aria-invalid={Boolean(errors.rut)}
-                  {...register("rut")}
-                />
-                <FieldError errors={[errors.rut]} />
-              </Field>
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2">
-              <Field data-invalid={Boolean(errors.phoneNumber)}>
-                <FieldLabel htmlFor="phoneNumber">Teléfono *</FieldLabel>
-                <Input
-                  id="phoneNumber"
-                  placeholder="099123456"
-                  aria-invalid={Boolean(errors.phoneNumber)}
-                  {...register("phoneNumber")}
-                />
-                <FieldError errors={[errors.phoneNumber]} />
               </Field>
 
               <Field data-invalid={Boolean(errors.webUrl)}>

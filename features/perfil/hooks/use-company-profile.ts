@@ -21,21 +21,17 @@ export function companyProfileQueryKey(userId: string | undefined) {
 
 /**
  * Mapea la `Company` que devuelve la API al `CompanyProfile` que edita el
- * formulario. `rut`, `phoneNumber` y `logoUrl` no existen en el contrato
- * todavía (ver `CompanyProfile` en features/perfil/types.ts): se rellenan con
- * valores de muestra hasta que el backend los exponga.
+ * formulario — solo renombra `name` → `legalName`. La imagen de la empresa no
+ * viene por acá: irá en `User.imageUrl` cuando el backend la exponga.
  */
 function toCompanyProfile(company: Company): CompanyProfile {
   return {
     legalName: company.name,
-    rut: "210000000000", // TODO(api): sin respaldo en la API todavía
-    phoneNumber: "099123456", // TODO(api): sin respaldo en la API todavía
     industry: company.industry,
     description: company.description,
     webUrl: company.webUrl,
     linkedinUrl: company.linkedinUrl,
     location: company.location,
-    logoUrl: "", // TODO(api): sin endpoint de upload todavía
   };
 }
 

@@ -75,34 +75,28 @@ export type LinkedInImportFormat = "pendiente-de-confirmar";
 // ---------------------------------------------------------------------------
 
 /**
- * Perfil de empresa tal como lo edita ella misma. Espeja `Company` del MER.
+ * Perfil de empresa tal como lo edita ella misma. Coincide con lo que la API
+ * acepta/devuelve en `Company` (docs/ENDPOINTS.md, sección 3), con `name`
+ * renombrado a `legalName` (inglés — AGENTS.md).
  *
- * ⚠️ `docs/ENDPOINTS.md` todavía no expone `razonSocial`, `rut`, `phoneNumber`
- * ni `logoUrl` en `Company` — están en el MER pero no en el contrato real de
- * la API. Se documentan igual como forma deseada; `toCompanyProfile` rellena
- * los que faltan con datos mock hasta que el back los agregue.
+ * La imagen de la empresa NO vive acá: va a `User.imageUrl` (compartida por
+ * empresa/alumno/admin), todavía sin exponer en el contrato.
  */
 export interface CompanyProfile {
-  /** Company.razon_social — nombrado en inglés (AGENTS.md), etiqueta visible
-   *  sigue siendo "Razón social". */
+  /** Company.name (razón social) — etiqueta visible "Razón social". */
   legalName: string;
-  rut: string;
-  phoneNumber: string;
   industry: string;
   description: string;
   webUrl: string;
   linkedinUrl: string;
   location: Department;
-  /** Company.logo_url — bucket. Sin endpoint de upload todavía. */
-  logoUrl: string;
 }
 
 /**
  * Wire: `UpdateCompanyRequest` — `PUT /company/{id}` (docs/ENDPOINTS.md,
- * sección 3). Es el SUBCONJUNTO de `CompanyProfile` que la API acepta: los
- * seis campos `@NotBlank`/`@NotNull` del contrato. `rut`, `phoneNumber` y
- * `logoUrl` del formulario NO viajan acá — el backend todavía no los expone,
- * viven solo en el view-model (ver `CompanyProfile` arriba).
+ * sección 3). Los seis campos `@NotBlank`/`@NotNull` del contrato: igual que
+ * `CompanyProfile`, solo con `legalName` de vuelta como `name` (el nombre real
+ * del campo en la API).
  */
 export interface UpdateCompanyInput {
   /** Company.name (razón social) — el form lo llama `legalName`. */
