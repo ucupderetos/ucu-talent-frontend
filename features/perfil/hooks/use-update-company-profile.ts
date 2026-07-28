@@ -1,28 +1,61 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { apiClient, ApiError } from "@/lib/api-client";
+import { useSession } from "@/hooks/use-session";
+import { companyProfileQueryKey } from "@/features/perfil/hooks/use-company-profile";
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
+import type { UpdateCompanyInput } from "@/features/perfil/types";
+import type { Company } from "@/types";
 
-// PUT /company/{id} ya existe en docs/ENDPOINTS.md — conectar acá con
-// apiClient.put(). No hace falta un segundo PUT a /user: legalName vive en
-// Company según el MER, no en User. Al conectar: invalidar la query de la
-// empresa (GET /company?userId=) en el onSuccess para que el form refleje
-// lo guardado.
-async function updateCompanyProfileRequest(
-  values: CompanyProfileFormValues,
-): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
+/**
+ * Guardado del perfil de empresa. Wire: `PUT /company/{id}`, body
+ * `UpdateCompanyRequest` (docs/ENDPOINTS.md, sección 3). La PK es compartida
+ * (`companyId === userId`), así que el `userId` de la sesión es el `{id}` del
+ * path — y el candado "🔒 + dueño" del endpoint se cumple solo.
+ *
+ * `toUpdateCompanyRequest` solo renombra `legalName` → `name`; el resto del
+ * form ya son los seis campos del contrato.
+ */
+function toUpdateCompanyRequest(values: CompanyProfileFormValues): UpdateCompanyInput {
+  return {
+    name: values.legalName,
+    industry: values.industry,
+    description: values.description,
+    webUrl: values.webUrl,
+    linkedinUrl: values.linkedinUrl,
+    location: values.location,
+  };
 }
 
 export function useUpdateCompanyProfile() {
-  const mutation = useMutation({ mutationFn: updateCompanyProfileRequest });
+  const { user } = useSession();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (values: CompanyProfileFormValues) => {
+      if (!user) {
+        throw new Error("No se pudo resolver la empresa logueada.");
+      }
+      return apiClient.put<Company>(`/company/${user.userId}`, toUpdateCompanyRequest(values));
+    },
+    onSuccess: () => {
+      // Refresca la Company en cache — al reabrir el form se siembra con lo que
+      // el back confirmó que guardó, no con lo que mandamos a ciegas.
+      queryClient.invalidateQueries({ queryKey: companyProfileQueryKey(user?.userId) });
+    },
+  });
+
+  const apiError = mutation.error instanceof ApiError ? mutation.error : null;
 
   return {
     updateProfile: mutation.mutateAsync,
     isLoading: mutation.isPending,
     error: mutation.isError
-      ? "No se pudo guardar el perfil. Intentá nuevamente."
+      ? apiError?.status === 400
+        ? "Revisá los datos ingresados."
+        : "No se pudo guardar el perfil. Intentá nuevamente."
       : null,
   };
 }

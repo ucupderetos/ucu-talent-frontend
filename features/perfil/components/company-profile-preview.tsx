@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MapPinIcon, TagIcon } from "lucide-react";
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
@@ -20,9 +20,9 @@ export function CompanyProfilePreview({
 }: {
   form: UseFormReturn<CompanyProfileFormValues>;
 }) {
-  const [logoUrl, legalName, location, industry, description] = useWatch({
+  const [legalName, location, industry, description] = useWatch({
     control: form.control,
-    name: ["logoUrl", "legalName", "location", "industry", "description"],
+    name: ["legalName", "location", "industry", "description"],
   });
 
   return (
@@ -34,11 +34,11 @@ export function CompanyProfilePreview({
       <CardContent>
         <div className="rounded-lg border p-4">
           <div className="flex items-start gap-3">
-            {/* Mismo tratamiento que el avatar de empresa en "Mis postulaciones"
-             *  (application-card.tsx) — círculo con la inicial de fallback, no
-             *  el cuadrado rounded-md que había acá antes. */}
+            {/* TODO(api): la imagen vendrá de `User.imageUrl` (compartida por
+             *  empresa/alumno/admin) cuando el backend la exponga. Por ahora,
+             *  círculo con la inicial de fallback — mismo tratamiento que el
+             *  avatar de empresa en "Mis postulaciones" (application-card.tsx). */}
             <Avatar className="size-12 shrink-0">
-              <AvatarImage src={logoUrl || undefined} alt="Logo de la empresa" />
               <AvatarFallback>{(legalName || "Razón social").charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
