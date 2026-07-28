@@ -3,7 +3,7 @@
 import { useWatch } from "react-hook-form";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -57,8 +57,9 @@ export function JobBasicInfoForm() {
       </CardHeader>
       <CardContent>
         <FieldGroup>
-          {/* div plano con gap propio: título/área + tipo de contrato quedan más juntos */}
-          <div className="flex flex-col gap-3">
+          {/* FieldSet (primitiva de `field`) para agrupar: título/área + tipo de contrato
+              quedan más juntos entre sí (gap-3) que el gap-5 por default del FieldGroup. */}
+          <FieldSet className="gap-3">
             <div className="grid gap-6 sm:grid-cols-2">
               <Field data-invalid={Boolean(errors.name)}>
                 <FieldLabel htmlFor="name">Título del puesto *</FieldLabel>
@@ -109,7 +110,7 @@ export function JobBasicInfoForm() {
               />
               <FieldError errors={[errors.contractType]} />
             </Field>
-          </div>
+          </FieldSet>
 
           <Field data-invalid={Boolean(errors.modality)}>
             <FieldLabel>Modalidad *</FieldLabel>
