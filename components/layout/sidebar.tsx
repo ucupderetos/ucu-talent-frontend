@@ -17,7 +17,7 @@ import { usePathname } from "next/navigation";
 import { NAV_BY_ROLE } from "@/components/layout/nav-items";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useLogout } from "@/features/auth/hooks/use-logout";
+import { useLogout } from "@/hooks/use-logout";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/types";
 
