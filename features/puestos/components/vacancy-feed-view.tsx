@@ -4,7 +4,7 @@
 // arma la vista (grilla de cards o lista, según el toggle). La page.tsx solo
 // renderiza esto.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { LayoutGridIcon, ListIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/layout/empty-state";
@@ -13,9 +13,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { VacancyFeedCard } from "@/features/puestos/components/vacancy-feed-card";
 import { VacancyFeedFilters } from "@/features/puestos/components/vacancy-feed-filters";
 import { VacancyFeedTable } from "@/features/puestos/components/vacancy-feed-table";
-import { useFeedVacancies } from "@/features/puestos/hooks/use-feed-vacancies";
+import { useFeedFilterOptions, useFeedVacancies } from "@/features/puestos/hooks/use-feed-vacancies";
 import type { FeedFilters } from "@/features/puestos/types";
-import { MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
 
 const DEFAULT_FILTERS: FeedFilters = {};
 
@@ -102,28 +101,6 @@ export function VacancyFeedView() {
       )}
     </div>
   );
-}
-
-/**
- * Opciones de los selects de carrera/trabajo: se calculan sobre TODAS las
- * vacantes visibles (sin aplicar los filtros activos), para que el dropdown
- * no vaya perdiendo opciones a medida que se filtra — mismo criterio que
- * useCompanyVacancyOptions en company-vacancies-view.tsx.
- *
- * TODO(api): cuando exista el contrato, esto probablemente lo devuelva el
- * propio endpoint de filtros (facets) en vez de calcularse en el cliente.
- */
-function useFeedFilterOptions() {
-  return useMemo(() => {
-    const visible = MOCK_VACANCIES.filter((vacancy) => vacancy.status === "PUBLICADO");
-    const areaIds = new Set(visible.map((vacancy) => vacancy.areaId));
-    const contractTypes = Array.from(new Set(visible.map((vacancy) => vacancy.contractType))).sort();
-
-    return {
-      areas: MOCK_AREAS.filter((area) => areaIds.has(area.areaId)),
-      contractTypes,
-    };
-  }, []);
 }
 
 function GridSkeleton() {

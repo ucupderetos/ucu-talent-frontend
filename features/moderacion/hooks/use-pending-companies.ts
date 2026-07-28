@@ -13,6 +13,7 @@ import type { Paginated } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function pendingCompaniesQueryKey(filters: PendingCompaniesFilters) {
   return ["moderacion", "empresas-pendientes", filters] as const;
 }
@@ -24,30 +25,21 @@ export function usePendingCompanies(filters: PendingCompaniesFilters) {
   });
 }
 
-export function pendingCompanyIndustriesQueryKey() {
-  return ["moderacion", "empresas-pendientes", "industrias"] as const;
-}
-
-/** Industrias presentes en empresas que todavía requieren validación. */
+/** Opciones del multiselect de industria: solo las de empresas PENDIENTES,
+ *  para no ofrecer opciones que no filtran nada. */
 export function usePendingCompanyIndustries() {
-  return useQuery({
-    queryKey: pendingCompanyIndustriesQueryKey(),
-    queryFn: fetchPendingCompanyIndustries,
+  const { data } = useQuery({
+    queryKey: ["moderacion", "empresas-industrias"],
+    queryFn: () => {
+      const pendingIds = new Set(
+        MOCK_COMPANY_USERS.filter((u) => u.status === "PENDIENTE").map((u) => u.userId),
+      );
+      return Array.from(
+        new Set(MOCK_COMPANIES.filter((c) => pendingIds.has(c.companyId)).map((c) => c.industry)),
+      ).sort();
+    },
   });
-}
-
-async function fetchPendingCompanyIndustries(): Promise<string[]> {
-  const pendingIds = new Set(
-    MOCK_COMPANY_USERS.filter((user) => user.status === "PENDIENTE").map((user) => user.userId),
-  );
-
-  return Array.from(
-    new Set(
-      MOCK_COMPANIES.filter((company) => pendingIds.has(company.companyId)).map(
-        (company) => company.industry,
-      ),
-    ),
-  ).sort();
+  return data ?? [];
 }
 
 async function fetchPendingCompanies(

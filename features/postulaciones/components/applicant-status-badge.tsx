@@ -3,7 +3,7 @@
 //
 // El estado nunca lo cambia la empresa a mano: `PENDIENTE → VISTO` es
 // automático al abrir el detalle (ver use-mark-applicant-viewed.ts) y
-// `VISTO → FINALIZADO` es automático al cerrar la vacante (lo dispara el
+// `VISTO → FINALIZADA` es automático al cerrar la vacante (lo dispara el
 // sistema). Por eso este badge es de solo lectura en toda la pantalla.
 
 import { Badge } from "@/components/ui/badge";
@@ -13,13 +13,13 @@ import type { VacancyApplicationStatus } from "@/types";
 export const APPLICANT_STATUS_LABEL: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "Nuevo",
   VISTO: "En revisión",
-  FINALIZADO: "Finalizado",
+  FINALIZADA: "Finalizado",
 };
 
 const APPLICANT_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "bg-success",
   VISTO: "bg-warning",
-  FINALIZADO: "bg-muted-foreground",
+  FINALIZADA: "bg-muted-foreground",
 };
 
 export function ApplicantStatusBadge({ status }: { status: VacancyApplicationStatus }) {

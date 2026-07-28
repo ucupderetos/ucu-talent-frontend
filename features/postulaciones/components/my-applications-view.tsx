@@ -12,9 +12,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/features/auth/hooks/use-session";
 import { ApplicationCard } from "@/features/postulaciones/components/application-card";
 import { MyApplicationsFilters } from "@/features/postulaciones/components/my-applications-filters";
-import { useMyApplications } from "@/features/postulaciones/hooks/use-my-applications";
+import {
+  useMyApplicationAreas,
+  useMyApplications,
+} from "@/features/postulaciones/hooks/use-my-applications";
 import type { MyApplicationFilters, MyApplicationRow } from "@/features/postulaciones/types";
-import { MOCK_AREAS } from "@/lib/fixtures";
 
 const DEFAULT_FILTERS: MyApplicationFilters = {};
 
@@ -24,7 +26,7 @@ export function MyApplicationsView() {
   const [filters, setFilters] = useState<MyApplicationFilters>(DEFAULT_FILTERS);
 
   const isLoading = isLoadingSession || isLoadingApplications;
-  const areas = useApplicationAreaOptions(data);
+  const areas = useMyApplicationAreas(data);
   const filteredRows = useFilteredRows(data, filters);
 
   const hasAnyApplication = (data?.length ?? 0) > 0;
@@ -67,20 +69,6 @@ export function MyApplicationsView() {
       )}
     </div>
   );
-}
-
-/**
- * Opciones del select de carrera: se calculan sobre TODAS las postulaciones
- * (sin aplicar los filtros activos), mismo criterio que useFeedFilterOptions
- * en vacancy-feed-view.tsx — así el dropdown no va perdiendo opciones a
- * medida que se filtra.
- */
-function useApplicationAreaOptions(data: MyApplicationRow[] | undefined) {
-  return useMemo(() => {
-    if (!data) return [];
-    const areaIds = new Set(data.map((row) => row.vacancy.areaId));
-    return MOCK_AREAS.filter((area) => areaIds.has(area.areaId));
-  }, [data]);
 }
 
 function useFilteredRows(

@@ -29,9 +29,7 @@ export function ApplicationsView() {
   const [filters, setFilters] = useState<AdminApplicationFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading, isError } = useApplications(filters);
-  const { data: filterOptions } = useApplicationFilterOptions();
-  const vacancies = filterOptions?.vacancies ?? [];
-  const companies = filterOptions?.companies ?? [];
+  const { vacancies, companies } = useApplicationFilterOptions();
 
   const hasAnyApplication = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 

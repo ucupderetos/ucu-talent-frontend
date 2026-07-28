@@ -2,14 +2,16 @@
 
 // Acciones de moderación sobre una vacante, con diálogo de confirmación.
 //
-// Solo se ofrecen las transiciones que NO son el estado actual: el Admin puede
-// llevar la vacante a cualquiera de los 3 (types/index.ts). Pasarla a
-// `FINALIZADO` es terminal, así que desde ahí no se ofrece nada más.
+// ⚠️ El Admin SOLO mueve `PUBLICADO ↔ PENDIENTE` (docs/ENDPOINTS.md,
+// `PUT /vacancy/status/{id}`) — "dar de baja" para el Admin es
+// `PUBLICADO → PENDIENTE`, no un cierre terminal. Pasar a `FINALIZADO` es una
+// acción exclusiva de la empresa dueña (`PATCH /vacancy/status/{id}`, dominio
+// `puestos`); este menú de Admin nunca la ofrece. Ver `VacancyStatus` en
+// `types/index.ts`.
 
 import { useState } from "react";
 import Link from "next/link";
 import {
-  BanIcon,
   BriefcaseBusinessIcon,
   EyeIcon,
   EyeOffIcon,
@@ -39,6 +41,10 @@ import { useReviewVacancy } from "@/features/moderacion/hooks/use-review-vacancy
 import type { AdminVacancyRow } from "@/features/moderacion/types";
 import type { VacancyStatus } from "@/types";
 
+/** Los dos únicos targets que el Admin puede elegir — nunca `FINALIZADO`
+ *  (ver el aviso de arriba). */
+type AdminVacancyTarget = Extract<VacancyStatus, "PUBLICADO" | "PENDIENTE">;
+
 interface TransitionConfig {
   menuLabel: string;
   icon: LucideIcon;
@@ -50,7 +56,7 @@ interface TransitionConfig {
   successMessage: string;
 }
 
-const TRANSITION: Record<VacancyStatus, TransitionConfig> = {
+const TRANSITION: Record<AdminVacancyTarget, TransitionConfig> = {
   PUBLICADO: {
     menuLabel: "Publicar",
     icon: EyeIcon,
@@ -62,38 +68,28 @@ const TRANSITION: Record<VacancyStatus, TransitionConfig> = {
     successMessage: "Oferta publicada.",
   },
   PENDIENTE: {
-    menuLabel: "Retirar para revisión",
-    icon: EyeOffIcon,
-    destructive: false,
-    title: "¿Retirar esta oferta?",
-    description: (name) =>
-      `${name} deja de verse en el feed hasta que la vuelvas a publicar. Las postulaciones ya recibidas no se pierden.`,
-    confirmLabel: "Sí, retirar",
-    pendingLabel: "Retirando...",
-    successMessage: "Oferta retirada para revisión.",
-  },
-  FINALIZADO: {
     menuLabel: "Dar de baja",
-    icon: BanIcon,
+    icon: EyeOffIcon,
     destructive: true,
     title: "¿Dar de baja esta oferta?",
     description: (name) =>
-      `${name} queda cerrada de forma definitiva: es un estado terminal y no se puede volver atrás.`,
+      `${name} deja de verse en el feed hasta que la vuelvas a publicar. Las postulaciones ya recibidas no se pierden — no es un cierre definitivo.`,
     confirmLabel: "Sí, dar de baja",
     pendingLabel: "Dando de baja...",
-    successMessage: "Oferta dada de baja.",
+    successMessage: "Oferta retirada para revisión.",
   },
 };
 
-/** Desde `FINALIZADO` no se sale: es terminal. */
-const AVAILABLE_TRANSITIONS: Record<VacancyStatus, VacancyStatus[]> = {
-  PUBLICADO: ["PENDIENTE", "FINALIZADO"],
-  PENDIENTE: ["PUBLICADO", "FINALIZADO"],
+/** Desde `FINALIZADO` no se sale: es terminal, y el Admin no puede llegar a él
+ *  (solo la empresa dueña lo hace, desde el dominio `puestos`). */
+const AVAILABLE_TRANSITIONS: Record<VacancyStatus, AdminVacancyTarget[]> = {
+  PUBLICADO: ["PENDIENTE"],
+  PENDIENTE: ["PUBLICADO"],
   FINALIZADO: [],
 };
 
 export function VacancyActionsMenu({ vacancy }: { vacancy: AdminVacancyRow }) {
-  const [target, setTarget] = useState<VacancyStatus | null>(null);
+  const [target, setTarget] = useState<AdminVacancyTarget | null>(null);
   const review = useReviewVacancy();
 
   const transitions = AVAILABLE_TRANSITIONS[vacancy.status];

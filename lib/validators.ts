@@ -13,7 +13,7 @@ import type { DocumentType } from "@/types";
 
 /** Saca separadores de formato (puntos, comas, guiones, espacios). El resto
  *  (letras/dígitos) queda para que el validador de cada tipo lo evalúe. */
-export function cleanDocumentNumber(value: string): string {
+function cleanDocumentNumber(value: string): string {
   return value.replace(/[.,\-\s]/g, "");
 }
 

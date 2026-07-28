@@ -119,5 +119,5 @@ export const MOCK_RECENT_ACTIVITY: RecentActivityItem[] = [
 export const MOCK_APPLICATIONS_BY_STATUS: ApplicationStatusSummary[] = [
   { status: "PENDIENTE", label: "Pendientes", count: 48 },
   { status: "VISTO", label: "Vistas", count: 34 },
-  { status: "FINALIZADO", label: "Finalizadas", count: 18 },
+  { status: "FINALIZADA", label: "Finalizadas", count: 18 },
 ];

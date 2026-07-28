@@ -11,11 +11,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
-  MOCK_APPLICANT_USERS,
+  MOCK_COMPANIES,
   MOCK_COMPANY_USERS,
   MOCK_PENDING_STUDENT_USERS,
-  MOCK_STUDENT_USERS,
-  MOCK_USERS,
+  MOCK_STUDENT_PROFILES,
 } from "@/lib/fixtures";
 import type { AccountResolution } from "@/features/moderacion/types";
 
@@ -28,19 +27,23 @@ export function useReviewAccount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, accountType, status }: ReviewAccountInput) => {
+    mutationFn: async ({ userId, accountType, status, adminComment }: ReviewAccountInput) => {
       // TODO(api): apiClient.patch(`/user/${userId}`, { status, adminComment })
-      const user =
-        accountType === "student"
-          ? (MOCK_STUDENT_USERS.find((candidate) => candidate.userId === userId) ??
-            MOCK_PENDING_STUDENT_USERS.find((candidate) => candidate.userId === userId) ??
-            MOCK_APPLICANT_USERS.find((candidate) => candidate.userId === userId))
-          : (MOCK_COMPANY_USERS.find((candidate) => candidate.userId === userId) ??
-            (MOCK_USERS.EMPRESA.userId === userId ? MOCK_USERS.EMPRESA : undefined));
+      const pool = accountType === "student" ? MOCK_PENDING_STUDENT_USERS : MOCK_COMPANY_USERS;
+      const user = pool.find((u) => u.userId === userId);
+      if (user) user.status = status;
 
-      if (!user) throw new Error(`No se encontró la cuenta ${userId}.`);
-
-      user.status = status;
+      // El backend guarda status/adminComment/reviewedAt también en el perfil
+      // (StudentProfile/Company, no solo en User) — se replica acá para que
+      // las dos fuentes no queden desincronizadas en el mock.
+      const reviewedAt = new Date().toISOString();
+      if (accountType === "student") {
+        const profile = MOCK_STUDENT_PROFILES.find((p) => p.studentProfileId === userId);
+        if (profile) Object.assign(profile, { status, reviewedAt, adminComment: adminComment ?? null });
+      } else {
+        const profile = MOCK_COMPANIES.find((p) => p.companyId === userId);
+        if (profile) Object.assign(profile, { status, reviewedAt, adminComment: adminComment ?? null });
+      }
     },
     onSuccess: () => {
       // Invalida ambas colas (empresas y alumnos) — todas cuelgan de "moderacion".

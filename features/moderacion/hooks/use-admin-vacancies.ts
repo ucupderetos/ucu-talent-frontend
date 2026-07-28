@@ -2,10 +2,11 @@
 
 // Datos del listado de vacantes para el Admin.
 //
-// Andamio temporal sobre fixtures para el listado y el detalle. El tipo core
-// ya conserva los tres estados confirmados (`PENDIENTE | PUBLICADO |
-// FINALIZADO`); cuando se conecte el contrato administrativo, solo cambia la
-// fuente de estas queries y las vistas siguen consumiendo la misma forma.
+// Andamio temporal: resuelve todo sobre `lib/fixtures.ts`. El endpoint real
+// (`GET /vacancy` + `PUT /vacancy/status/{id}` para moderar, ver
+// docs/ENDPOINTS.md) ya está confirmado con los 3 estados de `VacancyStatus`
+// — cuando se enchufe, solo cambia `fetchAdminVacancies`; la vista sigue
+// consumiendo TanStack Query.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -26,6 +27,7 @@ import type { Company, Paginated, VacancyApplicationStatus } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function adminVacanciesQueryKey(filters: AdminVacancyFilters) {
   return ["moderacion", "ofertas", filters] as const;
 }
@@ -116,7 +118,7 @@ function allVacancyDetails(): AdminVacancyDetail[] {
     const applicationStatusCounts: Record<VacancyApplicationStatus, number> = {
       PENDIENTE: 0,
       VISTO: 0,
-      FINALIZADO: 0,
+      FINALIZADA: 0,
     };
 
     for (const application of applications) {
@@ -133,7 +135,9 @@ function allVacancyDetails(): AdminVacancyDetail[] {
       area: area ? { ...area } : null,
       parentArea: parentArea ? { ...parentArea } : null,
       applicationStatusCounts,
-      selectedApplicationCount: applications.filter((application) => application.selected).length,
+      // `selected` se eliminó del contrato (ver types/index.ts) — sin dato para
+      // computar la métrica. Se deja en 0 hasta que el contrato lo reponga.
+      selectedApplicationCount: 0,
     };
   });
 }
@@ -169,8 +173,8 @@ function filterRows(
  * tienen fecha quedan al final y se ordenan por nombre. */
 function sortByPublicationDate(rows: AdminVacancyRow[]): AdminVacancyRow[] {
   return [...rows].sort((a, b) => {
-    const aTime = a.publicationDate ? new Date(a.publicationDate).getTime() : -1;
-    const bTime = b.publicationDate ? new Date(b.publicationDate).getTime() : -1;
+    const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : -1;
+    const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : -1;
 
     return bTime - aTime || a.name.localeCompare(b.name, "es");
   });

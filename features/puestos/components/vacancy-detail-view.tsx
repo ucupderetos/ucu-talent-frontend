@@ -5,8 +5,8 @@
 //
 // Orquestador: junta la vacante (features/puestos) con la sesión
 // (features/auth) para resolver el gate de RN-16/RN-05 del botón "Aplicar".
-// La postulación en sí (features/postulaciones) todavía no tiene mutación —
-// ver el comentario en ApplyAction más abajo.
+// La mutación de postularse vive en features/puestos/hooks/use-vacancy.ts —
+// ver el comentario ahí sobre por qué no está en features/postulaciones.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -32,9 +32,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ApiError } from "@/lib/api-client";
 import { useSession } from "@/features/auth/hooks/use-session";
 import { getVacancyDetailPreviewExtras } from "@/features/puestos/components/vacancy-detail-preview-mock";
-import { hasAppliedToVacancy, useVacancy } from "@/features/puestos/hooks/use-vacancy";
+import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
 import type { AccountStatus, Modality } from "@/types";
 
@@ -133,7 +134,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarIcon className="size-4" />
-                {formatDate(vacancy.publicationDate)}
+                {formatDate(vacancy.publishedAt)}
               </span>
             </div>
 
@@ -290,16 +291,12 @@ const PENDING_STATUS_MESSAGE: Partial<Record<AccountStatus, string>> = {
   RECHAZADO: "Tu cuenta no fue aprobada, así que no podés postularte a vacantes.",
 };
 
-/**
- * Botón "Aplicar" con el gate de RN-16 (cuenta no `APROBADO`) y RN-05 (ya
- * postulado). La creación de la postulación en sí (`features/postulaciones`)
- * todavía no tiene mutación — el dominio no tiene ni un hook escrito (ver
- * AGENTS.md, "Todavía NO existe"). Mientras tanto, igual que "Crear nueva
- * oferta"/"Cerrar" en el dominio empresa, el click solo avisa que falta el
- * contrato de la API.
- */
+/** Botón "Aplicar" con el gate de RN-16 (cuenta no `APROBADO`) y RN-05 (ya
+ *  postulado), y la mutación real de `POST /vacancy-application`. */
 function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
   const { user, isLoading } = useSession();
+  const hasApplied = useHasApplied(vacancy.vacancyId, user?.userId);
+  const { apply, isLoading: isApplying } = useApplyToVacancy(vacancy.vacancyId, user?.userId);
 
   if (isLoading || !user) {
     return <Skeleton className="h-10 w-32 shrink-0" />;
@@ -313,7 +310,7 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
     );
   }
 
-  if (hasAppliedToVacancy(vacancy.vacancyId, user.userId)) {
+  if (hasApplied) {
     return (
       <Button variant="outline" className="h-10 shrink-0 px-6" disabled>
         Ya te postulaste
@@ -327,12 +324,21 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
     <div className="flex shrink-0 flex-col items-end gap-1.5">
       <Button
         className="h-10 bg-ucu-blue px-6 text-white hover:bg-ucu-blue/90"
-        disabled={Boolean(blockedMessage)}
-        onClick={() =>
-          toast.info('Postularte todavía no está disponible: falta el contrato de la API.')
-        }
+        disabled={Boolean(blockedMessage) || isApplying}
+        onClick={async () => {
+          try {
+            await apply();
+            toast.success("¡Te postulaste con éxito!");
+          } catch (err) {
+            toast.error(
+              err instanceof ApiError && err.status === 409
+                ? "Ya te postulaste a esta vacante."
+                : "No se pudo enviar la postulación. Intentá nuevamente.",
+            );
+          }
+        }}
       >
-        Aplicar
+        {isApplying ? "Postulando..." : "Aplicar"}
       </Button>
       {blockedMessage && (
         <p className="max-w-56 text-right text-xs text-muted-foreground">{blockedMessage}</p>

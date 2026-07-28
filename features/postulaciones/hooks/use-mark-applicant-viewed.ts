@@ -11,7 +11,7 @@
 // fixtures en memoria como sustituto. TODO(api): cuando exista, pasa a
 // `apiClient.put(...)`.
 //
-// `VISTO → FINALIZADO` NO se implementa acá: es automático en cascada al
+// `VISTO → FINALIZADA` NO se implementa acá: es automático en cascada al
 // cerrar la vacante (lo dispara el sistema, no la empresa) — no hay ninguna
 // acción de la empresa que lo gatille desde esta pantalla.
 

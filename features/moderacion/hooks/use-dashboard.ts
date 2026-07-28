@@ -30,7 +30,7 @@ import type {
   RecentVacancy,
 } from "@/features/moderacion/types";
 
-export interface AdminDashboardData {
+interface AdminDashboardData {
   stats: DashboardStat[];
   recentVacancies: RecentVacancy[];
   pendingValidations: PendingCompanyValidation[];
@@ -38,6 +38,7 @@ export interface AdminDashboardData {
   applicationsByStatus: ApplicationStatusSummary[];
 }
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function dashboardQueryKey() {
   return ["moderacion", "dashboard"] as const;
 }

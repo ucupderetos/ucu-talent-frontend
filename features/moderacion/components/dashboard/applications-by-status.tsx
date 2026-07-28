@@ -28,7 +28,7 @@ import type { VacancyApplicationStatus } from "@/types";
 const STATUS_COLOR: Record<VacancyApplicationStatus, { css: string; dotClass: string }> = {
   PENDIENTE: { css: "var(--chart-2)", dotClass: "bg-chart-2" },
   VISTO: { css: "var(--chart-4)", dotClass: "bg-chart-4" },
-  FINALIZADO: { css: "var(--success)", dotClass: "bg-success" },
+  FINALIZADA: { css: "var(--success)", dotClass: "bg-success" },
 };
 
 function percentageOf(count: number, total: number): number {

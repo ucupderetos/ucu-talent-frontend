@@ -13,10 +13,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablePagination } from "@/components/filters/table-pagination";
-import {
-  useStudentFilterOptions,
-  useStudents,
-} from "@/features/moderacion/hooks/use-students";
+import { useStudentFilterOptions, useStudents } from "@/features/moderacion/hooks/use-students";
 import { StudentsFilters } from "@/features/moderacion/components/students/students-filters";
 import { StudentsTable } from "@/features/moderacion/components/students/students-table";
 import type { StudentFilters } from "@/features/moderacion/types";
@@ -29,9 +26,7 @@ export function StudentsView() {
   const [filters, setFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading, isError } = useStudents(filters);
-  const { data: filterOptions } = useStudentFilterOptions();
-  const degrees = filterOptions?.degrees ?? [];
-  const areas = filterOptions?.areas ?? [];
+  const { degrees, areas } = useStudentFilterOptions();
 
   const hasAnyStudent = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 

@@ -23,6 +23,7 @@ import {
 } from "@/lib/fixtures";
 import type { ApplicantDetailRow } from "@/features/postulaciones/types";
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function applicantDetailQueryKey(
   companyId: string | undefined,
   vacancyApplicationId: string | null,

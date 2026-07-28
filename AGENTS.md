@@ -30,6 +30,12 @@ saca los datos personales de `User`, agrega la entidad `Admin`, agrega
 `Vacancy_Application.selected` y agrega un segundo correo automático. Esos puntos del SRS
 están desactualizados y se van a corregir en una revisión posterior del documento.
 
+⚠️ **A su vez, `docs/ENDPOINTS.md` (fuente #3, recibido 2026-07-27) revierte uno de esos
+puntos del MER**: `selected` no aparece en ningún lado del contrato cerrado. Por la regla
+de precedencia de arriba (gana la fuente de más abajo), esto se trata como la definición
+vigente — `selected` se eliminó de `types/index.ts` y de la UI que dependía de él. Ver
+*Postulaciones: máquina de estados*.
+
 ## Contexto del proyecto
 
 Portal laboral tipo LinkedIn para la UCU: conecta empresas, alumnos/egresados y
@@ -495,11 +501,14 @@ los errores de RHF.
 
 - 3 roles: **`ALUMNO`**, **`EMPRESA`**, **`ADMIN`**. Cada uno ve solo lo que le
   corresponde.
-- **El estado de aprobación vive en `User`, no en el perfil.** Un único
+- **El estado de aprobación vive canónicamente en `User`.** Un único
   `AccountStatus: enum(PENDIENTE, APROBADO, RECHAZADO)` para los tres roles, y **llega en
   `GET /me`**. Esto reemplaza a los dos enums separados que había antes
   (`CompanyStatus` / `StudentProfileStatus`) y también al booleano `Company.approved` del
-  MER viejo.
+  MER viejo. ✅ Confirmado en `docs/ENDPOINTS.md`: `StudentProfileResponse` y
+  `CompanyResponse` **también** traen `status`/`reviewedAt`/`adminComment` — el mismo valor
+  duplicado en el perfil, para que la pantalla de perfil no necesite un segundo fetch a
+  `/user/{id}` solo para mostrarlo. La fuente de verdad sigue siendo `User.status`.
 - **Toda cuenta nace `PENDIENTE`** (alumno y empresa). No hay aprobación automática: la
   vía `@ucu.edu.uy` que preveía el SRS (RF-AUT-01, RN-01) **se descartó**. Todo alumno se
   registra igual, con documento, y queda `PENDIENTE` hasta que un **Admin lo apruebe a
@@ -520,15 +529,20 @@ los errores de RHF.
 - Vacante (`Vacancy`): **post-moderación (DEC-01)** — nace ya `PUBLICADO` **por default**
   al crearse, sin aprobación previa por puesto (RN-03). Estados **confirmados**:
   `enum(PENDIENTE, PUBLICADO, FINALIZADO)` — **sin `RECHAZADO`** (se descartó) **ni
-  `paused`**. La empresa dueña lo puede cerrar cuando termina la búsqueda
-  (→ `FINALIZADO`, terminal, RF-PUE-03). El Admin UCU revisa periódicamente lo ya
-  publicado: puede pasarla a **`PENDIENTE`** (para revisar/editar algo) o, si la **da de
-  baja, a `FINALIZADO`** (terminal, RF-MOD-02) — mismo estado terminal que el cierre de la
-  empresa. Impacto: el panel de admin es una **bandeja de revisión de lo ya publicado**
-  (últimas 24h destacadas — RF-MOD-01), no una cola de aprobación previa. La empresa ve su
-  vacante viva apenas la crea. 🔄 **Confirmado por backend, todavía no en
-  `api-dev`/`ENDPOINTS.md`** (que aún muestra `PENDIENTE, FINALIZADO`) — tratar como el
-  contrato vigente y verificar al integrar (A-14).
+  `paused`**. ✅ **Cerrado en `docs/ENDPOINTS.md`, con dos endpoints separados por
+  actor**: `PATCH /vacancy/status/{id}` (EMPRESA + dueña) y `PUT /vacancy/status/{id}`
+  (ADMIN, `UpdateVacancyStatusAdminRequest`). Las transiciones NO son simétricas por rol:
+  - **La empresa dueña SOLO cierra**: `PUBLICADO → FINALIZADO` o `PENDIENTE → FINALIZADO`
+    (terminal, RF-PUE-03). No hay mail en la segunda.
+  - **El Admin SOLO mueve `PUBLICADO ↔ PENDIENTE`** — nunca a `FINALIZADO`. ⚠️ Esto
+    corrige una versión anterior de este párrafo, que decía que el Admin "daba de baja"
+    a `FINALIZADO`: **`docs/ENDPOINTS.md` es explícito en que "dar de baja" para el Admin
+    es `PUBLICADO → PENDIENTE`** (se conservan las postulaciones, no hay baja física). El
+    cierre terminal es una acción exclusiva de la empresa.
+
+  Impacto: el panel de admin es una **bandeja de revisión de lo ya publicado** (últimas
+  24h destacadas — RF-MOD-01), no una cola de aprobación previa ni una que pueda cerrar
+  vacantes. La empresa ve su vacante viva apenas la crea.
 - Cada route group (`(auth)`, `(alumno)`, `(empresa)`, `(admin)`) lleva su propio
   `layout.tsx` que valida el rol antes de renderizar. Ya existen: son de 3 líneas y
   delegan en `RoleGuard` (`features/auth/components/role-guard.tsx`).
@@ -629,12 +643,15 @@ Ya no es una asunción: `ENDPOINTS.md` lo define.
   de saber quién es el usuario es preguntándoselo al backend.
 - **`GET /me`** (`🔒 Autenticado`) devuelve `MeResponse`:
   ```ts
-  { userId, email, role: Role, status: AccountStatus, registeredAt }
+  { userId, email, role: Role, status: AccountStatus, registeredAt, hasProfile: boolean }
   ```
   El `status` se lee fresco de la BD en cada llamada, nunca del JWT — así una aprobación
-  del Admin se refleja sin reloguear. Lo consume
-  `features/auth/hooks/use-session.ts`, una sola vez para toda la app (Query deduplica por
-  `queryKey`).
+  del Admin se refleja sin reloguear. `hasProfile` ✅ ya es un campo real del wire (antes
+  A-09 lo daba como "confirmado, todavía no en api-dev"; `docs/ENDPOINTS.md` lo cierra) —
+  `features/auth/hooks/use-session.ts` hoy lo *deriva* del 404 al perfil en vez de leerlo
+  directo; no es incorrecto (mismo resultado), pero es candidato a simplificarse una vez
+  que se confirme el campo en `api-dev`. Lo consume una sola vez para toda la app (Query
+  deduplica por `queryKey`).
 - **`MeResponse` NO trae `name`.** El navbar necesita el nombre, así que hoy hace falta un
   segundo fetch al perfil según el rol (`GET /student-profile?userId={id}` o
   `GET /company?userId={id}`). Está pedido como cambio a backend — ver *Pendiente de
@@ -644,30 +661,38 @@ Ya no es una asunción: `ENDPOINTS.md` lo define.
 - `lib/api-client.ts` manda `credentials: "include"` para que el browser adjunte la cookie
   en cross-origin.
 
-### Postulaciones: máquina de estados y `selected`
+### Postulaciones: máquina de estados
 
 ```
-VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)
-selected: boolean   // default false, independiente del status
+VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADA)
 ```
+
+⚠️ El valor terminal es **`FINALIZADA`** (femenino, por "postulación") — no confundir con
+`VacancyStatus.FINALIZADO`.
 
 | Transición | Disparador | Actor |
 |---|---|---|
 | (alta) → `PENDIENTE` | el alumno se postula | Alumno |
 | `PENDIENTE` → `VISTO` | la empresa abre el perfil del postulante | Empresa dueña |
-| `VISTO` → `FINALIZADO` | **automático**, en cascada al finalizar el puesto | Sistema |
+| `VISTO` → `FINALIZADA` | **automático**, en cascada al finalizar el puesto | Sistema |
 
-- **`selected` solo se puede setear en `VISTO`.** Es el momento en que la empresa revisa y
-  marca su elección. Una vez que el puesto se finaliza, queda congelado.
-- `selected` es **independiente del status**: no altera la máquina de estados. Por eso no
-  hay `ACEPTADO`/`RECHAZADO` — esa alternativa se descartó (DEC-06).
-- El estado **nunca retrocede** (RN-08).
+- El estado **nunca retrocede** (RN-08). Una transición inválida devuelve `409` y no
+  modifica la postulación.
 - Un alumno no puede postularse dos veces al mismo puesto: `UNIQUE (vacancy_id,
   student_profile_id)` (RN-05). El segundo intento devuelve `409`.
-- 🔄 **`selected` y la cascada `VISTO → FINALIZADO` están confirmados por backend pero
-  todavía no en `api-dev`** (no aparecen en `VacancyApplicationResponse` /
-  `UpdateVacancyApplicationRequest`) — tratar como parte del contrato y verificar al
-  integrar (A-17).
+
+⚠️ **`selected` SE ELIMINÓ — reversión respecto de una versión anterior de esta
+sección.** El MER aprobado lo tenía (`Vacancy_Application.selected: boolean`, independiente
+del status, para no necesitar `ACEPTADO`/`RECHAZADO` — DEC-06) y A-17 llegó a darlo como
+"confirmado por backend, todavía no en `api-dev`". **`docs/ENDPOINTS.md` — el contrato
+cerrado — no lo incluye en ningún lado**: ni en `VacancyApplicationResponse` ni en
+`UpdateVacancyApplicationRequest` (`{ status: VISTO | FINALIZADA }`, sin más campos). Se
+trata como una reversión real de esa confirmación previa, no como un vacío del documento.
+Consecuencia concreta: **no hay forma de distinguir "seleccionado" de "no seleccionado"**
+en una postulación `FINALIZADA` — la barra de progreso de "Mis postulaciones"
+(`features/postulaciones/components/application-progress.tsx`) ya no lo muestra, solo
+marca que la postulación llegó a su fin. Si el backend reintroduce el campo más adelante,
+revisar `types/index.ts` (`VacancyApplication`) primero.
 
 ### Mails: los dos son del backend, el frontend no manda ninguno
 
@@ -683,8 +708,10 @@ Los dos correos automáticos del sistema, ambos desde Spring Boot:
    asíncrono: un fallo del proveedor nunca bloquea ni revierte el registro de la
    postulación (RNF-14). `notified_at` da idempotencia.
 2. **Cierre del puesto → a cada postulante** (según el MER). Al finalizar la vacante, el
-   sistema manda un no-reply por postulante, con contenido según su `selected`.
-   `result_notified_at` da idempotencia.
+   sistema manda un no-reply por postulante. `result_notified_at` da idempotencia. El MER
+   originalmente ataba el contenido del mail a `selected`, pero ese campo se eliminó del
+   contrato cerrado (ver *Postulaciones*) — el criterio real para el contenido del mail
+   no está definido en `docs/ENDPOINTS.md` hoy.
 
 > ⚠️ **Esto revierte dos cosas que decía antes esta sección.** (a) Que el alumno nunca
 > recibía correo automático: ahora sí lo recibe, al cerrarse el puesto. (b) Que la empresa
@@ -778,8 +805,8 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
   (el padrón — tabla de consulta, sin FK a `User`), `Degree`, `Education`,
   `WorkExperience`, `Modality: enum(PRESENCIAL, HIBRIDO, REMOTO)`,
   `VacancyStatus: enum(PENDIENTE, PUBLICADO, FINALIZADO)`, `Vacancy`,
-  `VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)`, `VacancyApplication` (con
-  `selected: boolean`), `Paginated<T>`.
+  `VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADA)`, `VacancyApplication`
+  (sin `selected` — ver *Postulaciones*), `Paginated<T>`.
 - **`features/<x>/types.ts` → lo específico del dominio**: filtros, payloads de formulario,
   view models. No cruzan a otro dominio, así que no suben.
 
@@ -788,7 +815,8 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 > - `CompanyStatus` y `StudentProfileStatus` → **se unifican en `AccountStatus`**, que
 >   vive en `User` y llega en `GET /me`.
 > - `VacancyApplicationStatus` deja de tener `ACEPTADO`/`RECHAZADO` → es
->   `PENDIENTE, VISTO, FINALIZADO` + el flag `selected`.
+>   `PENDIENTE, VISTO, FINALIZADA`, sin ningún flag de resultado (`selected` se agregó y
+>   después se eliminó — ver *Postulaciones*).
 > - **`MailTemplate` se elimina.** Ver *Mails*.
 > - Se agrega `Admin` (perfil con PK compartida, mismo patrón que los otros dos).
 
@@ -867,8 +895,8 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 
 | Dominio | alumno | empresa | admin |
 |---|---|---|---|
-| `puestos` | feed, ver detalle | crear/editar/cerrar | moderar (dar de baja) |
-| `postulaciones` | postularse, ver estado | postulantes: marcar `VISTO`, `selected` | — |
+| `puestos` | feed, ver detalle | crear/editar/cerrar | moderar (dar de baja a revisión) |
+| `postulaciones` | postularse, ver estado | postulantes: marcar `VISTO` | — |
 | `perfil` | dueño | ve perfiles de postulantes | — |
 | `moderacion` | — | — | dueño |
 
@@ -940,7 +968,9 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
 - `app/providers.tsx`: `QueryClient` con los defaults de TanStack Query.
 - `types/index.ts` y los 5 `features/<x>/types.ts`.
 - `lib/api-client.ts`: la **forma** del cliente (verbos, `ApiError`, base URL). Faltan los
-  endpoints, pero **el contrato ya existe**: `ENDPOINTS.md`.
+  endpoints, pero **el contrato ya existe**: `docs/ENDPOINTS.md` (recibido 2026-07-27,
+  marcado "contrato funcional cerrado" — es la fuente #3 de la tabla de precedencia del
+  encabezado de este archivo).
 - `lib/auth.ts` + `features/auth/`: sesión vía `GET /me` (`hooks/use-session.ts`) y
   guards de rol (`components/role-guard.tsx`, `components/guest-only.tsx`).
 - `.env.example`, `lib/fixtures.ts` y el modo sesión mock.
@@ -1019,8 +1049,10 @@ los literales viejos (`student`/`company`/`admin`).
 
 ## Pendiente de aclarar / estado de definición
 
-> **Actualizado 2026-07-24** contra `ENDPOINTS.md` (rama `dev`) + confirmaciones del
-> backend. Leyenda:
+> **Actualizado 2026-07-27** contra `docs/ENDPOINTS.md` — el contrato funcional cerrado
+> recibido de backend, transcripto en ese archivo. Reemplaza como fuente a las
+> confirmaciones sueltas que citaba esta sección antes de que el documento existiera.
+> Leyenda:
 > - **✅ Resuelto** — definido y verificable hoy; se programa contra esto.
 > - **🔄 Confirmado, aún no en `api-dev`** — el backend confirmó la decisión pero
 >   `ENDPOINTS.md`/`api-dev` todavía no la reflejan. **Se trata como el contrato vigente
@@ -1039,13 +1071,13 @@ los literales viejos (`student`/`company`/`admin`).
 | **A-04** | 🔄 | El feed **va a ir paginado** (backend lo está implementando). Tratar `Paginated<T>` como contrato futuro; revisar nombres de params/envoltorio al salir. |
 | **A-05** | ✅ | El **filtrado del feed queda en el front** por ahora (fetch-all + en memoria, ver *Barras de filtros*). No esperar endpoint de filtros del backend. |
 | **A-08** | ✅ | `PUT /student-profile/{id}` existe (dueño): edita `phoneNumber`, `linkedinUrl`, `skills`, `description`. `name`/`surname`/documento **no** se editan por ahí. |
-| **A-09** | 🔄 | `hasProfile: boolean` **se agrega** a `MeResponse` (tratar como existente; hoy se deriva del `404` del perfil en `use-session.ts`). `name` **no** se agrega — el navbar sigue con el 2º fetch al perfil, es el diseño definitivo. |
+| **A-09** | ✅ | `hasProfile: boolean` confirmado en `MeResponse` (`docs/ENDPOINTS.md`). `use-session.ts` hoy lo deriva del `404` del perfil — sigue siendo correcto, es candidato a simplificarse leyendo el campo directo. `name` **no** se agrega — el navbar sigue con el 2º fetch al perfil, es el diseño definitivo. |
 | **A-10** | ✅ | Documento **único por el par `(documentType, documentNumber)`**. La **validez** del documento (dígito verificador, etc.) la valida el **backend**; el front solo valida superficie (cantidad y tipo de caracteres). **Implementado**: `lib/validators.ts` (`isValidDocumentNumber`) — cédula/DNI solo dígitos, exactamente 8; pasaporte alfanumérico 6–9, limpiando puntos/comas/guiones/espacios antes de medir. Lo consumen los dos formularios del paso 2 (`register-form.tsx`, `complete-profile-form.tsx`), que muestran el tipo como `Select` y bloquean el avance con mensaje inline. |
-| **A-12** | 🔄 | Gaps de autorización **corregidos en backend** — falta actualizar `ENDPOINTS.md`. Asumir ownership/roles aplicados. |
-| **A-14** | 🔄 | `VacancyStatus = PENDIENTE, PUBLICADO, FINALIZADO`, default **`PUBLICADO`** (post-moderación). **Sin `RECHAZADO`.** El admin puede pasarla a **`PENDIENTE`** (para revisar/editar algo) y, si la **da de baja, a `FINALIZADO`** (terminal, mismo estado que el cierre de la empresa). `api-dev` todavía muestra solo `PENDIENTE, FINALIZADO`. |
-| **A-15** | 🔄 | `contractType` pasa a **enum** (valores los define backend, pendientes de pasar). `salaryRange` → **`salary`** (un solo campo string, nada más). `location` pasa a **nullable si `modality` es `REMOTO`**. Sin orden por skills. |
-| **A-17** | 🔄 | `selected` + cascada `VISTO → FINALIZADO` **se van a implementar**. Tratar como parte del contrato (ver *Postulaciones*); todavía no en `api-dev`. |
-| **A-18** | ✅ | `CompanyResponse` ahora expone `status`, `reviewedAt`, `adminComment`. El admin ve/filtra por estado. |
+| **A-12** | 🔄 | Gaps de autorización **corregidos en backend** — falta actualizar `api-dev`. Asumir ownership/roles aplicados. |
+| **A-14** | ✅ | `VacancyStatus = PENDIENTE, PUBLICADO, FINALIZADO`, default **`PUBLICADO`** (post-moderación). **Sin `RECHAZADO`.** Dos endpoints separados por actor: `PATCH /vacancy/status/{id}` (EMPRESA + dueña, cierre) y `PUT /vacancy/status/{id}` (ADMIN, `PUBLICADO ↔ PENDIENTE`). **El Admin NUNCA llega a `FINALIZADO`** — "dar de baja" para el Admin es `PUBLICADO → PENDIENTE`, corrigiendo lo que decía una versión anterior de esta fila. Ver *Roles y control de acceso*. |
+| **A-15** | 🔄 | `contractType` sigue siendo `string` libre — el contrato cerrado no confirma un enum ni sus valores; queda abierto. `salaryRange` **se queda como está** — el contrato lo mantiene tal cual, no se renombra a `salary` (esta fila decía lo contrario antes de tener `docs/ENDPOINTS.md`). `location` sigue como campo requerido en `CreateVacancyRequest` — el contrato no confirma la nulabilidad condicional a `REMOTO` que se anticipaba acá; tratar como no resuelto. Sin orden por skills. |
+| **A-17** | ⚠️ | **Reversión, no confirmación**: `selected` **NO** está en `docs/ENDPOINTS.md` — ni en `VacancyApplicationResponse` ni en `UpdateVacancyApplicationRequest`. Se eliminó de `types/index.ts` y de la barra de progreso de "Mis postulaciones" (ver *Postulaciones*). La cascada `VISTO → FINALIZADA` al finalizar el puesto sigue vigente (no depende de `selected`). |
+| **A-18** | ✅ | `CompanyResponse` expone `status`, `reviewedAt`, `adminComment` (y `StudentProfileResponse` también, más `description` — ver *Roles y control de acceso*). El admin ve/filtra por estado. |
 | **A-19** | ✅ | Error `application/problem+json` con mapa por campo bajo la key **`errores`**: `{ detail, title, status, instance, errores: { campo: mensaje } }`. Mapear `errores` a `setError` de RHF y tipar así `ApiError`. |
 
 ### 🔴 Todavía abierto
@@ -1078,9 +1110,10 @@ Además, **descartado por decisión posterior al SRS**:
   contacto empresa → alumno ocurre enteramente fuera del sistema. Ver *Mails*.
 - **La vía de registro por `@ucu.edu.uy`** (RF-AUT-01, RN-01a) — no hay aprobación
   automática por dominio de correo. Toda cuenta nace `PENDIENTE`.
-- **`VacancyApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADO`
-  más el flag `selected`.
+- **`VacancyApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADA`,
+  sin ningún flag de resultado (`selected` se eliminó del contrato cerrado — ver
+  *Postulaciones*).
 
 Los correos automáticos son **dos** y los manda el backend: aviso de nueva postulación a
-la empresa, y aviso de cierre a cada postulante según su `selected`. El frontend no manda
-ninguno. Ningún otro evento dispara un envío.
+la empresa, y aviso de cierre a cada postulante al finalizar el puesto. El frontend no
+manda ninguno. Ningún otro evento dispara un envío.

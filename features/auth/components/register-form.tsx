@@ -30,6 +30,7 @@ import { AuthFormSkeleton } from "@/features/auth/components/auth-layout";
 import { useRegister, type RegistrationProfile } from "@/features/auth/hooks/use-register";
 import type { Registration } from "@/features/auth/types";
 import { ApiError } from "@/lib/api-client";
+import { DEPARTMENT_OPTIONS } from "@/lib/departments";
 import { cn } from "@/lib/utils";
 import { isValidDocumentNumber } from "@/lib/validators";
 import type { Department, DocumentType } from "@/types";
@@ -41,31 +42,6 @@ const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
   { value: "PASAPORTE", label: "Pasaporte" },
   { value: "DNI", label: "DNI" },
 ];
-
-/** Wire: `Department` (19 valores, ver `docs/ENDPOINTS.md`). Labels en
- *  español para UI — son cara al usuario. */
-const DEPARTMENTS: { value: Department; label: string }[] = [
-  { value: "ARTIGAS", label: "Artigas" },
-  { value: "CANELONES", label: "Canelones" },
-  { value: "CERRO_LARGO", label: "Cerro Largo" },
-  { value: "COLONIA", label: "Colonia" },
-  { value: "DURAZNO", label: "Durazno" },
-  { value: "FLORES", label: "Flores" },
-  { value: "FLORIDA", label: "Florida" },
-  { value: "LAVALLEJA", label: "Lavalleja" },
-  { value: "MALDONADO", label: "Maldonado" },
-  { value: "MONTEVIDEO", label: "Montevideo" },
-  { value: "PAYSANDU", label: "Paysandú" },
-  { value: "RIO_NEGRO", label: "Río Negro" },
-  { value: "RIVERA", label: "Rivera" },
-  { value: "ROCHA", label: "Rocha" },
-  { value: "SALTO", label: "Salto" },
-  { value: "SAN_JOSE", label: "San José" },
-  { value: "SORIANO", label: "Soriano" },
-  { value: "TACUAREMBO", label: "Tacuarembó" },
-  { value: "TREINTA_Y_TRES", label: "Treinta y Tres" },
-];
-DEPARTMENTS.sort((a, b) => a.label.localeCompare(b.label, "es"));
 
 /** Ignora acentos/mayúsculas para que "rio" encuentre "Río Negro". */
 function normalizeForSearch(value: string): string {
@@ -470,7 +446,7 @@ export function RegisterForm() {
                 control={control}
                 name="location"
                 render={({ field }) => {
-                  const selected = DEPARTMENTS.find(
+                  const selected = DEPARTMENT_OPTIONS.find(
                     (department) => department.value === field.value,
                   );
 
@@ -506,7 +482,7 @@ export function RegisterForm() {
                           <CommandList>
                             <CommandEmpty>No se encontró el departamento.</CommandEmpty>
                             <CommandGroup>
-                              {DEPARTMENTS.map((department) => (
+                              {DEPARTMENT_OPTIONS.map((department) => (
                                 <CommandItem
                                   key={department.value}
                                   value={department.label}

@@ -6,28 +6,6 @@
 import type { Company, Department, Modality, Vacancy, VacancyStatus } from "@/types";
 
 /**
- * Orden del feed.
- *
- * `match` (RF-14) se resuelve por reglas: matchea el `Area` de las carreras del
- * alumno (Education → Degree → Area) contra el `Area` de la vacante. No es IA/ML,
- * así que no choca con "fuera de alcance".
- * TODO: confirmar si el backend expone ese orden (no está en `docs/ENDPOINTS.md`
- * — hoy el filtrado por `GET /vacancy` es solo por `status`/`companyId`/`areaId`/
- * `modality`/`location`) o si se calcula en el front con los datos ya traídos.
- */
-export type FeedOrder = "recent" | "match";
-
-/** Filtros del feed de vacantes (RF-14). Cada uno mapea 1:1 a un query param
- *  real de `GET /vacancy` (`docs/ENDPOINTS.md`, sección 10). */
-export interface VacancyFilters {
-  areaId?: string;
-  modality?: Modality;
-  location?: Department;
-  status?: VacancyStatus;
-  order?: FeedOrder;
-}
-
-/**
  * Payload para crear o editar una vacante. Wire: `CreateVacancyRequest` — lo
  * usan tanto `POST /vacancy` como `PUT /vacancy/{id}` (el PUT reemplaza el
  * objeto entero, no es un patch parcial).
@@ -55,12 +33,12 @@ export interface VacancyInput {
 
 /**
  * Filtros del feed de vacantes (vista alumno) tal como se resuelven HOY en el
- * cliente sobre fixtures — ver `hooks/use-feed-vacancies.ts`. No confundir con
- * `VacancyFilters` de arriba: esos son los query params reales de
- * `GET /vacancy` para cuando exista el contrato de paginación (A-04/A-05).
+ * cliente sobre fixtures — ver `hooks/use-feed-vacancies.ts`. Por A-05
+ * (✅ Resuelto), el filtrado queda en el front: no hay query params de
+ * `GET /vacancy` que reemplacen esto, ni aunque exista paginación (A-04).
+ * `areaIds`/`contractTypes`: multi-selección (RF-14 no pide exclusión mutua
+ * entre carreras o tipos de contrato — un alumno puede cursar varias).
  */
-/** `areaIds`/`contractTypes`: multi-selección (RF-14 no pide exclusión mutua
- *  entre carreras o tipos de contrato — un alumno puede cursar varias). */
 export interface FeedFilters {
   search?: string;
   areaIds?: string[];
@@ -157,26 +135,3 @@ export interface CompanyVacancyRow extends Vacancy {
   /** Postulaciones de los últimos 7 días. Alimenta el "+N esta semana". */
   newApplicantsThisWeek: number;
 }
-// ---------------------------------------------------------------------------
-// Catálogo de departamentos para selects del formulario de creación.
-//
-// ⚠️ DUPLICADO A PROPÓSITO: el mismo array existe (con distinta forma) en
-// features/auth/components/register-form.tsx y
-// features/perfil/components/complete-profile-form.tsx. Centralizarlo de
-// verdad (types/index.ts o lib/) es zona de conflicto — ticket aparte.
-// ---------------------------------------------------------------------------
-
-export const DEPARTMENTS: readonly Department[] = [
-  "ARTIGAS", "CANELONES", "CERRO_LARGO", "COLONIA", "DURAZNO", "FLORES",
-  "FLORIDA", "LAVALLEJA", "MALDONADO", "MONTEVIDEO", "PAYSANDU", "RIO_NEGRO",
-  "RIVERA", "ROCHA", "SALTO", "SAN_JOSE", "SORIANO", "TACUAREMBO", "TREINTA_Y_TRES",
-];
-
-export const DEPARTMENT_LABELS: Record<Department, string> = {
-  ARTIGAS: "Artigas", CANELONES: "Canelones", CERRO_LARGO: "Cerro Largo",
-  COLONIA: "Colonia", DURAZNO: "Durazno", FLORES: "Flores", FLORIDA: "Florida",
-  LAVALLEJA: "Lavalleja", MALDONADO: "Maldonado", MONTEVIDEO: "Montevideo",
-  PAYSANDU: "Paysandú", RIO_NEGRO: "Río Negro", RIVERA: "Rivera", ROCHA: "Rocha",
-  SALTO: "Salto", SAN_JOSE: "San José", SORIANO: "Soriano",
-  TACUAREMBO: "Tacuarembó", TREINTA_Y_TRES: "Treinta y Tres",
-};

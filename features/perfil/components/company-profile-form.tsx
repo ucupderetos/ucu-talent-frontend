@@ -25,7 +25,7 @@ import { useUpdateCompanyProfile } from "@/features/perfil/hooks/use-update-comp
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
 import { CompanyProfileReadOnly } from "@/features/perfil/components/company-profile-read-only";
 import { COMPANY_DESCRIPTION_MAX } from "@/features/perfil/types";
-import { DEPARTMENT_LABELS } from "@/features/perfil/hooks/use-company-profile-form";
+import { DEPARTMENT_LABELS } from "@/lib/departments";
 
 export function CompanyProfileForm({
   form,

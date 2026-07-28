@@ -11,6 +11,7 @@
 // a `apiClient.get<Paginated<CompanyVacancyRow>>(...)` con `filters` como
 // query params, y se borra el filtrado/orden/paginación de acá abajo.
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { MOCK_APPLICATIONS, MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
@@ -19,11 +20,12 @@ import type {
   CompanyVacancyOrder,
   CompanyVacancyRow,
 } from "@/features/puestos/types";
-import type { Paginated, Vacancy } from "@/types";
+import type { Area, Department, Paginated, Vacancy } from "@/types";
 
 const NEW_APPLICANT_WINDOW_DAYS = 7;
 const DEFAULT_PER_PAGE = 5;
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function companyVacanciesQueryKey(
   companyId: string | undefined,
   filters: CompanyVacancyFilters,
@@ -85,10 +87,10 @@ function filterRows(
     if (filters.areaIds?.length && !filters.areaIds.includes(row.areaId)) return false;
     if (filters.locations?.length && !filters.locations.includes(row.location)) return false;
     if (filters.publishedFrom || filters.publishedTo) {
-      // Sin `publicationDate` (vacante todavía `PENDIENTE`) no hay fecha para
+      // Sin `publishedAt` (vacante todavía `PENDIENTE`) no hay fecha para
       // comparar contra el rango: queda afuera.
-      if (!row.publicationDate) return false;
-      const publishedDate = row.publicationDate.slice(0, 10);
+      if (!row.publishedAt) return false;
+      const publishedDate = row.publishedAt.slice(0, 10);
       if (filters.publishedFrom && publishedDate < filters.publishedFrom) return false;
       if (filters.publishedTo && publishedDate > filters.publishedTo) return false;
     }
@@ -117,8 +119,32 @@ function sortRows(
   }
 }
 
-/** 0 para vacantes sin `publicationDate` (todavía `PENDIENTE`): el wire real
+/** 0 para vacantes sin `publishedAt` (todavía `PENDIENTE`): el wire real
  *  no tiene `createdAt`, así que no hay una fecha mejor para ordenarlas. */
 function publishedTimestamp(row: CompanyVacancyRow): number {
-  return row.publicationDate ? new Date(row.publicationDate).getTime() : 0;
+  return row.publishedAt ? new Date(row.publishedAt).getTime() : 0;
+}
+
+/**
+ * Opciones de los selects de área/ubicación: se calculan sobre TODAS las
+ * vacantes de la empresa (sin aplicar los filtros activos), para que el
+ * dropdown no vaya perdiendo opciones a medida que se filtra.
+ *
+ * TODO(api): cuando exista el contrato, esto probablemente lo devuelva el
+ * propio endpoint de filtros (facets) en vez de calcularse en el cliente.
+ */
+export function useCompanyVacancyFilterOptions(companyId: string | undefined): {
+  areas: Area[];
+  locations: Department[];
+} {
+  return useMemo(() => {
+    const ownVacancies = MOCK_VACANCIES.filter((v) => v.companyId === companyId);
+    const areaIds = new Set(ownVacancies.map((v) => v.areaId));
+    const locations = Array.from(new Set(ownVacancies.map((v) => v.location))).sort();
+
+    return {
+      areas: MOCK_AREAS.filter((area) => areaIds.has(area.areaId)),
+      locations,
+    };
+  }, [companyId]);
 }

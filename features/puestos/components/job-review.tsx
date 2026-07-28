@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
-import { DEPARTMENT_LABELS } from "@/features/puestos/types";
+import { DEPARTMENT_LABELS } from "@/lib/departments";
 
 import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
 

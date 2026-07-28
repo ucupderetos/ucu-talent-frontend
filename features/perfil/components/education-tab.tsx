@@ -32,12 +32,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   useCreateEducation,
+  useDegrees,
   useDeleteEducation,
   useUpdateEducation,
 } from "@/features/perfil/hooks/use-education";
 import type { EducationInput } from "@/features/perfil/types";
-import { MOCK_DEGREES } from "@/lib/fixtures";
-import type { DegreeLevel, Education } from "@/types";
+import type { Degree, DegreeLevel, Education } from "@/types";
 
 const DEGREE_LEVEL_LABEL: Record<DegreeLevel, string> = {
   TECNICATURA: "Tecnicatura",
@@ -59,13 +59,14 @@ function toDateInputValue(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "";
 }
 
-function degreeName(degreeId: string): string {
-  return MOCK_DEGREES.find((d) => d.degreeId === degreeId)?.name ?? "—";
+function degreeName(degrees: readonly Degree[], degreeId: string): string {
+  return degrees.find((d) => d.degreeId === degreeId)?.name ?? "—";
 }
 
 interface FormValues {
   degreeLevel: DegreeLevel | "";
   degreeId: string;
+  institution: string;
   startDate: string;
   isCurrent: boolean;
   endDate: string;
@@ -76,6 +77,7 @@ function toFormValues(item?: Education): FormValues {
   return {
     degreeLevel: item?.degreeLevel ?? "",
     degreeId: item?.degreeId ?? "",
+    institution: item?.institution ?? "",
     startDate: toDateInputValue(item?.startDate ?? null),
     isCurrent: item ? item.endDate === null : true,
     endDate: toDateInputValue(item?.endDate ?? null),
@@ -87,6 +89,7 @@ function toInput(values: FormValues): EducationInput {
   return {
     degreeLevel: values.degreeLevel as DegreeLevel,
     degreeId: values.degreeId,
+    institution: values.institution.trim() || undefined,
     description: values.description.trim() || undefined,
     startDate: values.startDate,
     endDate: values.isCurrent ? null : values.endDate || null,
@@ -102,6 +105,7 @@ export function EducationTab({
 }) {
   const [items, setItems] = useState(education);
   const [editingItem, setEditingItem] = useState<Education | "new" | null>(null);
+  const degrees = useDegrees();
 
   const { createEducation } = useCreateEducation();
   const { updateEducation } = useUpdateEducation();
@@ -130,7 +134,7 @@ export function EducationTab({
   }
 
   async function handleDelete(item: Education) {
-    await deleteEducation(item.educationId);
+    await deleteEducation({ educationId: item.educationId, studentProfileId });
     setItems((current) => current.filter((i) => i.educationId !== item.educationId));
     toast.success("Formación académica eliminada.");
   }
@@ -155,9 +159,10 @@ export function EducationTab({
             <Card key={item.educationId}>
               <CardContent className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="font-medium">{degreeName(item.degreeId)}</p>
+                  <p className="font-medium">{degreeName(degrees, item.degreeId)}</p>
                   <p className="text-sm text-muted-foreground">
                     {DEGREE_LEVEL_LABEL[item.degreeLevel]}
+                    {item.institution ? ` · ${item.institution}` : ""}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {formatRange(item.startDate, item.endDate)}
@@ -217,6 +222,14 @@ function EducationDialog({
   });
 
   const isCurrent = useWatch({ control: form.control, name: "isCurrent" });
+  const degreeId = useWatch({ control: form.control, name: "degreeId" });
+  const degrees = useDegrees();
+
+  // Institución obligatoria cuando la carrera elegida NO es de la UCU
+  // (docs/ENDPOINTS.md, sección 4) — el backend la valida igual, esto solo
+  // adelanta el error en el form.
+  const selectedDegree = degrees.find((d) => d.degreeId === degreeId);
+  const institutionRequired = Boolean(selectedDegree && !selectedDegree.isUcu);
 
   return (
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
@@ -244,7 +257,7 @@ function EducationDialog({
                       <SelectValue placeholder="Seleccioná una carrera" />
                     </SelectTrigger>
                     <SelectContent position="popper">
-                      {MOCK_DEGREES.map((degree) => (
+                      {degrees.map((degree) => (
                         <SelectItem key={degree.degreeId} value={degree.degreeId}>
                           {degree.name}
                         </SelectItem>
@@ -255,6 +268,21 @@ function EducationDialog({
               />
               <FieldError errors={[form.formState.errors.degreeId]} />
             </Field>
+
+            {institutionRequired && (
+              <Field data-invalid={Boolean(form.formState.errors.institution)}>
+                <FieldLabel htmlFor="ed-institution">Institución *</FieldLabel>
+                <Input
+                  id="ed-institution"
+                  placeholder="Nombre de la institución"
+                  aria-invalid={Boolean(form.formState.errors.institution)}
+                  {...form.register("institution", {
+                    required: "Ingresá la institución: la carrera elegida no es de la UCU.",
+                  })}
+                />
+                <FieldError errors={[form.formState.errors.institution]} />
+              </Field>
+            )}
 
             <Field data-invalid={Boolean(form.formState.errors.degreeLevel)}>
               <FieldLabel htmlFor="ed-level">Nivel *</FieldLabel>

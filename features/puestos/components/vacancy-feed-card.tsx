@@ -102,8 +102,8 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            {vacancy.publicationDate
-              ? `Publicado el ${dateFormatter.format(new Date(vacancy.publicationDate))}`
+            {vacancy.publishedAt
+              ? `Publicado el ${dateFormatter.format(new Date(vacancy.publishedAt))}`
               : "Sin fecha de publicación"}
           </p>
         </CardContent>

@@ -1,11 +1,15 @@
 "use client";
 
-// Pestaña "Información personal" de Mi perfil: nombre, apellido, teléfono y
-// LinkedIn — los únicos campos de `StudentProfile` editables desde acá
-// (documento no se edita: viaja al `padrón`/registro, ver el header de la
-// pantalla). Mismo patrón view/edit que CompanyProfileForm, pero sin separar
-// en un componente ReadOnly aparte: al ser un solo formulario chico no vale
-// la pena partirlo.
+// Pestaña "Información personal" de Mi perfil: teléfono y LinkedIn son los
+// ÚNICOS campos editables desde acá — nombre, apellido y documento no viajan
+// en `UpdateStudentProfileRequest` (docs/ENDPOINTS.md, sección 3), así que
+// quedan siempre de solo lectura, con el resto del registro. Mismo patrón
+// view/edit que CompanyProfileForm, pero sin separar en un componente
+// ReadOnly aparte: al ser un solo formulario chico no vale la pena partirlo.
+//
+// `PUT /student-profile/{id}` reemplaza el objeto entero (ver
+// use-update-student-profile.ts): el submit manda `skills`/`description` de
+// `profile` sin tocar, junto con los campos que sí edita esta pestaña.
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
@@ -21,8 +25,6 @@ import { useUpdateStudentProfile } from "@/features/perfil/hooks/use-update-stud
 import type { StudentProfile } from "@/types";
 
 const personalInfoSchema = z.object({
-  name: z.string().trim().min(1, "Ingresá tu nombre."),
-  surname: z.string().trim().min(1, "Ingresá tu apellido."),
   phoneNumber: z.string().trim(),
   linkedinUrl: z.string().trim(),
 });
@@ -31,8 +33,6 @@ type PersonalInfoFormValues = z.infer<typeof personalInfoSchema>;
 
 function toFormValues(profile: StudentProfile): PersonalInfoFormValues {
   return {
-    name: profile.name,
-    surname: profile.surname,
     phoneNumber: profile.phoneNumber ?? "",
     linkedinUrl: profile.linkedinUrl ?? "",
   };
@@ -41,7 +41,7 @@ function toFormValues(profile: StudentProfile): PersonalInfoFormValues {
 export function PersonalInfoTab({ profile }: { profile: StudentProfile }) {
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [savedValues, setSavedValues] = useState(() => toFormValues(profile));
-  const { updateProfile, isLoading, error } = useUpdateStudentProfile();
+  const { updateProfile, isLoading, error } = useUpdateStudentProfile(profile.studentProfileId);
 
   const form = useForm<PersonalInfoFormValues>({
     resolver: zodResolver(personalInfoSchema),
@@ -49,7 +49,11 @@ export function PersonalInfoTab({ profile }: { profile: StudentProfile }) {
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    await updateProfile(values);
+    await updateProfile({
+      ...values,
+      skills: profile.skills,
+      description: profile.description ?? "",
+    });
     setSavedValues(values);
     form.reset(values);
     setMode("view");
@@ -74,8 +78,8 @@ export function PersonalInfoTab({ profile }: { profile: StudentProfile }) {
           </Button>
         </CardHeader>
         <CardContent className="grid gap-6 sm:grid-cols-2">
-          <ReadOnlyField label="Nombres" value={savedValues.name} />
-          <ReadOnlyField label="Apellidos" value={savedValues.surname} />
+          <ReadOnlyField label="Nombres" value={profile.name} />
+          <ReadOnlyField label="Apellidos" value={profile.surname} />
           <ReadOnlyField label="Teléfono" value={savedValues.phoneNumber} />
           <ReadOnlyField label="LinkedIn" value={savedValues.linkedinUrl} />
         </CardContent>
@@ -93,25 +97,8 @@ export function PersonalInfoTab({ profile }: { profile: StudentProfile }) {
         <CardContent>
           <FieldGroup>
             <div className="grid gap-6 sm:grid-cols-2">
-              <Field data-invalid={Boolean(form.formState.errors.name)}>
-                <FieldLabel htmlFor="name">Nombres *</FieldLabel>
-                <Input
-                  id="name"
-                  aria-invalid={Boolean(form.formState.errors.name)}
-                  {...form.register("name")}
-                />
-                <FieldError errors={[form.formState.errors.name]} />
-              </Field>
-
-              <Field data-invalid={Boolean(form.formState.errors.surname)}>
-                <FieldLabel htmlFor="surname">Apellidos *</FieldLabel>
-                <Input
-                  id="surname"
-                  aria-invalid={Boolean(form.formState.errors.surname)}
-                  {...form.register("surname")}
-                />
-                <FieldError errors={[form.formState.errors.surname]} />
-              </Field>
+              <ReadOnlyField label="Nombres" value={profile.name} />
+              <ReadOnlyField label="Apellidos" value={profile.surname} />
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2">

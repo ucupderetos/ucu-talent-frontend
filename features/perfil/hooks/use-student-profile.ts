@@ -1,24 +1,19 @@
 "use client";
 
-// Datos mock del perfil del alumno logueado ("Mi perfil") para desarrollo,
-// mientras no exista GET /student-profile/{id} con Education/WorkExperience
-// resueltas (AGENTS.md, A-08: tampoco hay PUT todavía, pero la lectura al
-// menos ya tiene forma en docs/ENDPOINTS.md).
-//
-// TODO(api): cuando exista el contrato, fetchStudentProfile encadena
-// GET /student-profile/{id} + GET /education?studentProfileId= +
-// GET /work-experience?studentProfileId= (o lo que exponga el backend real)
-// y se borra la búsqueda en fixtures.
+// Datos de "Mi perfil" (vista alumno): `StudentProfile` + `Education[]` +
+// `WorkExperience[]`. Wire: `GET /student-profile/{id}` +
+// `GET /education?studentProfileId={id}` +
+// `GET /work-experience?studentProfileId={id}` (docs/ENDPOINTS.md, secciones
+// 3 y 4) — no hay un único endpoint que devuelva las tres resueltas, se
+// piden en paralelo.
 
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  MOCK_EDUCATION,
-  MOCK_STUDENT_PROFILES,
-  MOCK_WORK_EXPERIENCE,
-} from "@/lib/fixtures";
+import { apiClient } from "@/lib/api-client";
 import type { StudentProfileData } from "@/features/perfil/types";
+import type { Education, StudentProfile, WorkExperience } from "@/types";
 
+/** @public para invalidación puntual futura (AGENTS.md). */
 export function studentProfileQueryKey(studentProfileId: string | undefined) {
   return ["perfil", "alumno", studentProfileId] as const;
 }
@@ -31,13 +26,12 @@ export function useStudentProfile(studentProfileId: string | undefined) {
   });
 }
 
-async function fetchStudentProfile(studentProfileId: string): Promise<StudentProfileData | null> {
-  const profile = MOCK_STUDENT_PROFILES.find((p) => p.studentProfileId === studentProfileId);
-  if (!profile) return null;
+async function fetchStudentProfile(studentProfileId: string): Promise<StudentProfileData> {
+  const [profile, education, workExperience] = await Promise.all([
+    apiClient.get<StudentProfile>(`/student-profile/${studentProfileId}`),
+    apiClient.get<Education[]>("/education", { params: { studentProfileId } }),
+    apiClient.get<WorkExperience[]>("/work-experience", { params: { studentProfileId } }),
+  ]);
 
-  return {
-    profile,
-    education: MOCK_EDUCATION.filter((e) => e.studentProfileId === studentProfileId),
-    workExperience: MOCK_WORK_EXPERIENCE.filter((w) => w.studentProfileId === studentProfileId),
-  };
+  return { profile, education, workExperience };
 }

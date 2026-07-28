@@ -35,7 +35,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
 
         <TableBody>
           {vacancies.map((vacancy) => {
-            const isNew = wasPublishedWithinLastDay(vacancy.publicationDate);
+            const isNew = wasPublishedWithinLastDay(vacancy.publishedAt);
 
             return (
               <TableRow
@@ -80,7 +80,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                 </TableCell>
 
                 <TableCell>{VACANCY_MODALITY_LABEL[vacancy.modality]}</TableCell>
-                <TableCell>{formatPublicationDate(vacancy.publicationDate)}</TableCell>
+                <TableCell>{formatPublicationDate(vacancy.publishedAt)}</TableCell>
                 <TableCell>{vacancy.applicationCount.toLocaleString("es-UY")}</TableCell>
                 <TableCell>
                   <VacancyStatusBadge status={vacancy.status} />

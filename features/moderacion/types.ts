@@ -2,17 +2,20 @@
 //
 // Las entidades core viven en @/types. Acá van las acciones de moderación.
 //
-// Estado de los endpoints de moderación (AGENTS.md, "Pendiente de aclarar"):
+// Estado de los endpoints de moderación (docs/ENDPOINTS.md):
 //   - Cola de CUENTAS (empresas/alumnos): ✅ `PATCH /user/{id}` con
 //     { status, adminComment } EXISTE (A-02, Resuelto). `AccountResolution` se
 //     puede enchufar; la pantalla de validaciones ya lo usa (hoy como andamio
 //     sobre fixtures — ver use-review-account.ts, con el swap a apiClient
 //     marcado como TODO).
-//   - Cola de VACANTES: 🔴 todavía sin endpoint de ADMIN. El único
-//     `PUT /vacancy/{id}` es rol `EMPRESA`, y `VacancyStatus` no tiene
-//     "publicado"/"rechazado" hoy (solo `PENDIENTE`/`FINALIZADO`).
-//     `VacancyResolution` queda como CONTRATO DESEADO (RF-12), NO enchufable
-//     aún — confirmar con backend antes de construir hooks contra él.
+//   - Cola de VACANTES: ✅ `PUT /vacancy/status/{id}` (rol ADMIN,
+//     `UpdateVacancyStatusAdminRequest`) EXISTE — el Admin mueve
+//     `PUBLICADO ↔ PENDIENTE`, nunca a `FINALIZADO` (eso es exclusivo de la
+//     empresa dueña vía `PATCH /vacancy/status/{id}`). Ver `ReviewVacancyInput`
+//     en `use-review-vacancy.ts`, ya enchufado sobre fixtures con ese criterio
+//     (no hay un `VacancyResolution` acá: `VacancyStatus` no tiene `RECHAZADO`,
+//     así que no hace falta un tipo de "decisión" aparte — el input es
+//     directamente el `VacancyStatus` destino).
 
 import type {
   AccountStatus,
@@ -45,26 +48,6 @@ export interface AccountResolution {
    *  y se lo muestra al usuario si el Admin lo registró. */
   adminComment?: string;
 }
-
-/**
- * RF-12: resolver una vacante en `PENDIENTE`.
- *
- * `decision: "reject"` no tiene dónde aterrizar hoy: `VacancyStatus` no tiene
- * `RECHAZADO` (ver el gap en `types/index.ts` y en
- * `features/puestos/types.ts`). Queda modelado igual porque es lo que pide
- * RF-12, pero USARLO hoy rompe: no hay valor de `VacancyStatus` ni endpoint
- * de `ADMIN` para esto.
- */
-export interface VacancyResolution {
-  vacancyId: string;
-  decision: "approve" | "reject";
-  /** El MER no tiene campo para motivo de rechazo en `Vacancy` — si hace
-   *  falta, hay que pedirlo al backend. */
-  reason?: string;
-}
-
-/** Las dos colas del panel de Admin UCU. */
-export type ModerationQueue = "pending-accounts" | "pending-vacancies";
 
 // ---------------------------------------------------------------------------
 // Listado de "Usuarios" (alumnos) — RF-MOD-05 desde el lado del Admin.
@@ -200,11 +183,13 @@ export interface AdminApplicationFilters {
 // juego de valores para lo mismo se desincroniza apenas el backend cambie uno.
 //
 // ⚠️ Consecuencia asumida: el dashboard solo puede graficar los estados que el
-// modelo tiene hoy. No hay "Rechazada" en `VacancyStatus` (es el gap A-14), y
-// el desglose de postulaciones es PENDIENTE/VISTO/FINALIZADO — no
-// aceptada/rechazada, que es el eje que DEC-06 descartó a favor del flag
-// `selected`. Si más adelante se quiere graficar por `selected`, es un campo
-// aparte, no un estado.
+// modelo tiene hoy. No hay "Rechazada" en `VacancyStatus` (el Admin solo
+// mueve PUBLICADO ↔ PENDIENTE, nunca a un estado de rechazo), y el desglose
+// de postulaciones es PENDIENTE/VISTO/FINALIZADA — no aceptada/rechazada
+// (DEC-06 la descartó a favor de `selected`, que a su vez se eliminó del
+// contrato cerrado — ver el aviso en `VacancyApplication`, `types/index.ts`).
+// No hay ningún eje de "resultado" para graficar hoy, ni como estado ni como
+// campo aparte.
 // ---------------------------------------------------------------------------
 
 /** Una de las 4 métricas de la fila superior. El ícono no es un dato: lo elige

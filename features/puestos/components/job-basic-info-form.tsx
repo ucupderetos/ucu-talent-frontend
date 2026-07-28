@@ -15,7 +15,7 @@ import {
 import { MapPinIcon, HomeIcon, LaptopIcon } from "lucide-react";
 
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
-import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/features/puestos/types";
+import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { cn } from "@/lib/utils";
 
 const TITLE_MAX = 100;

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useCompleteProfile } from "@/features/perfil/hooks/use-complete-profile";
 import { homeRouteFor } from "@/lib/auth";
+import { DEPARTMENT_OPTIONS } from "@/lib/departments";
 import { isValidDocumentNumber } from "@/lib/validators";
 import type { Department, DocumentType, Role } from "@/types";
 
@@ -34,28 +35,6 @@ const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
   { value: "CEDULA_IDENTIDAD", label: "Cédula de identidad" },
   { value: "PASAPORTE", label: "Pasaporte" },
   { value: "DNI", label: "DNI" },
-];
-
-const DEPARTMENTS: { value: Department; label: string }[] = [
-  { value: "ARTIGAS", label: "Artigas" },
-  { value: "CANELONES", label: "Canelones" },
-  { value: "CERRO_LARGO", label: "Cerro Largo" },
-  { value: "COLONIA", label: "Colonia" },
-  { value: "DURAZNO", label: "Durazno" },
-  { value: "FLORES", label: "Flores" },
-  { value: "FLORIDA", label: "Florida" },
-  { value: "LAVALLEJA", label: "Lavalleja" },
-  { value: "MALDONADO", label: "Maldonado" },
-  { value: "MONTEVIDEO", label: "Montevideo" },
-  { value: "PAYSANDU", label: "Paysandú" },
-  { value: "RIO_NEGRO", label: "Río Negro" },
-  { value: "RIVERA", label: "Rivera" },
-  { value: "ROCHA", label: "Rocha" },
-  { value: "SALTO", label: "Salto" },
-  { value: "SAN_JOSE", label: "San José" },
-  { value: "SORIANO", label: "Soriano" },
-  { value: "TACUAREMBO", label: "Tacuarembó" },
-  { value: "TREINTA_Y_TRES", label: "Treinta y Tres" },
 ];
 
 const studentSchema = z
@@ -238,7 +217,7 @@ function CompanyForm() {
                   <SelectValue placeholder="Elegí un departamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DEPARTMENTS.map((department) => (
+                  {DEPARTMENT_OPTIONS.map((department) => (
                     <SelectItem key={department.value} value={department.value}>
                       {department.label}
                     </SelectItem>
