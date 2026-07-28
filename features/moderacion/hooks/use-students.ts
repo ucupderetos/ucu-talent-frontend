@@ -1,26 +1,19 @@
 "use client";
 
-// Datos de la tabla de "Usuarios" (alumnos, vista admin — RF-MOD-05).
+// tabla de "Usuarios" (alumnos, vista admin — RF-MOD-05).
 //
-// 🔴 No hay endpoint real todavía (ver aviso en features/moderacion/types.ts).
-// Esto simula un GET paginado y filtrado, pero resuelve todo en memoria sobre
-// lib/fixtures.ts. Cuando exista el contrato, fetchStudents() pasa a llamar a
-// apiClient.get<Paginated<StudentRow>>(...) con `filters` como query params, y
-// se borra el filtrado/orden/paginación de acá abajo — el resto (la forma del
-// hook, `StudentRow`) no cambia.
+// GET /user?role=ALUMNO trae todos los estados (a diferencia de la cola de
+// pendientes, aca mostramos tambien aprobados y rechazados) + GET
+// /student-profile, cruzados por pk. la carrera/area de cada fila sale de
+// GET /education?studentProfileId=, y ese no tiene version "traeme todos de
+// una", asi que es un request por alumno. no es lo mas optimo pero para el
+// tamaño de datos que manejamos por ahora funciona bien.
 
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  MOCK_AREAS,
-  MOCK_DEGREES,
-  MOCK_EDUCATION,
-  MOCK_STUDENT_PROFILES,
-  MOCK_STUDENT_USERS,
-} from "@/lib/fixtures";
+import { ApiError, apiClient } from "@/lib/api-client";
 import type { StudentFilters, StudentRow } from "@/features/moderacion/types";
-import type { Area, Degree, Paginated } from "@/types";
+import type { Area, Degree, Education, Paginated, StudentProfile, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -36,12 +29,26 @@ export function useStudents(filters: StudentFilters) {
   });
 }
 
-
 async function fetchStudents(filters: StudentFilters): Promise<Paginated<StudentRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
-  const rows = MOCK_STUDENT_USERS.map(toRow).filter((row): row is StudentRow => row !== null);
+  const [users, profiles, degrees, areas] = await Promise.all([
+    apiClient.get<User[]>("/user", { params: { role: "ALUMNO" } }),
+    apiClient.get<StudentProfile[]>("/student-profile"),
+    apiClient.get<Degree[]>("/degree"),
+    apiClient.get<Area[]>("/area"),
+  ]);
+
+  const usersById = new Map(users.map((u) => [u.userId, u]));
+  const degreesById = new Map(degrees.map((d) => [d.degreeId, d]));
+  const areasById = new Map(areas.map((a) => [a.areaId, a]));
+
+  const rows = await Promise.all(
+    profiles
+      .filter((p) => usersById.has(p.studentProfileId))
+      .map((p) => toRow(p, usersById.get(p.studentProfileId)!, degreesById, areasById)),
+  );
   const filtered = filterRows(rows, filters);
 
   const start = (page - 1) * perPage;
@@ -50,16 +57,17 @@ async function fetchStudents(filters: StudentFilters): Promise<Paginated<Student
   return { items, total: filtered.length, page, perPage };
 }
 
-/** Un alumno puede tener N educaciones (types/index.ts); tomamos la primera,
- *  que alcanza para esta tabla. `null` si el perfil no existe (no debería
- *  pasar con la PK compartida, pero el tipo de `find` lo permite). */
-function toRow(user: (typeof MOCK_STUDENT_USERS)[number]): StudentRow | null {
-  const profile = MOCK_STUDENT_PROFILES.find((p) => p.studentProfileId === user.userId);
-  if (!profile) return null;
-
-  const education = MOCK_EDUCATION.find((e) => e.studentProfileId === profile.studentProfileId);
-  const degree = MOCK_DEGREES.find((d) => d.degreeId === education?.degreeId);
-  const area = MOCK_AREAS.find((a) => a.areaId === degree?.areaId);
+/** un alumno puede tener varias educaciones cargadas, para esta tabla nos
+ *  alcanza con mostrar la primera. */
+async function toRow(
+  profile: StudentProfile,
+  user: User,
+  degreesById: Map<string, Degree>,
+  areasById: Map<string, Area>,
+): Promise<StudentRow> {
+  const education = await fetchEducation(profile.studentProfileId);
+  const degree = education[0] ? degreesById.get(education[0].degreeId) : undefined;
+  const area = degree ? areasById.get(degree.areaId) : undefined;
 
   return {
     ...profile,
@@ -71,6 +79,19 @@ function toRow(user: (typeof MOCK_STUDENT_USERS)[number]): StudentRow | null {
     areaId: area?.areaId ?? null,
     areaName: area?.name ?? "—",
   };
+}
+
+/** si tira 404 es que el alumno todavia no cargo ninguna educacion, la fila
+ *  sigue siendo valida, solo que sin carrera/area para mostrar. */
+async function fetchEducation(studentProfileId: string): Promise<Education[]> {
+  try {
+    return await apiClient.get<Education[]>("/education", {
+      params: { studentProfileId },
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return [];
+    throw error;
+  }
 }
 
 function filterRows(rows: StudentRow[], filters: StudentFilters): StudentRow[] {
@@ -92,16 +113,20 @@ function filterRows(rows: StudentRow[], filters: StudentFilters): StudentRow[] {
   });
 }
 
-/** Opciones de los MultiSelect: solo las carreras/áreas que algún alumno
- *  mockeado realmente cursa, para que el dropdown no ofrezca opciones vacías.
- *  Mismo criterio que `useCompanyVacancyFilterOptions` en puestos. */
+/** opciones de los multiselect: el catalogo completo de carreras/areas, sin
+ *  filtrar. tiene su propia query key (no depende de los filtros) para no
+ *  volver a pedirlo cada vez que cambia la busqueda o la pagina. */
 export function useStudentFilterOptions(): { degrees: Degree[]; areas: Area[] } {
-  return useMemo(() => {
-    const degreeIds = new Set(MOCK_EDUCATION.map((e) => e.degreeId));
-    const degrees = MOCK_DEGREES.filter((degree) => degreeIds.has(degree.degreeId));
-    const areaIds = new Set(degrees.map((degree) => degree.areaId));
-    const areas = MOCK_AREAS.filter((area) => areaIds.has(area.areaId));
+  const { data } = useQuery({
+    queryKey: ["moderacion", "alumnos-filtros"],
+    queryFn: async () => {
+      const [degrees, areas] = await Promise.all([
+        apiClient.get<Degree[]>("/degree"),
+        apiClient.get<Area[]>("/area"),
+      ]);
+      return { degrees, areas };
+    },
+  });
 
-    return { degrees, areas };
-  }, []);
+  return data ?? { degrees: [], areas: [] };
 }
