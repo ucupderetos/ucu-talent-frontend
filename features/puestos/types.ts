@@ -50,6 +50,18 @@ export interface VacancyInput {
 }
 
 /**
+ * Payload para editar una vacante ya existente. Wire: `UpdateVacancyRequest`
+ * (`PUT /vacancy/{id}`, docs/ENDPOINTS.md) — a diferencia de `VacancyInput`
+ * (`POST /vacancy` / `CreateVacancyRequest`), NO lleva `companyId` ni
+ * `areaId`: el backend ya sabe de qué vacante se trata por el `{id}` de la
+ * URL, y el área queda fija desde la creación (el contrato no la deja
+ * editar). A-06 (qué campos quedan editables antes de la 1ª postulación)
+ * sigue abierto — mientras tanto se deja editar todo lo que el contrato
+ * permite, sin restringir por estado ni por cantidad de postulantes.
+ */
+export type VacancyUpdateInput = Omit<VacancyInput, "companyId" | "areaId">;
+
+/**
  * Filtros del feed de vacantes (vista alumno) tal como se resuelven HOY en el
  * cliente sobre fixtures — ver `hooks/use-feed-vacancies.ts`. Por A-05
  * (✅ Resuelto), el filtrado queda en el front: no hay query params de

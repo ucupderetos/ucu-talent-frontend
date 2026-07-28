@@ -1,29 +1,21 @@
 "use client";
 
 // Datos de la tabla de "Mis ofertas" (vista empresa).
-//
-// ⚠️ ANDAMIO TEMPORAL: el contrato de la API todavía no está definido (ver
-// AGENTS.md — "Todavía NO existe: el contrato de la API"). Esto simula un
-// `GET /companies/:id/vacancies?...` paginado y filtrado, pero resuelve todo
-// en memoria sobre `lib/fixtures.ts`.
-//
-// TODO(api): cuando el contrato exista, `fetchCompanyVacancies` pasa a llamar
-// a `apiClient.get<Paginated<CompanyVacancyRow>>(...)` con `filters` como
-// query params, y se borra el filtrado/orden/paginación de acá abajo.
 
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import { apiClient } from "@/lib/api-client";
 import { MOCK_APPLICATIONS, MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
 import type {
   CompanyVacancyFilters,
   CompanyVacancyOrder,
   CompanyVacancyRow,
 } from "@/features/puestos/types";
-import type { Area, Department, Paginated, Vacancy } from "@/types";
+import type { Area, Department, Paginated, Vacancy, VacancyApplication } from "@/types";
 
 const NEW_APPLICANT_WINDOW_DAYS = 7;
 const DEFAULT_PER_PAGE = 5;
+const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function companyVacanciesQueryKey(
@@ -39,7 +31,7 @@ export function useCompanyVacancies(
 ) {
   return useQuery({
     queryKey: companyVacanciesQueryKey(companyId, filters),
-    queryFn: () => fetchCompanyVacancies(companyId, filters),
+    queryFn: ({ signal }) => fetchCompanyVacancies(companyId, filters, signal),
     enabled: Boolean(companyId),
   });
 }
@@ -47,13 +39,14 @@ export function useCompanyVacancies(
 async function fetchCompanyVacancies(
   companyId: string | undefined,
   filters: CompanyVacancyFilters,
+  signal?: AbortSignal,
 ): Promise<Paginated<CompanyVacancyRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   if (!companyId) return { items: [], total: 0, page, perPage };
 
-  const rows = MOCK_VACANCIES.filter((vacancy) => vacancy.companyId === companyId).map(toRow);
+  const rows = await fetchCompanyVacancyRows(companyId, signal);
   const filtered = filterRows(rows, filters);
   const sorted = sortRows(filtered, filters.order);
 
@@ -63,13 +56,65 @@ async function fetchCompanyVacancies(
   return { items, total: sorted.length, page, perPage };
 }
 
-function toRow(vacancy: Vacancy): CompanyVacancyRow {
-  const applications = MOCK_APPLICATIONS.filter((a) => a.vacancyId === vacancy.vacancyId);
+async function fetchCompanyVacancyRows(
+  companyId: string,
+  signal?: AbortSignal,
+): Promise<CompanyVacancyRow[]> {
+  if (MOCK_ROLE) {
+    return MOCK_VACANCIES.filter((vacancy) => vacancy.companyId === companyId).map((vacancy) => {
+      const applications = MOCK_APPLICATIONS.filter((a) => a.vacancyId === vacancy.vacancyId);
+      return toRow(vacancy, MOCK_AREAS, applications);
+    });
+  }
+
+  const [vacancies, areas] = await Promise.all([
+    apiClient.get<Vacancy[]>("/vacancy", { signal }),
+    fetchAreas(signal),
+  ]);
+
+  const ownVacancies = vacancies.filter((vacancy) => vacancy.companyId === companyId);
+
+  return Promise.all(
+    ownVacancies.map(async (vacancy) =>
+      toRow(vacancy, areas, await fetchVacancyApplications(vacancy.vacancyId, signal)),
+    ),
+  );
+}
+
+async function fetchAreas(signal?: AbortSignal): Promise<Area[]> {
+  try {
+    return await apiClient.get<Area[]>("/area", { signal });
+  } catch {
+    // El nombre de área es auxiliar: no debería bloquear el listado de puestos.
+    return [];
+  }
+}
+
+async function fetchVacancyApplications(
+  vacancyId: string,
+  signal?: AbortSignal,
+): Promise<VacancyApplication[]> {
+  try {
+    return await apiClient.get<VacancyApplication[]>("/vacancy-application", {
+      params: { vacancyId },
+      signal,
+    });
+  } catch {
+    // El conteo de postulantes no debe impedir ver las vacantes propias.
+    return [];
+  }
+}
+
+function toRow(
+  vacancy: Vacancy,
+  areas: Area[],
+  applications: Pick<VacancyApplication, "appliedAt">[],
+): CompanyVacancyRow {
   const weekAgo = Date.now() - NEW_APPLICANT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
   return {
     ...vacancy,
-    areaName: MOCK_AREAS.find((area) => area.areaId === vacancy.areaId)?.name ?? "—",
+    areaName: areas.find((area) => area.areaId === vacancy.areaId)?.name ?? "—",
     applicantsCount: applications.length,
     newApplicantsThisWeek: applications.filter((a) => new Date(a.appliedAt).getTime() >= weekAgo)
       .length,
@@ -135,14 +180,46 @@ export function useCompanyVacancyFilterOptions(companyId: string | undefined): {
   areas: Area[];
   locations: Department[];
 } {
-  return useMemo(() => {
-    const ownVacancies = MOCK_VACANCIES.filter((v) => v.companyId === companyId);
-    const areaIds = new Set(ownVacancies.map((v) => v.areaId));
-    const locations = Array.from(new Set(ownVacancies.map((v) => v.location))).sort();
+  const query = useQuery({
+    queryKey: ["puestos", "empresa", companyId, "opciones-filtro"] as const,
+    queryFn: ({ signal }) => fetchCompanyVacancyFilterOptions(companyId, signal),
+    enabled: Boolean(companyId),
+  });
 
-    return {
-      areas: MOCK_AREAS.filter((area) => areaIds.has(area.areaId)),
-      locations,
-    };
-  }, [companyId]);
+  return query.data ?? { areas: [], locations: [] };
+}
+
+async function fetchCompanyVacancyFilterOptions(
+  companyId: string | undefined,
+  signal?: AbortSignal,
+): Promise<{ areas: Area[]; locations: Department[] }> {
+  if (!companyId) return { areas: [], locations: [] };
+
+  if (MOCK_ROLE) {
+    const ownVacancies = MOCK_VACANCIES.filter((vacancy) => vacancy.companyId === companyId);
+    return buildFilterOptions(ownVacancies, MOCK_AREAS);
+  }
+
+  const [vacancies, areas] = await Promise.all([
+    apiClient.get<Vacancy[]>("/vacancy", { signal }),
+    fetchAreas(signal),
+  ]);
+
+  return buildFilterOptions(
+    vacancies.filter((vacancy) => vacancy.companyId === companyId),
+    areas,
+  );
+}
+
+function buildFilterOptions(
+  vacancies: Vacancy[],
+  areas: Area[],
+): { areas: Area[]; locations: Department[] } {
+  const areaIds = new Set(vacancies.map((vacancy) => vacancy.areaId));
+  const locations = Array.from(new Set(vacancies.map((vacancy) => vacancy.location))).sort();
+
+  return {
+    areas: areas.filter((area) => areaIds.has(area.areaId)),
+    locations,
+  };
 }
