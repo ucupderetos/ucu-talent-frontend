@@ -85,7 +85,7 @@ flowchart LR
 
 ## Requisitos previos
 
-- **Node.js 20 o superior**
+- **Node.js 20.9.0 o superior**
 - **npm**
 - Una API de backend disponible y compatible con el contrato esperado por el frontend
 - **Docker** si se quiere ejecutar la aplicación en contenedores
