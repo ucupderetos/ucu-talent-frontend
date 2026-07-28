@@ -1036,7 +1036,7 @@ crudo pide sesión).
 
 ```bash
 cp .env.example .env.local
-NEXT_PUBLIC_API_URL=https://api-dev.ucutalent.tech
+NEXT_PUBLIC_API_BASE_URL=https://api-dev.ucutalent.tech
 ```
 
 ⚠️ **La cookie cross-origin es el primer problema a resolver.** El front corre en
