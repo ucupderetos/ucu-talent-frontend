@@ -90,7 +90,7 @@ export interface User {
   registeredAt: string; // ISO 8601
   /**
    * NO viene en `UserResponse`/`MeResponse`. Lo completa
-   * `features/auth/hooks/use-session.ts` con una segunda consulta al perfil
+   * `hooks/use-session.ts` con una segunda consulta al perfil
    * del rol (`/student-profile`, `/company` o `/admin`), para que
    * `components/layout/navbar.tsx` pueda mostrar un nombre sin tener que leer
    * la sesión él mismo (recibe el usuario ya armado por props). `undefined`
@@ -330,6 +330,45 @@ export interface VacancyApplication {
   studentProfileId: string;
   status: VacancyApplicationStatus;
   appliedAt: string; // ISO 8601
+}
+
+// ---------------------------------------------------------------------------
+// Payloads compartidos entre dominios
+// ---------------------------------------------------------------------------
+
+// Los inputs del paso 3 del registro (`POST /student-profile` / `POST /company`)
+// los usan DOS dominios: `auth` (camino feliz, `use-register.ts`) y `perfil`
+// (reintento desde `/completar-perfil`, `use-complete-profile.ts`). Por eso
+// suben acá — un tipo que cruza dominios no puede vivir en `features/auth/types`
+// sin romper la regla "no importar features/ de otro dominio". Ver AGENTS.md,
+// "Registro en dos pasos y ProfileGuard".
+
+/**
+ * `POST /student-profile` — paso 3 del registro si el rol es `ALUMNO`.
+ * `phoneNumber`, `linkedinUrl` y `skills` son opcionales en el backend: no
+ * bloquean el alta, se completan después desde `/perfil`.
+ */
+export interface StudentProfileRegistrationInput {
+  name: string;
+  surname: string;
+  documentType: DocumentType;
+  documentNumber: string;
+  phoneNumber?: string;
+  linkedinUrl?: string;
+  skills?: string[];
+}
+
+/**
+ * `POST /company` — paso 3 del registro si el rol es `EMPRESA`. Todos los
+ * campos son `@NotBlank` en el backend: no hay forma de diferir ninguno.
+ */
+export interface CompanyRegistrationInput {
+  name: string;
+  industry: string;
+  description: string;
+  webUrl: string;
+  linkedinUrl: string;
+  location: Department;
 }
 
 // ---------------------------------------------------------------------------

@@ -13,7 +13,9 @@
 // red), la cuenta queda logueada pero sin perfil — `ProfileGuard`
 // (`features/perfil/components/`) es la red que atrapa ese caso.
 
-import type { Department, DocumentType } from "@/types";
+// Los inputs del paso 3 (`StudentProfileRegistrationInput` /
+// `CompanyRegistrationInput`) NO viven acá: los comparte `perfil`
+// (`use-complete-profile.ts`) además de `auth`, así que subieron a `@/types`.
 
 export interface Credentials {
   email: string;
@@ -26,32 +28,4 @@ export interface Registration {
   email: string;
   password: string;
   role: "ALUMNO" | "EMPRESA";
-}
-
-/**
- * `POST /student-profile` — paso 3 si el rol es `ALUMNO`. `phoneNumber`,
- * `linkedinUrl` y `skills` son opcionales en el backend: no bloquean el alta,
- * se completan después desde `/perfil`.
- */
-export interface StudentProfileRegistrationInput {
-  name: string;
-  surname: string;
-  documentType: DocumentType;
-  documentNumber: string;
-  phoneNumber?: string;
-  linkedinUrl?: string;
-  skills?: string[];
-}
-
-/**
- * `POST /company` — paso 3 si el rol es `EMPRESA`. Todos los campos son
- * `@NotBlank` en el backend: no hay forma de diferir ninguno.
- */
-export interface CompanyRegistrationInput {
-  name: string;
-  industry: string;
-  description: string;
-  webUrl: string;
-  linkedinUrl: string;
-  location: Department;
 }

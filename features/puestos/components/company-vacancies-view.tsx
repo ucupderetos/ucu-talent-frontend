@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { ListPagination } from "@/components/pagination/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import {
   useCompanyVacancies,
   useCompanyVacancyFilterOptions,

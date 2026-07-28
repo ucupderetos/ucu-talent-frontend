@@ -8,13 +8,15 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import type {
-  CompanyRegistrationInput,
-  StudentProfileRegistrationInput,
-} from "@/features/auth/types";
-import { SESSION_QUERY_KEY } from "@/features/auth/hooks/use-session";
+import { SESSION_QUERY_KEY } from "@/hooks/use-session";
 import { apiClient, ApiError } from "@/lib/api-client";
-import type { Company, Role, StudentProfile } from "@/types";
+import type {
+  Company,
+  CompanyRegistrationInput,
+  Role,
+  StudentProfile,
+  StudentProfileRegistrationInput,
+} from "@/types";
 
 async function completeProfileRequest(
   role: Extract<Role, "ALUMNO" | "EMPRESA">,

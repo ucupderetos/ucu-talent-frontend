@@ -41,7 +41,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout/empty-state";
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
-import { useCurrentCompany } from "@/features/auth/hooks/use-current-company";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { ApplicantStatusBadge } from "@/features/postulaciones/components/applicant-status-badge";
 import { useApplicantDetail } from "@/features/postulaciones/hooks/use-applicant-detail";
 import { useMarkApplicantViewed } from "@/features/postulaciones/hooks/use-mark-applicant-viewed";

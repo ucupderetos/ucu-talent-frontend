@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/layout/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 import { ApplicationCard } from "@/features/postulaciones/components/application-card";
 import { MyApplicationsFilters } from "@/features/postulaciones/components/my-applications-filters";
 import {

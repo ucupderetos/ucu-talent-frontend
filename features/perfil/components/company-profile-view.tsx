@@ -4,7 +4,7 @@
 // Se monta desde /perfil (route group compartido (perfil)) cuando el rol es
 // EMPRESA — ver app/(perfil)/perfil/page.tsx.
 
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 import { CompanyAccountStatusBanner } from "@/features/perfil/components/company-account-status-banner";
 import { CompanyProfileForm } from "@/features/perfil/components/company-profile-form";
 import { CompanyProfilePreview } from "@/features/perfil/components/company-profile-preview";

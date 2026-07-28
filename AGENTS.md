@@ -648,7 +648,7 @@ Ya no es una asunción: `ENDPOINTS.md` lo define.
   El `status` se lee fresco de la BD en cada llamada, nunca del JWT — así una aprobación
   del Admin se refleja sin reloguear. `hasProfile` ✅ ya es un campo real del wire (antes
   A-09 lo daba como "confirmado, todavía no en api-dev"; `docs/ENDPOINTS.md` lo cierra) —
-  `features/auth/hooks/use-session.ts` hoy lo *deriva* del 404 al perfil en vez de leerlo
+  `hooks/use-session.ts` hoy lo *deriva* del 404 al perfil en vez de leerlo
   directo; no es incorrecto (mismo resultado), pero es candidato a simplificarse una vez
   que se confirme el campo en `api-dev`. Lo consume una sola vez para toda la app (Query
   deduplica por `queryKey`).
@@ -758,6 +758,10 @@ features/<dominio>/         # auth, perfil, puestos, postulaciones, moderacion
 ├── components/             # Componentes propios del dominio
 ├── hooks/                  # Hooks de datos (useQuery/useMutation) del dominio
 └── types.ts                # Tipos ESPECÍFICOS del dominio (no las entidades core)
+hooks/                      # ⚠️ Hooks app-wide (React) que cruzan dominios: capa de
+│                           #    sesión (use-session, use-current-company). NO van en
+│                           #    lib/ (sin React) ni en components/ (no lee sesión).
+│                           #    Un hook de UN solo dominio va en features/<x>/hooks/
 lib/
 ├── api-client.ts           # ⚠️ Wrapper de fetch hacia la API de Spring Boot
 ├── auth.ts                 # ⚠️ Sesión, usuario actual, guards de rol
@@ -785,7 +789,13 @@ Qué va en cada lado:
 - **`components/ui/`** — la genera el CLI de shadcn; no crearla a mano.
 - **`lib/`** — infraestructura transversal, **sin UI ni React**. Por eso `lib/auth.ts`
   tiene solo funciones puras (`obtenerUsuarioActual`, `puedeAcceder`), y el hook que las
-  consume vive en `features/auth/hooks/use-session.ts`.
+  consume vive en `hooks/use-session.ts`.
+- **`hooks/`** — hooks **app-wide** (transversales a los dominios) que dependen de React,
+  así que no pueden vivir en `lib/` (sin React) ni en `components/` (UI que no lee la
+  sesión). Hoy: la capa de sesión (`use-session.ts`, `use-current-company.ts`). No es un
+  cajón para cualquier hook: si un hook es de un solo dominio, va en
+  `features/<x>/hooks/`. Solo sube acá lo que **lo consumen varios dominios** y no tiene
+  otro hogar legal — es lo que evita el import cruzado `features/A → features/B`.
 - **`types/index.ts`** — **entidades core del modelo de datos**: las que cruzan dominios.
 
 ### Dónde va cada tipo: `types/` vs `features/<x>/types.ts`
@@ -877,7 +887,9 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 - **No inventar endpoints que `ENDPOINTS.md` no tiene** — si el SRS pide algo que la API
   todavía no expone, se documenta como pendiente y se para ahí.
 - No importar desde `features/` de otro dominio. Si algo se comparte, sube a
-  `components/`, `lib/` o `types/`.
+  `components/`, `lib/`, `types/` o `hooks/` (este último para hooks app-wide que
+  dependen de React — la capa de sesión, ver *Estructura de carpetas*). Sin excepciones
+  "salvo auth": la sesión ya NO vive en `features/auth`, vive en `hooks/`.
 - **No importar desde `features/` dentro de `components/`** — la dependencia va al revés:
   `features/` → `components/`, nunca al revés.
 - **No dejar `lib/fixtures.ts` ni `NEXT_PUBLIC_MOCK_SESSION` vivos** cuando exista el
@@ -989,9 +1001,9 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
 - **`proxy.ts`** — no hay ninguna primera línea de defensa. Va en rama `feature/`, no
   `chore/`: es funcionalidad.
 - **`features/<x>/hooks/`** — vacíos salvo `auth`, `perfil` (`use-complete-profile.ts`) y
-  `puestos` (`use-company-vacancies.ts`, `use-current-company.ts`, todavía sobre fixtures).
-  Ya se pueden escribir contra `ENDPOINTS.md`. `features/auth/hooks/use-session.ts` sirve
-  de plantilla del patrón.
+  `puestos` (`use-company-vacancies.ts`, todavía sobre fixtures). Ya se pueden escribir
+  contra `ENDPOINTS.md`. `hooks/use-session.ts` (capa de sesión app-wide, en el bucket
+  `hooks/` de raíz — ver *Estructura de carpetas*) sirve de plantilla del patrón.
 - ✅ **`app/(empresa)/puestos/page.tsx`** — ya existe ("Mis ofertas"), construida por el
   grupo de empresa. 🔄 Ver `VacancyStatus` en *Roles y control de acceso*: el enum
   confirmado es `PENDIENTE, PUBLICADO, FINALIZADO` (default `PUBLICADO`), pero `api-dev`

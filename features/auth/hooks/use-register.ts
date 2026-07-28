@@ -3,13 +3,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, ApiError } from "@/lib/api-client";
+import type { Registration } from "@/features/auth/types";
+import { SESSION_QUERY_KEY } from "@/hooks/use-session";
 import type {
+  Company,
   CompanyRegistrationInput,
-  Registration,
+  StudentProfile,
   StudentProfileRegistrationInput,
-} from "@/features/auth/types";
-import { SESSION_QUERY_KEY } from "@/features/auth/hooks/use-session";
-import type { Company, StudentProfile, User } from "@/types";
+  User,
+} from "@/types";
 
 export type RegistrationProfile = StudentProfileRegistrationInput | CompanyRegistrationInput;
 

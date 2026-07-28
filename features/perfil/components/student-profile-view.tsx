@@ -18,7 +18,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSession } from "@/features/auth/hooks/use-session";
+import { useSession } from "@/hooks/use-session";
 import { EducationTab } from "@/features/perfil/components/education-tab";
 import { PersonalInfoTab } from "@/features/perfil/components/personal-info-tab";
 import { SkillsTab } from "@/features/perfil/components/skills-tab";
