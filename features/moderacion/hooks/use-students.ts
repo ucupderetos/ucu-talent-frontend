@@ -36,26 +36,6 @@ export function useStudents(filters: StudentFilters) {
   });
 }
 
-export function studentFilterOptionsQueryKey() {
-  return ["moderacion", "alumnos", "opciones-filtros"] as const;
-}
-
-/** Solo ofrece carreras y áreas presentes en la educación de los alumnos. */
-export function useStudentFilterOptions() {
-  return useQuery({
-    queryKey: studentFilterOptionsQueryKey(),
-    queryFn: fetchStudentFilterOptions,
-  });
-}
-
-async function fetchStudentFilterOptions() {
-  const degreeIds = new Set(MOCK_EDUCATION.map((education) => education.degreeId));
-  const degrees = MOCK_DEGREES.filter((degree) => degreeIds.has(degree.degreeId));
-  const areaIds = new Set(degrees.map((degree) => degree.areaId));
-  const areas = MOCK_AREAS.filter((area) => areaIds.has(area.areaId));
-
-  return { degrees, areas };
-}
 
 async function fetchStudents(filters: StudentFilters): Promise<Paginated<StudentRow>> {
   const page = filters.page ?? 1;

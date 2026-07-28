@@ -118,7 +118,7 @@ function allVacancyDetails(): AdminVacancyDetail[] {
     const applicationStatusCounts: Record<VacancyApplicationStatus, number> = {
       PENDIENTE: 0,
       VISTO: 0,
-      FINALIZADO: 0,
+      FINALIZADA: 0,
     };
 
     for (const application of applications) {
@@ -135,7 +135,9 @@ function allVacancyDetails(): AdminVacancyDetail[] {
       area: area ? { ...area } : null,
       parentArea: parentArea ? { ...parentArea } : null,
       applicationStatusCounts,
-      selectedApplicationCount: applications.filter((application) => application.selected).length,
+      // `selected` se eliminó del contrato (ver types/index.ts) — sin dato para
+      // computar la métrica. Se deja en 0 hasta que el contrato lo reponga.
+      selectedApplicationCount: 0,
     };
   });
 }

@@ -26,9 +26,7 @@ export function StudentsView() {
   const [filters, setFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
 
   const { data, isLoading, isError } = useStudents(filters);
-  const { data: filterOptions } = useStudentFilterOptions();
-  const degrees = filterOptions?.degrees ?? [];
-  const areas = filterOptions?.areas ?? [];
+  const { degrees, areas } = useStudentFilterOptions();
 
   const hasAnyStudent = (data?.total ?? 0) > 0 || hasActiveFilters(filters);
 
