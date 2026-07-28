@@ -57,56 +57,59 @@ export function JobBasicInfoForm() {
       </CardHeader>
       <CardContent>
         <FieldGroup>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="name">Título del puesto *</FieldLabel>
-              <Input
-                id="name"
-                className="h-11"
-                placeholder="Pasante de Marketing"
-                maxLength={TITLE_MAX}
-                aria-invalid={Boolean(errors.name)}
-                {...register("name")}
-              />
-              <p className="text-right text-xs text-muted-foreground">
-                {name.length}/{TITLE_MAX}
-              </p>
-              <FieldError errors={[errors.name]} />
-            </Field>
+          {/* div plano con gap propio: título/área + tipo de contrato quedan más juntos */}
+          <div className="flex flex-col gap-3">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Field data-invalid={Boolean(errors.name)}>
+                <FieldLabel htmlFor="name">Título del puesto *</FieldLabel>
+                <Input
+                  id="name"
+                  className="h-11"
+                  placeholder="Pasante de Marketing"
+                  maxLength={TITLE_MAX}
+                  aria-invalid={Boolean(errors.name)}
+                  {...register("name")}
+                />
+                <p className="text-right text-xs text-muted-foreground">
+                  {name.length}/{TITLE_MAX}
+                </p>
+                <FieldError errors={[errors.name]} />
+              </Field>
 
-            <Field data-invalid={Boolean(errors.areaId)}>
-              <FieldLabel htmlFor="areaId">Área *</FieldLabel>
-              <Select value={areaId ?? ""} onValueChange={(v) => setValue("areaId", v, { shouldValidate: true })}>
-                <SelectTrigger
-                  id="areaId"
-                  className="w-full data-[size=default]:h-11"
-                  aria-invalid={Boolean(errors.areaId)}
-                >
-                  <SelectValue placeholder="Seleccioná un área" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AREAS_PLACEHOLDER.map((area) => (
-                    <SelectItem key={area.value} value={area.value}>
-                      {area.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FieldError errors={[errors.areaId]} />
+              <Field data-invalid={Boolean(errors.areaId)}>
+                <FieldLabel htmlFor="areaId">Área *</FieldLabel>
+                <Select value={areaId ?? ""} onValueChange={(v) => setValue("areaId", v, { shouldValidate: true })}>
+                  <SelectTrigger
+                    id="areaId"
+                    className="w-full data-[size=default]:h-11"
+                    aria-invalid={Boolean(errors.areaId)}
+                  >
+                    <SelectValue placeholder="Seleccioná un área" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AREAS_PLACEHOLDER.map((area) => (
+                      <SelectItem key={area.value} value={area.value}>
+                        {area.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError errors={[errors.areaId]} />
+              </Field>
+            </div>
+
+            <Field data-invalid={Boolean(errors.contractType)}>
+              <FieldLabel htmlFor="contractType">Tipo de contrato *</FieldLabel>
+              <Input
+                id="contractType"
+                className="h-11"
+                placeholder="Pasantía, Full-time, Part-time..."
+                aria-invalid={Boolean(errors.contractType)}
+                {...register("contractType")}
+              />
+              <FieldError errors={[errors.contractType]} />
             </Field>
           </div>
-
-          <Field data-invalid={Boolean(errors.contractType)}>
-            <FieldLabel htmlFor="contractType">Tipo de contrato *</FieldLabel>
-            <Input
-              id="contractType"
-              className="h-11"
-              placeholder="Pasantía, Full-time, Part-time..."
-              aria-invalid={Boolean(errors.contractType)}
-              {...register("contractType")}
-            />
-            <FieldError errors={[errors.contractType]} />
-          </Field>
 
           <Field data-invalid={Boolean(errors.modality)}>
             <FieldLabel>Modalidad *</FieldLabel>

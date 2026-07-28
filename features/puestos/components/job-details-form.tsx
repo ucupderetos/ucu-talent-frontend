@@ -31,34 +31,37 @@ export function JobDetailsForm() {
       </CardHeader>
       <CardContent>
         <FieldGroup>
-          <Field data-invalid={Boolean(errors.description)}>
-            <FieldLabel htmlFor="description">Descripción del puesto *</FieldLabel>
-            <Textarea
-              id="description"
-              maxLength={DESCRIPTION_MAX}
-              className="min-h-48"
-              aria-invalid={Boolean(errors.description)}
-              {...register("description")}
-            />
-            <p className="text-right text-xs text-muted-foreground">
-              {description.length}/{DESCRIPTION_MAX}
-            </p>
-            <FieldError errors={[errors.description]} />
-          </Field>
+          {/* div plano con gap propio: descripción + requisitos quedan más juntos */}
+          <div className="flex flex-col gap-3">
+            <Field data-invalid={Boolean(errors.description)}>
+              <FieldLabel htmlFor="description">Descripción del puesto *</FieldLabel>
+              <Textarea
+                id="description"
+                maxLength={DESCRIPTION_MAX}
+                className="min-h-48"
+                aria-invalid={Boolean(errors.description)}
+                {...register("description")}
+              />
+              <p className="text-right text-xs text-muted-foreground">
+                {description.length}/{DESCRIPTION_MAX}
+              </p>
+              <FieldError errors={[errors.description]} />
+            </Field>
 
-          <Field data-invalid={Boolean(errors.requirements)}>
-            <FieldLabel htmlFor="requirements">Requisitos *</FieldLabel>
-            <p className="text-sm text-muted-foreground">
-              ¿Qué conocimientos, experiencia o habilidades necesita la persona que aplique?
-            </p>
-            <Textarea
-              id="requirements"
-              className="min-h-32"
-              aria-invalid={Boolean(errors.requirements)}
-              {...register("requirements")}
-            />
-            <FieldError errors={[errors.requirements]} />
-          </Field>
+            <Field data-invalid={Boolean(errors.requirements)}>
+              <FieldLabel htmlFor="requirements">Requisitos *</FieldLabel>
+              <p className="text-sm text-muted-foreground">
+                ¿Qué conocimientos, experiencia o habilidades necesita la persona que aplique?
+              </p>
+              <Textarea
+                id="requirements"
+                className="min-h-32"
+                aria-invalid={Boolean(errors.requirements)}
+                {...register("requirements")}
+              />
+              <FieldError errors={[errors.requirements]} />
+            </Field>
+          </div>
 
           <Field data-invalid={Boolean(errors.salaryRange)}>
             <FieldLabel htmlFor="salaryRange">Rango salarial *</FieldLabel>
