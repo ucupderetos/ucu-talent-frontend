@@ -112,7 +112,7 @@ export function WorkExperienceTab({
   }
 
   async function handleDelete(item: WorkExperience) {
-    await deleteWorkExperience(item.workExperienceId);
+    await deleteWorkExperience({ workExperienceId: item.workExperienceId, studentProfileId });
     setItems((current) => current.filter((i) => i.workExperienceId !== item.workExperienceId));
     toast.success("Experiencia laboral eliminada.");
   }

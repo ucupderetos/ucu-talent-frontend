@@ -134,7 +134,7 @@ export function EducationTab({
   }
 
   async function handleDelete(item: Education) {
-    await deleteEducation(item.educationId);
+    await deleteEducation({ educationId: item.educationId, studentProfileId });
     setItems((current) => current.filter((i) => i.educationId !== item.educationId));
     toast.success("Formación académica eliminada.");
   }
