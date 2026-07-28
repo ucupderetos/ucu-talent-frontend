@@ -6,11 +6,8 @@
 // `features/puestos/components/company-vacancies-view.tsx`.
 
 import { useState } from "react";
-import { DownloadIcon } from "lucide-react";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/layout/empty-state";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablePagination } from "@/components/filters/table-pagination";
 import { useStudentFilterOptions, useStudents } from "@/features/moderacion/hooks/use-students";
@@ -36,18 +33,6 @@ export function StudentsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Sin `title`/`description`: el nombre de la sección ya lo muestra el
-          Navbar (AGENTS.md, "Header dinámico"). `PageHeader` queda por el slot
-          de acciones. */}
-      <PageHeader
-        actions={
-          <Button variant="outline">
-            <DownloadIcon />
-            Exportar
-          </Button>
-        }
-      />
-
       <StudentsFilters filters={filters} degrees={degrees} areas={areas} onChange={updateFilters} />
 
       {isLoading && <TableSkeleton />}
@@ -71,7 +56,7 @@ export function StudentsView() {
       )}
 
       {!isLoading && !isError && data && data.items.length > 0 && (
-        <>
+        <div className="space-y-2">
           <StudentsTable rows={data.items} />
           <TablePagination
             page={data.page}
@@ -81,7 +66,7 @@ export function StudentsView() {
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
             onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
-        </>
+        </div>
       )}
     </div>
   );

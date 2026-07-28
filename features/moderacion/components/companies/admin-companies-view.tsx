@@ -65,7 +65,7 @@ export function AdminCompaniesView() {
       )}
 
       {!isLoading && !isError && data && data.items.length > 0 && (
-        <>
+        <div className="space-y-2">
           <CompaniesTable companies={data.items} />
           <TablePagination
             page={data.page}
@@ -75,7 +75,7 @@ export function AdminCompaniesView() {
             onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
             onPerPageChange={(perPage) => setFilters((f) => ({ ...f, perPage, page: 1 }))}
           />
-        </>
+        </div>
       )}
     </div>
   );
