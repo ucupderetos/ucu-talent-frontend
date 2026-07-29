@@ -18,28 +18,15 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 import { DEPARTMENTS } from "@/lib/departments";
-import type { ContractType, Modality, Department } from "@/types";
+import { CONTRACT_TYPES } from "@/lib/contract-types";
+import type { Modality, Department } from "@/types";
 
 const TITLE_MAX = 100;
 
-// satisfies (no `as`): si Modality/ContractType gana/pierde un valor en
-// @/types, esto rompe la build en vez de quedar desincronizado en silencio.
+// satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto rompe
+// la build en vez de quedar desincronizado en silencio. `CONTRACT_TYPES` sigue
+// el mismo criterio pero vive centralizado en `lib/contract-types.ts`.
 const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readonly Modality[];
-
-// `ContractType` es un enum real de Backend (`vacancy/ContractType.java`), no
-// un string libre — verificado contra el código fuente, no contra
-// docs/ENDPOINTS.md (que en ningún lado, ni local ni el del backend, lo
-// documentaba como enum).
-export const CONTRACT_TYPES = [
-  "FULL_TIME",
-  "PART_TIME",
-  "FREELANCE",
-  "PASANTIA",
-  "CONTRATO_FIJO",
-  "CONTRATO_INDEFINIDO",
-  "SUPLENCIA",
-  "BECA",
-] as const satisfies readonly ContractType[];
 
 // Reglas de validación. Reflejan `VacancyInput` (features/puestos/types.ts),
 // sin `companyId` (se agrega al armar el payload, no lo carga el usuario).

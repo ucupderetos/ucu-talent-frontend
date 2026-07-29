@@ -10,22 +10,9 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { FeedVacancyRow } from "@/features/puestos/types";
-import type { ContractType, Department } from "@/types";
-
-/** Enum real de Backend (`vacancy/ContractType.java`) — ver el aviso en
- *  `job-basic-info-form.tsx`. Exportado por el mismo motivo que
- *  `DEPARTMENT_LABEL` abajo: `vacancy-feed-table.tsx` lo reusa. */
-export const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
-  FULL_TIME: "Full-time",
-  PART_TIME: "Part-time",
-  FREELANCE: "Freelance",
-  PASANTIA: "Pasantía",
-  CONTRATO_FIJO: "Contrato fijo",
-  CONTRATO_INDEFINIDO: "Contrato indefinido",
-  SUPLENCIA: "Suplencia",
-  BECA: "Beca",
-};
+import type { Department } from "@/types";
 
 /**
  * Duplica el diccionario de RegisterForm.tsx/CompleteProfileForm.tsx — no hay
@@ -111,7 +98,7 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
             </span>
             <span className="flex items-center gap-1.5">
               <BriefcaseIcon className="size-4 shrink-0" aria-hidden />
-              {CONTRACT_TYPE_LABEL[vacancy.contractType]}
+              {CONTRACT_TYPE_LABELS[vacancy.contractType]}
             </span>
           </div>
 

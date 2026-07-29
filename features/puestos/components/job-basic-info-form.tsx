@@ -14,19 +14,14 @@ import {
 } from "@/components/ui/select";
 import { MapPinIcon, HomeIcon, LaptopIcon } from "lucide-react";
 
-import { CONTRACT_TYPES, useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
+import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { cn } from "@/lib/utils";
+import { CONTRACT_TYPES, CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { useAreas } from "@/features/puestos/hooks/use-areas";
 import type { ContractType } from "@/types";
 
 const TITLE_MAX = 100;
-
-// TODO: reemplazar por catálogo real de GET /area cuando esté conectado.
-const AREAS_PLACEHOLDER = [
-  { value: "marketing", label: "Marketing y Publicidad" },
-  { value: "tecnologia", label: "Tecnología" },
-  { value: "finanzas", label: "Finanzas" },
-];
 
 const MODALITY_OPTIONS = [
   { value: "PRESENCIAL", label: "Presencial", helper: "En sitio", icon: MapPinIcon },
@@ -34,22 +29,9 @@ const MODALITY_OPTIONS = [
   { value: "REMOTO", label: "Remota", helper: "A distancia", icon: LaptopIcon },
 ] as const;
 
-// Diccionario de presentación — el valor del enum va en inglés/mayúscula, la
-// UI lo traduce acá (AGENTS.md, "Idioma del código"). Enum real de Backend
-// (`vacancy/ContractType.java`), no un texto libre.
-export const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
-  FULL_TIME: "Full-time",
-  PART_TIME: "Part-time",
-  FREELANCE: "Freelance",
-  PASANTIA: "Pasantía",
-  CONTRATO_FIJO: "Contrato fijo",
-  CONTRATO_INDEFINIDO: "Contrato indefinido",
-  SUPLENCIA: "Suplencia",
-  BECA: "Beca",
-};
-
 export function JobBasicInfoForm() {
   const { form } = useCreateJobForm();
+  const { data: areas, isLoading: isLoadingAreas } = useAreas();
   const {
     register,
     control,
@@ -105,9 +87,12 @@ export function JobBasicInfoForm() {
                     <SelectValue placeholder="Seleccioná un área" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AREAS_PLACEHOLDER.map((area) => (
-                      <SelectItem key={area.value} value={area.value}>
-                        {area.label}
+                    {isLoadingAreas && (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">Cargando áreas...</div>
+                    )}
+                    {areas?.map((area) => (
+                      <SelectItem key={area.areaId} value={area.areaId}>
+                        {area.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -132,9 +117,9 @@ export function JobBasicInfoForm() {
                   <SelectValue placeholder="Seleccioná un tipo de contrato" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONTRACT_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {CONTRACT_TYPE_LABEL[type]}
+                  {CONTRACT_TYPES.map((ct) => (
+                    <SelectItem key={ct} value={ct}>
+                      {CONTRACT_TYPE_LABELS[ct]}
                     </SelectItem>
                   ))}
                 </SelectContent>

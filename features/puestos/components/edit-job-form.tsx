@@ -26,8 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { cn } from "@/lib/utils";
-import { CONTRACT_TYPES } from "@/features/puestos/hooks/use-create-job-form";
-import { CONTRACT_TYPE_LABEL } from "@/features/puestos/components/job-basic-info-form";
+import { CONTRACT_TYPES, CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { VacancyDetail, VacancyUpdateInput } from "@/features/puestos/types";
 import type { ContractType, Department, Modality } from "@/types";
 
@@ -200,7 +199,7 @@ export function EditJobForm({
                   <SelectContent>
                     {CONTRACT_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
-                        {CONTRACT_TYPE_LABEL[type]}
+                        {CONTRACT_TYPE_LABELS[type]}
                       </SelectItem>
                     ))}
                   </SelectContent>
