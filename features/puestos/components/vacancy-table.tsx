@@ -5,15 +5,9 @@
 // TanStack Query.
 
 import Link from "next/link";
-import { EyeIcon, MoreHorizontalIcon, XCircleIcon } from "lucide-react";
+import { PencilIcon, UserIcon, XCircleIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -23,6 +17,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   VACANCY_STATUS_DESCRIPTION,
   VacancyStatusBadge,
@@ -62,9 +61,7 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
             <TableHead>Estado</TableHead>
             <TableHead>Postulantes</TableHead>
             <TableHead>Fecha de publicación</TableHead>
-            <TableHead className="w-10">
-              <span className="sr-only">Acciones</span>
-            </TableHead>
+            <TableHead className="pl-4">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -115,36 +112,76 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
 
 function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        {/* Sin override de foco: `Button` ya trae `border-ring`/`ring-ring`
-            (navy) por default — pisarlo con `--sidebar` no cambiaba nada
-            visualmente (AGENTS.md, "Estados"). */}
-        <Button variant="ghost" size="icon" aria-label={`Acciones de ${vacancy.name}`}>
-          <MoreHorizontalIcon className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild>
-          <Link href={`/postulantes?vacancyId=${vacancy.vacancyId}`}>
-            <EyeIcon />
-            Ver postulantes
-          </Link>
-        </DropdownMenuItem>
+    <div className="flex items-center gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" asChild>
+            <Link
+              href={`/postulantes?vacancyId=${vacancy.vacancyId}`}
+              aria-label={`Ver postulantes de ${vacancy.name}`}
+            >
+              <UserIcon className="size-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ver postulantes</TooltipContent>
+      </Tooltip>
 
-        {/* La empresa dueña solo puede cerrar, y solo desde `PUBLICADO`
-            (RF-PUE-03). Retirar una vacante a `PENDIENTE` es potestad del
-            Admin, no de la empresa — ver `VacancyStatus` en types/index.ts. */}
-        {vacancy.status === "PUBLICADO" && (
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={() => notImplemented("Cerrar oferta")}
-          >
-            <XCircleIcon />
-            Cerrar
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      {/* Editar (`PUT /vacancy/{id}`) no se ofrece en dos casos:
+          - `FINALIZADO`: estado terminal (AGENTS.md), el backend lo rechaza.
+          - con postulaciones: A-06 quedó RESUELTO — el backend da
+            `403 "El Puesto ya tiene postulaciones."` si `applicantsCount > 0`
+            (ENDPOINTS.md). En vez de dejar completar el form y comerse el 403 al
+            guardar, se muestra el botón deshabilitado con el motivo. */}
+      {vacancy.status !== "FINALIZADO" &&
+        (vacancy.applicantsCount > 0 ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* Radix no dispara el tooltip sobre un `Button` deshabilitado (no
+                  recibe eventos de puntero); el `span` envolvente sí. */}
+              <span tabIndex={0}>
+                <Button variant="ghost" size="icon" disabled aria-label={`Editar ${vacancy.name}`}>
+                  <PencilIcon className="size-4" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>No se puede editar: ya tiene postulaciones</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" asChild>
+                <Link
+                  href={`/puestos/${vacancy.vacancyId}/editar`}
+                  aria-label={`Editar ${vacancy.name}`}
+                >
+                  <PencilIcon className="size-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Editar oferta</TooltipContent>
+          </Tooltip>
+        ))}
+
+      {/* La empresa dueña solo puede cerrar, y solo desde `PUBLICADO`
+          (RF-PUE-03). Retirar una vacante a `PENDIENTE` es potestad del
+          Admin, no de la empresa — ver `VacancyStatus` en types/index.ts. */}
+      {vacancy.status === "PUBLICADO" && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:text-destructive"
+              aria-label={`Cerrar ${vacancy.name}`}
+              onClick={() => notImplemented("Cerrar oferta")}
+            >
+              <XCircleIcon className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Cerrar oferta</TooltipContent>
+        </Tooltip>
+      )}
+    </div>
   );
 }
