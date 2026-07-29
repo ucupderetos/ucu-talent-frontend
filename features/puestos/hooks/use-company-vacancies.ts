@@ -5,7 +5,6 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import { MOCK_APPLICATIONS, MOCK_AREAS, MOCK_VACANCIES } from "@/lib/fixtures";
 import type {
   CompanyVacancyFilters,
   CompanyVacancyOrder,
@@ -15,7 +14,6 @@ import type { Area, Department, Paginated, Vacancy, VacancyApplication } from "@
 
 const NEW_APPLICANT_WINDOW_DAYS = 7;
 const DEFAULT_PER_PAGE = 5;
-const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function companyVacanciesQueryKey(
@@ -60,13 +58,6 @@ async function fetchCompanyVacancyRows(
   companyId: string,
   signal?: AbortSignal,
 ): Promise<CompanyVacancyRow[]> {
-  if (MOCK_ROLE) {
-    return MOCK_VACANCIES.filter((vacancy) => vacancy.companyId === companyId).map((vacancy) => {
-      const applications = MOCK_APPLICATIONS.filter((a) => a.vacancyId === vacancy.vacancyId);
-      return toRow(vacancy, MOCK_AREAS, applications);
-    });
-  }
-
   const [vacancies, areas] = await Promise.all([
     apiClient.get<Vacancy[]>("/vacancy", { signal }),
     fetchAreas(signal),
@@ -90,32 +81,46 @@ async function fetchAreas(signal?: AbortSignal): Promise<Area[]> {
   }
 }
 
+interface VacancyApplicationsResult {
+  applications: Pick<VacancyApplication, "appliedAt">[];
+  /** `false` si el fetch falló: el conteo de postulantes de esa fila quedó
+   *  desconocido, no en cero (ver `toRow` y el gate de A-06 en
+   *  `vacancy-table.tsx`). */
+  countKnown: boolean;
+}
+
 async function fetchVacancyApplications(
   vacancyId: string,
   signal?: AbortSignal,
-): Promise<VacancyApplication[]> {
+): Promise<VacancyApplicationsResult> {
   try {
-    return await apiClient.get<VacancyApplication[]>("/vacancy-application", {
+    const applications = await apiClient.get<VacancyApplication[]>("/vacancy-application", {
       params: { vacancyId },
       signal,
     });
+    return { applications, countKnown: true };
   } catch {
-    // El conteo de postulantes no debe impedir ver las vacantes propias.
-    return [];
+    // El conteo de postulantes no debe impedir ver las vacantes propias, pero
+    // tampoco puede caer silenciosamente en "0 postulantes": eso habilitaría
+    // el gate de edición (A-06) para una oferta que en realidad sí tiene
+    // postulantes. `countKnown: false` avisa que ese "0" no es confiable.
+    return { applications: [], countKnown: false };
   }
 }
 
 function toRow(
   vacancy: Vacancy,
   areas: Area[],
-  applications: Pick<VacancyApplication, "appliedAt">[],
+  applicationsResult: VacancyApplicationsResult,
 ): CompanyVacancyRow {
+  const { applications, countKnown } = applicationsResult;
   const weekAgo = Date.now() - NEW_APPLICANT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
   return {
     ...vacancy,
     areaName: areas.find((area) => area.areaId === vacancy.areaId)?.name ?? "—",
     applicantsCount: applications.length,
+    applicantsCountKnown: countKnown,
     newApplicantsThisWeek: applications.filter((a) => new Date(a.appliedAt).getTime() >= weekAgo)
       .length,
   };
@@ -194,11 +199,6 @@ async function fetchCompanyVacancyFilterOptions(
   signal?: AbortSignal,
 ): Promise<{ areas: Area[]; locations: Department[] }> {
   if (!companyId) return { areas: [], locations: [] };
-
-  if (MOCK_ROLE) {
-    const ownVacancies = MOCK_VACANCIES.filter((vacancy) => vacancy.companyId === companyId);
-    return buildFilterOptions(ownVacancies, MOCK_AREAS);
-  }
 
   const [vacancies, areas] = await Promise.all([
     apiClient.get<Vacancy[]>("/vacancy", { signal }),

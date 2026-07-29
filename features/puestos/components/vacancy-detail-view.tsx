@@ -33,11 +33,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiError } from "@/lib/api-client";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { useSession } from "@/hooks/use-session";
 import { getVacancyDetailPreviewExtras } from "@/features/puestos/components/vacancy-detail-preview-mock";
 import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
-import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { AccountStatus, Modality } from "@/types";
 
 const MODALITY_LABEL: Record<Modality, string> = {
@@ -131,7 +131,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <BriefcaseIcon className="size-4" />
-                {CONTRACT_TYPE_LABELS[vacancy.contractType]}
+                {CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarIcon className="size-4" />

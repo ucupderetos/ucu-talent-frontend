@@ -16,8 +16,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
-import { DEPARTMENT_LABELS } from "@/lib/departments";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { DEPARTMENT_LABELS } from "@/lib/departments";
 
 import { useCurrentCompany } from "@/hooks/use-current-company";
 
@@ -47,7 +47,7 @@ export function JobReview() {
   const modality = useWatch({ control: form.control, name: "modality" });
   const description = useWatch({ control: form.control, name: "description" });
   const requirements = useWatch({ control: form.control, name: "requirements" });
-  const salaryRange = useWatch({ control: form.control, name: "salaryRange" });
+  const salary = useWatch({ control: form.control, name: "salary" });
   const publicationDate = useWatch({ control: form.control, name: "publicationDate" });
   const closingDate = useWatch({ control: form.control, name: "closingDate" });
 
@@ -86,10 +86,10 @@ export function JobReview() {
                   {MODALITY_LABELS[modality] ?? modality}
                 </span>
               )}
-              {salaryRange && (
+              {salary && (
                 <span className="flex items-center gap-1.5">
                   <BanknoteIcon className="size-4" />
-                  {salaryRange}
+                  {salary}
                 </span>
               )}
               {publicationDate && (

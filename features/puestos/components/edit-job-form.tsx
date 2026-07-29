@@ -5,10 +5,16 @@
 // completó todo una vez, editar es ajustar datos existentes, no un onboarding
 // guiado. El área se muestra de solo lectura — `UpdateVacancyRequest` no la
 // incluye (ver VacancyUpdateInput en features/puestos/types.ts).
+//
+// A-06 (resuelto, decisión de front): con >=1 postulaciones el resto de los
+// campos también pasa a solo lectura (`isLocked`, ver EditVacancyView), para
+// no cambiarle la información del puesto a alguien que ya se postuló. El
+// caso FINALIZADO (no editable en absoluto) lo filtra EditVacancyView antes
+// de montar este form.
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { HomeIcon, LaptopIcon, MapPinIcon } from "lucide-react";
+import { HomeIcon, LaptopIcon, LockIcon, MapPinIcon } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
@@ -24,9 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CONTRACT_TYPES, CONTRACT_TYPE_OPTIONS } from "@/lib/contract-types";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { cn } from "@/lib/utils";
-import { CONTRACT_TYPES, CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { VacancyDetail, VacancyUpdateInput } from "@/features/puestos/types";
 import type { ContractType, Department, Modality } from "@/types";
 
@@ -45,6 +51,62 @@ function formatDate(iso: string): string {
 // que use-create-job-form.tsx).
 const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readonly Modality[];
 
+// El wire (`Vacancy.salary` / `UpdateVacancyRequest.salary`) sigue siendo un
+// único `string` — acá se ofrecen 2 modos de edición sobre ese mismo string:
+// "estructurado" (moneda + monto desde + monto hasta, más cómodo para el
+// caso común) y "texto libre" (un único input, para puestos viejos con texto
+// no numérico como "A convenir" que el modo estructurado no puede
+// representar sin perder información). El modo inicial lo decide
+// `parseSalary` según si pudo extraer un monto numérico del valor guardado;
+// la empresa puede cambiar de modo a mano con el link de arriba del campo.
+// No hay enum de moneda confirmado en docs/ENDPOINTS.md: se fija una lista
+// chica de uso real (UYU/USD) para el modo estructurado.
+const SALARY_CURRENCIES = ["UYU", "USD"] as const;
+type SalaryCurrency = (typeof SALARY_CURRENCIES)[number];
+
+const SALARY_MODES = ["structured", "free"] as const;
+type SalaryMode = (typeof SALARY_MODES)[number];
+
+const AMOUNT_PATTERN = /^\d+([.,]\d+)?$/;
+
+/** Arma el string del wire a partir de moneda + rango. Sin "hasta" (o
+ *  igual al "desde") queda un monto fijo, "MONEDA monto" (ej. "USD 700").
+ *  Con "hasta", el formato pasa a ser "MONEDAdesde-hasta" pegado, sin
+ *  espacios (ej. "USD700-900") — pedido explícito de negocio, no el mismo
+ *  formato que el monto fijo. */
+function formatSalary(currency: SalaryCurrency, min: string, max: string): string {
+  const cleanMin = min.trim();
+  const cleanMax = max.trim();
+  if (!cleanMax || cleanMax === cleanMin) return `${currency} ${cleanMin}`;
+  return `${currency}${cleanMin}-${cleanMax}`;
+}
+
+/**
+ * Lee un `salary` existente para precargar los controles. El wire real usa
+ * "MONEDA monto" para un monto fijo o "MONEDAdesde-hasta" pegado para un
+ * rango (ver formatSalary), pero hay puestos viejos con texto libre ("A
+ * convenir", "$35.000 - $45.000" con `$` en vez de un código ISO, o el
+ * formato anterior "MONEDA desde - hasta" con espacios) — para esos, `min`
+ * queda vacío (no se pudo rescatar ningún número), y ESE es justo el
+ * criterio que usa `EditJobForm` para arrancar en modo "texto libre" en vez
+ * de "estructurado": mejor mostrar el texto original tal cual que forzarlo a
+ * 3 campos numéricos y perder la información.
+ *
+ * El regex de moneda no exige `\b` al final: con el formato pegado
+ * ("USD700") no hay borde de palabra entre la "D" y el "7" (los dos son
+ * `\w`), así que un `\b` ahí nunca matchearía.
+ */
+function parseSalary(raw: string): { currency: SalaryCurrency; min: string; max: string } {
+  const currencyMatch = raw.match(/\b(UYU|USD)/i);
+  const currency = (currencyMatch?.[1]?.toUpperCase() ?? "UYU") as SalaryCurrency;
+  const [min = "", max = ""] = raw.match(/\d+(?:[.,]\d+)*/g) ?? [];
+  return {
+    currency: SALARY_CURRENCIES.includes(currency) ? currency : "UYU",
+    min,
+    max: max === min ? "" : max,
+  };
+}
+
 const MODALITY_OPTIONS = [
   { value: "PRESENCIAL", label: "Presencial", helper: "En sitio", icon: MapPinIcon },
   { value: "HIBRIDO", label: "Híbrida", helper: "Combinada", icon: HomeIcon },
@@ -56,6 +118,12 @@ const MODALITY_OPTIONS = [
 // y sin `publicationDate` editable (es read-only en edición, se reenvía la de la
 // vacante). Es una factory porque el refine de `closingDate` compara contra esa
 // `publicationDate` fija, que no vive en el form.
+//
+// Los 4 campos de salario (`salaryCurrency`/`salaryMin`/`salaryMax`/
+// `salaryText`) son todos opcionales a nivel de tipo: cuáles son realmente
+// obligatorios depende de `salaryMode`, así que esa parte de la validación
+// vive en el `superRefine` de abajo (mismo patrón que `register-form.tsx`
+// para campos condicionales por un discriminante).
 function makeEditJobSchema(publicationDate: string) {
   return z
     .object({
@@ -69,7 +137,11 @@ function makeEditJobSchema(publicationDate: string) {
       location: z.enum(DEPARTMENTS as [Department, ...Department[]]).optional(),
       description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
       requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
-      salaryRange: z.string().trim().min(1, "Ingresá el rango salarial."),
+      salaryMode: z.enum(SALARY_MODES),
+      salaryCurrency: z.enum(SALARY_CURRENCIES).optional(),
+      salaryMin: z.string().trim().optional(),
+      salaryMax: z.string().trim().optional(),
+      salaryText: z.string().trim().optional(),
       closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
     })
     .refine((data) => data.modality === "REMOTO" || Boolean(data.location), {
@@ -79,31 +151,96 @@ function makeEditJobSchema(publicationDate: string) {
     .refine((data) => !data.closingDate || data.closingDate >= publicationDate, {
       message: "La fecha de cierre no puede ser anterior a la de publicación.",
       path: ["closingDate"],
+    })
+    .superRefine((data, ctx) => {
+      if (data.salaryMode === "free") {
+        if (!data.salaryText) {
+          ctx.addIssue({ code: "custom", path: ["salaryText"], message: "Ingresá el rango salarial." });
+        }
+        return;
+      }
+
+      if (!data.salaryCurrency) {
+        ctx.addIssue({ code: "custom", path: ["salaryCurrency"], message: "Seleccioná una moneda." });
+      }
+      if (!data.salaryMin || !AMOUNT_PATTERN.test(data.salaryMin)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["salaryMin"],
+          message: "Ingresá un monto mínimo válido.",
+        });
+      }
+      if (data.salaryMax && !AMOUNT_PATTERN.test(data.salaryMax)) {
+        ctx.addIssue({ code: "custom", path: ["salaryMax"], message: "Ingresá un monto válido." });
+      }
+      if (
+        data.salaryMin &&
+        data.salaryMax &&
+        AMOUNT_PATTERN.test(data.salaryMin) &&
+        AMOUNT_PATTERN.test(data.salaryMax) &&
+        parseFloat(data.salaryMax.replace(",", ".")) < parseFloat(data.salaryMin.replace(",", "."))
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["salaryMax"],
+          message: "El monto máximo debe ser mayor o igual al mínimo.",
+        });
+      }
     });
 }
 
 type EditJobFormValues = z.infer<ReturnType<typeof makeEditJobSchema>>;
+
+const SALARY_KNOWN_FIELDS = new Set([
+  "name",
+  "contractType",
+  "modality",
+  "location",
+  "description",
+  "requirements",
+]);
 
 export function EditJobForm({
   vacancy,
   onSubmit,
   isSubmitting,
   onCancel,
+  isLocked = false,
+  applicantsCount = 0,
+  apiFieldErrors = null,
 }: {
   vacancy: VacancyDetail;
   onSubmit: (values: VacancyUpdateInput) => void;
   isSubmitting: boolean;
   onCancel: () => void;
+  /** Requerimiento de negocio (A-06, resuelto): con >=1 postulaciones los
+   *  campos quedan solo lectura, para no cambiarle la información a alguien
+   *  que ya se postuló. El backend no lo valida — es un gate de front. */
+  isLocked?: boolean;
+  applicantsCount?: number;
+  /**
+   * Errores por campo del último intento de guardar fallido
+   * (`ApiError.fieldErrors`, A-19) — se mapean a `setError` de RHF para que
+   * se vean pegados al campo real en vez de solo en el toast genérico que ya
+   * muestra `EditVacancyView`. `salary` (el único campo del wire sin
+   * correspondencia 1 a 1 acá, partido en moneda/mínimo/máximo o texto
+   * libre) cae en un error general al pie del form en vez de adivinar cuál
+   * control corregir. `null` cuando no hay error pendiente de mostrar.
+   */
+  apiFieldErrors?: Record<string, string> | null;
 }) {
   // `publicationDate` es read-only: se fija a la de la vacante y alimenta tanto
   // el refine de `closingDate` como el `min` del input y el display.
   const publicationDate = vacancy.publicationDate.slice(0, 10);
   const schema = useMemo(() => makeEditJobSchema(publicationDate), [publicationDate]);
 
+  const parsedSalary = parseSalary(vacancy.salary);
+  const initialSalaryMode: SalaryMode = parsedSalary.min ? "structured" : "free";
   const {
     register,
     control,
     setValue,
+    setError,
     handleSubmit,
     formState: { errors },
   } = useForm<EditJobFormValues>({
@@ -115,9 +252,11 @@ export function EditJobForm({
       location: vacancy.location,
       description: vacancy.description,
       requirements: vacancy.requirements,
-      // La entidad `Vacancy` expone el sueldo como `salary`; el payload de update
-      // lo manda como `salaryRange` (ver `VacancyUpdateInput`, types.ts).
-      salaryRange: vacancy.salary,
+      salaryMode: initialSalaryMode,
+      salaryCurrency: parsedSalary.currency,
+      salaryMin: parsedSalary.min,
+      salaryMax: parsedSalary.max,
+      salaryText: initialSalaryMode === "free" ? vacancy.salary : "",
       closingDate: vacancy.closingDate.slice(0, 10),
     },
   });
@@ -127,8 +266,39 @@ export function EditJobForm({
   const contractType = useWatch({ control, name: "contractType" });
   const modality = useWatch({ control, name: "modality" });
   const location = useWatch({ control, name: "location" });
+  const salaryMode = useWatch({ control, name: "salaryMode" });
+  const salaryCurrency = useWatch({ control, name: "salaryCurrency" });
+
+  useEffect(() => {
+    if (!apiFieldErrors) return;
+
+    const unmapped: string[] = [];
+
+    for (const [field, message] of Object.entries(apiFieldErrors)) {
+      if (SALARY_KNOWN_FIELDS.has(field)) {
+        setError(field as keyof EditJobFormValues, { type: "server", message });
+      } else {
+        // `salary` (y cualquier otro campo que el backend agregue y este
+        // form no sepa mapear) cae acá.
+        unmapped.push(message);
+      }
+    }
+
+    if (unmapped.length > 0) {
+      setError("root", { type: "server", message: unmapped.join(" · ") });
+    }
+  }, [apiFieldErrors, setError]);
 
   function submit(values: EditJobFormValues) {
+    const salary =
+      values.salaryMode === "free"
+        ? (values.salaryText ?? "").trim()
+        : formatSalary(
+            values.salaryCurrency as SalaryCurrency,
+            values.salaryMin ?? "",
+            values.salaryMax ?? "",
+          );
+
     onSubmit({
       name: values.name,
       contractType: values.contractType,
@@ -139,7 +309,7 @@ export function EditJobForm({
       location: (values.location ?? vacancy.location) as Department,
       description: values.description,
       requirements: values.requirements,
-      salaryRange: values.salaryRange,
+      salary,
       // `publicationDate` no se edita: se reenvía la de la vacante (el contrato
       // la exige @NotNull en `UpdateVacancyRequest`). `closingDate` sí es editable.
       publicationDate,
@@ -149,6 +319,13 @@ export function EditJobForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-6">
+      {isLocked && <LockedNotice applicantsCount={applicantsCount} />}
+      {errors.root?.message && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          {errors.root.message}
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Información básica</CardTitle>
@@ -165,6 +342,7 @@ export function EditJobForm({
                     className="h-11"
                     maxLength={TITLE_MAX}
                     aria-invalid={Boolean(errors.name)}
+                    disabled={isLocked}
                     {...register("name")}
                   />
                   <p className="text-right text-xs text-muted-foreground">
@@ -188,6 +366,7 @@ export function EditJobForm({
                   onValueChange={(v) =>
                     setValue("contractType", v as ContractType, { shouldValidate: true })
                   }
+                  disabled={isLocked}
                 >
                   <SelectTrigger
                     id="contractType"
@@ -197,9 +376,9 @@ export function EditJobForm({
                     <SelectValue placeholder="Seleccioná un tipo de contrato" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CONTRACT_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {CONTRACT_TYPE_LABELS[type]}
+                    {CONTRACT_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -218,10 +397,12 @@ export function EditJobForm({
                     <button
                       key={option.value}
                       type="button"
+                      disabled={isLocked}
                       onClick={() => setValue("modality", option.value, { shouldValidate: true })}
                       className={cn(
                         "flex items-center gap-3 rounded-lg border p-4 text-left transition-colors",
                         isSelected ? "border-primary bg-primary/5" : "border-input hover:bg-accent/50",
+                        isLocked && "cursor-not-allowed opacity-50 hover:bg-transparent",
                       )}
                     >
                       <Icon className="size-5 shrink-0 text-muted-foreground" />
@@ -251,6 +432,7 @@ export function EditJobForm({
               <Select
                 value={location ?? ""}
                 onValueChange={(v) => setValue("location", v as Department, { shouldValidate: true })}
+                disabled={isLocked}
               >
                 <SelectTrigger
                   id="location"
@@ -287,6 +469,7 @@ export function EditJobForm({
                   maxLength={DESCRIPTION_MAX}
                   className="min-h-48"
                   aria-invalid={Boolean(errors.description)}
+                  disabled={isLocked}
                   {...register("description")}
                 />
                 <p className="text-right text-xs text-muted-foreground">
@@ -301,21 +484,86 @@ export function EditJobForm({
                   id="requirements"
                   className="min-h-32"
                   aria-invalid={Boolean(errors.requirements)}
+                  disabled={isLocked}
                   {...register("requirements")}
                 />
                 <FieldError errors={[errors.requirements]} />
               </Field>
             </FieldSet>
 
-            <Field data-invalid={Boolean(errors.salaryRange)}>
-              <FieldLabel htmlFor="salaryRange">Rango salarial *</FieldLabel>
-              <Input
-                id="salaryRange"
-                className="h-11"
-                aria-invalid={Boolean(errors.salaryRange)}
-                {...register("salaryRange")}
-              />
-              <FieldError errors={[errors.salaryRange]} />
+            <Field
+              data-invalid={Boolean(
+                errors.salaryCurrency || errors.salaryMin || errors.salaryMax || errors.salaryText,
+              )}
+            >
+              <FieldLabel htmlFor={salaryMode === "free" ? "salaryText" : "salaryMin"}>
+                Rango salarial *
+              </FieldLabel>
+
+              {salaryMode === "free" ? (
+                // Modo texto libre: para puestos con un valor no numérico
+                // guardado (ej. "A convenir") que el modo estructurado no
+                // puede representar sin perder información — ver parseSalary.
+                <>
+                  <Input
+                    id="salaryText"
+                    className="h-11"
+                    placeholder="Ej: A convenir, USD 700 - 900"
+                    aria-invalid={Boolean(errors.salaryText)}
+                    disabled={isLocked}
+                    {...register("salaryText")}
+                  />
+                  <FieldError errors={[errors.salaryText]} />
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[6.5rem_1fr_1fr]">
+                    <Select
+                      value={salaryCurrency}
+                      onValueChange={(value) =>
+                        setValue("salaryCurrency", value as SalaryCurrency, { shouldValidate: true })
+                      }
+                      disabled={isLocked}
+                    >
+                      <SelectTrigger
+                        className="w-full data-[size=default]:h-11"
+                        aria-label="Moneda"
+                        aria-invalid={Boolean(errors.salaryCurrency)}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SALARY_CURRENCIES.map((currency) => (
+                          <SelectItem key={currency} value={currency}>
+                            {currency}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="salaryMin"
+                      className="h-11"
+                      inputMode="decimal"
+                      placeholder="Desde"
+                      aria-label="Monto desde"
+                      aria-invalid={Boolean(errors.salaryMin)}
+                      disabled={isLocked}
+                      {...register("salaryMin")}
+                    />
+                    <Input
+                      id="salaryMax"
+                      className="h-11"
+                      inputMode="decimal"
+                      placeholder="Hasta (opcional)"
+                      aria-label="Monto hasta"
+                      aria-invalid={Boolean(errors.salaryMax)}
+                      disabled={isLocked}
+                      {...register("salaryMax")}
+                    />
+                  </div>
+                  <FieldError errors={[errors.salaryCurrency, errors.salaryMin, errors.salaryMax]} />
+                </>
+              )}
             </Field>
 
             <div className="grid gap-6 sm:grid-cols-2">
@@ -353,16 +601,33 @@ export function EditJobForm({
           onClick={onCancel}
           disabled={isSubmitting}
         >
-          Cancelar
+          {isLocked ? "Volver" : "Cancelar"}
         </Button>
-        <Button
-          type="submit"
-          className="h-11 bg-ucu-blue text-white hover:bg-ucu-blue/90"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Guardando..." : "Guardar cambios"}
-        </Button>
+        {!isLocked && (
+          <Button
+            type="submit"
+            className="h-11 bg-ucu-blue text-white hover:bg-ucu-blue/90"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        )}
       </div>
     </form>
   );
 }
+
+function LockedNotice({ applicantsCount }: { applicantsCount: number }) {
+  return (
+    <div className="flex items-start gap-2 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+      <LockIcon className="mt-0.5 size-4 shrink-0" />
+      <span>
+        Esta oferta ya tiene{" "}
+        {applicantsCount === 1 ? "una postulación" : `${applicantsCount} postulaciones`}, así que
+        sus datos quedaron fijos: no se pueden editar para no cambiarle la información a quien ya
+        se postuló.
+      </span>
+    </div>
+  );
+}
+

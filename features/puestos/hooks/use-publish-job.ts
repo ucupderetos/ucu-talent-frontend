@@ -7,12 +7,17 @@ import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
 import type { Vacancy } from "@/types";
 
-// POST /vacancy real. El backend fuerza el status inicial, no lo mandamos.
-// `VacancyInput` ya trae `salary`/`publicationDate`/`closingDate` con la forma
-// que espera `CreateVacancyRequest` (el mapeo `salaryRange`→`salary` lo hace
-// `publish()` abajo, con los valores del form), así que se postea tal cual.
+// ⚠️ `salary` → `salaryRange` por el mismo motivo que `use-edit-job.ts`
+// (AGENTS.md A-15): probado a mano en Swagger, `PUT /vacancy/{id}` solo
+// aplica el monto si el campo se llama `salaryRange`, no `salary` como dice
+// `docs/ENDPOINTS.md`. Acá en `POST /vacancy` NO está probado — se aplica
+// por analogía (mismo DTO de escritura documentado con el mismo campo,
+// mismo rename a medio hacer del lado backend) para no dejar un bug conocido
+// sin corregir, pero **falta confirmar contra Swagger igual que se hizo con
+// el PUT** antes de dar esto por cerrado.
 function publishJobRequest(payload: VacancyInput): Promise<Vacancy> {
-  return apiClient.post<Vacancy>("/vacancy", payload);
+  const { salary, ...rest } = payload;
+  return apiClient.post<Vacancy>("/vacancy", { ...rest, salaryRange: salary });
 }
 
 export function usePublishJob() {
@@ -55,10 +60,7 @@ export function usePublishJob() {
       areaId: values.areaId,
       contractType: values.contractType,
       modality: values.modality,
-      // El form le dice "rango salarial" al usuario (así lo pide
-      // `UpdateVacancyRequest.salaryRange`), pero `CreateVacancyRequest`
-      // real espera `salary` — ver el aviso en `VacancyInput`, types.ts.
-      salary: values.salaryRange,
+      salary: values.salary,
       location: values.location,
       publicationDate: values.publicationDate,
       closingDate: values.closingDate,

@@ -252,6 +252,27 @@ export interface UniversityRegistry {
 export type Modality = "PRESENCIAL" | "HIBRIDO" | "REMOTO";
 
 /**
+ * Wire: `Vacancy.contractType`. Confirmado 2026-07-29 como enum cerrado de 8
+ * valores — cierra el punto de A-15 que decía "sigue siendo `string` libre,
+ * el contrato cerrado no confirma un enum ni sus valores". Los valores
+ * llegan mezclando inglés (`PART_TIME`, `FREELANCE`, `FULL_TIME`) y español
+ * (`PASANTIA`, `CONTRATO_FIJO`, `CONTRATO_INDEFINIDO`, `SUPLENCIA`, `BECA`)
+ * — así los manda el backend, no se homogeneízan (mismo criterio que el
+ * resto de los enums: los valores no se traducen, ver *Idioma del código*
+ * en AGENTS.md). El catálogo y las labels de presentación viven en
+ * `lib/contract-types.ts`.
+ */
+export type ContractType =
+  | "PART_TIME"
+  | "FREELANCE"
+  | "PASANTIA"
+  | "CONTRATO_FIJO"
+  | "CONTRATO_INDEFINIDO"
+  | "SUPLENCIA"
+  | "BECA"
+  | "FULL_TIME";
+
+/**
  * Wire: `VacancyStatus`. Post-moderación (DEC-01): la vacante **nace
  * `PUBLICADO`**, sin aprobación previa. No existe `RECHAZADO`.
  *
@@ -271,20 +292,6 @@ export type Modality = "PRESENCIAL" | "HIBRIDO" | "REMOTO";
  * `FINALIZADO`) — corregido contra el contrato cerrado.
  */
 export type VacancyStatus = "PENDIENTE" | "PUBLICADO" | "FINALIZADO";
-
-/**
- * Wire: `ContractType` (enum real de Backend — no un `string` libre como se
- * asumía antes de verificar el código fuente, `vacancy/ContractType.java`).
- */
-export type ContractType =
-  | "PART_TIME"
-  | "FREELANCE"
-  | "PASANTIA"
-  | "CONTRATO_FIJO"
-  | "CONTRATO_INDEFINIDO"
-  | "SUPLENCIA"
-  | "BECA"
-  | "FULL_TIME";
 
 /**
  * Wire: `VacancyResponse` (`vacancy/dto/VacancyResponse.java`, fuente del

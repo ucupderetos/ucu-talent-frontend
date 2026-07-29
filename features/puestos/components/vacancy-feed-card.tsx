@@ -98,7 +98,7 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
             </span>
             <span className="flex items-center gap-1.5">
               <BriefcaseIcon className="size-4 shrink-0" aria-hidden />
-              {CONTRACT_TYPE_LABELS[vacancy.contractType]}
+              {CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType}
             </span>
           </div>
 

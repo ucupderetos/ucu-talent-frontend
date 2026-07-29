@@ -66,6 +66,44 @@ export function useHasApplied(vacancyId: string, studentProfileId: string | unde
   return query.data?.some((application) => application.vacancyId === vacancyId) ?? false;
 }
 
+/** @public para invalidación puntual futura (AGENTS.md). */
+export function vacancyApplicantsQueryKey(vacancyId: string) {
+  return ["puestos", vacancyId, "postulantes"] as const;
+}
+
+/**
+ * Cantidad de postulaciones de una vacante — la usa `EditVacancyView` para el
+ * gate de "campos editables solo sin postulaciones". Wire:
+ * `GET /vacancy-application?vacancyId={id}` (Empresa dueña,
+ * `VacancyApplicantResponse[]`, docs/ENDPOINTS.md) — mismo endpoint que ya
+ * usa `use-company-vacancies.ts` para la columna "Postulantes" de la tabla,
+ * pero acá alcanza con el conteo de una sola vacante.
+ *
+ * `enabled` lo controla el llamador: el endpoint es solo para la empresa
+ * dueña, así que no tiene sentido pedirlo antes de confirmar el ownership.
+ *
+ * ⚠️ Expone `isError` a propósito: es un gate de negocio (A-06), así que un
+ * conteo desconocido (falló el fetch) NO puede caer silenciosamente en "0
+ * postulantes" — el llamador (`EditVacancyView`) tiene que bloquear la
+ * edición en vez de asumir que no hay postulaciones.
+ */
+export function useVacancyApplicantsCount(vacancyId: string, enabled: boolean) {
+  const query = useQuery({
+    queryKey: vacancyApplicantsQueryKey(vacancyId),
+    queryFn: () =>
+      apiClient.get<VacancyApplication[]>("/vacancy-application", {
+        params: { vacancyId },
+      }),
+    enabled,
+  });
+
+  return {
+    count: query.data?.length ?? 0,
+    isLoading: enabled ? query.isLoading : false,
+    isError: enabled ? query.isError : false,
+  };
+}
+
 /**
  * Postularse a una vacante — RF-POS-01. Wire: `POST /vacancy-application`.
  *

@@ -15,6 +15,7 @@ import {
 import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
 import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
 import { VacancyStatusBadge } from "@/components/vacancies/vacancy-status-badge";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { AdminVacancyRow } from "@/features/moderacion/types";
 
 export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) {
@@ -59,7 +60,8 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                       )}
                     </div>
                     <p className="truncate text-xs text-muted-foreground">
-                      {vacancy.contractType} · {formatDepartment(vacancy.location)}
+                      {CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType} ·{" "}
+                      {formatDepartment(vacancy.location)}
                     </p>
                   </Link>
                 </TableCell>

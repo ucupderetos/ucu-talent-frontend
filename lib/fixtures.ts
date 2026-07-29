@@ -733,6 +733,7 @@ export const MOCK_WORK_EXPERIENCE: WorkExperience[] = [
  * de este archivo cuando exista el backend.
  */
 const RECENTLY_PUBLISHED = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
 export const MOCK_VACANCIES: Vacancy[] = [
   {
     vacancyId: "v-1",

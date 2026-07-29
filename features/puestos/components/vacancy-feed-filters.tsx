@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { FeedFilters } from "@/features/puestos/types";
-import type { Area } from "@/types";
+import type { Area, ContractType } from "@/types";
 
 export function VacancyFeedFilters({
   filters,
@@ -25,7 +26,7 @@ export function VacancyFeedFilters({
 }: {
   filters: FeedFilters;
   areas: Area[];
-  contractTypes: string[];
+  contractTypes: ContractType[];
   onChange: (filters: FeedFilters) => void;
 }) {
   const activeCount = (filters.areaIds?.length ?? 0) + (filters.contractTypes?.length ?? 0);
@@ -74,9 +75,16 @@ export function VacancyFeedFilters({
             <MultiSelect
               label="Tipo de trabajo"
               placeholder="Todos los trabajos"
-              options={contractTypes.map((type) => ({ value: type, label: type }))}
+              options={contractTypes.map((type) => ({
+                value: type,
+                label: CONTRACT_TYPE_LABELS[type] ?? type,
+              }))}
               selected={filters.contractTypes ?? []}
-              onChange={(contractTypes) => onChange({ ...filters, contractTypes })}
+              // `MultiSelect` es genérico en `string[]` (componente compartido,
+              // no conoce `ContractType`) — acá es seguro angostar el tipo:
+              // las opciones que ofrece salen todas de `contractTypes`
+              // (`ContractType[]`), nunca de un valor libre tipeado a mano.
+              onChange={(values) => onChange({ ...filters, contractTypes: values as ContractType[] })}
               className="w-full"
             />
           </FilterSection>

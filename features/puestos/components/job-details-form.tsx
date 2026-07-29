@@ -64,16 +64,16 @@ export function JobDetailsForm() {
             </Field>
           </FieldSet>
 
-          <Field data-invalid={Boolean(errors.salaryRange)}>
-            <FieldLabel htmlFor="salaryRange">Rango salarial *</FieldLabel>
+          <Field data-invalid={Boolean(errors.salary)}>
+            <FieldLabel htmlFor="salary">Rango salarial *</FieldLabel>
             <Input
-              id="salaryRange"
+              id="salary"
               className="h-11"
               placeholder="$45.000 - $60.000 UYU"
-              aria-invalid={Boolean(errors.salaryRange)}
-              {...register("salaryRange")}
+              aria-invalid={Boolean(errors.salary)}
+              {...register("salary")}
             />
-            <FieldError errors={[errors.salaryRange]} />
+            <FieldError errors={[errors.salary]} />
           </Field>
         </FieldGroup>
       </CardContent>

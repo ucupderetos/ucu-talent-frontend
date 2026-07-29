@@ -17,8 +17,8 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
-import { DEPARTMENTS } from "@/lib/departments";
 import { CONTRACT_TYPES } from "@/lib/contract-types";
+import { DEPARTMENTS } from "@/lib/departments";
 import type { Modality, Department } from "@/types";
 
 const TITLE_MAX = 100;
@@ -50,7 +50,7 @@ const jobFormSchema = z.object({
   location: z.enum(DEPARTMENTS as [Department, ...Department[]]).optional(),
   description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
   requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
-  salaryRange: z.string().trim().min(1, "Ingresá el rango salarial."),
+  salary: z.string().trim().min(1, "Ingresá el rango salarial."),
   publicationDate: z.string().min(1, "Ingresá la fecha de publicación."),
   closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
 }).refine(
@@ -82,7 +82,7 @@ export function CreateJobFormProvider({ children }: { children: ReactNode }) {
       location: undefined,
       description: "",
       requirements: "",
-      salaryRange: "",
+      salary: "",
       publicationDate: "",
       closingDate: "",
     },
