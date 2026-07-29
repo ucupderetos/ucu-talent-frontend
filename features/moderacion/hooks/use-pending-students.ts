@@ -1,14 +1,20 @@
 "use client";
 
-// trae los alumnos pendientes (cedula no encontrada en el padron). por ahora
-// junta todo en memoria sobre lib/fixtures.ts, cuando haya back se cambia
-// fetchPendingStudents por el fetch real y listo.
+// trae los alumnos pendientes de aprobar, mismo criterio que empresas.
+//
+// GET /student-profile (ADMIN) devuelve todos los perfiles con el status ya
+// adentro. cruzamos con GET /user?status=PENDIENTE&role=ALUMNO por la pk
+// compartida (studentProfileId === userId) para sacar email y fecha de
+// registro. ojo que AGENTS.md decia que el alumno nacia APROBADO directo
+// (A-01) pero probado en vivo el 28/7 el alumno SI nace PENDIENTE y se pudo
+// aprobar bien — parece que ya lo corrigieron del lado del back, falta
+// avisarle al equipo para que actualicen el doc.
 
 import { useQuery } from "@tanstack/react-query";
 
-import { MOCK_PENDING_STUDENT_USERS, MOCK_STUDENT_PROFILES } from "@/lib/fixtures";
+import { apiClient } from "@/lib/api-client";
 import type { PendingStudentRow, PendingStudentsFilters } from "@/features/moderacion/types";
-import type { Paginated } from "@/types";
+import type { Paginated, StudentProfile, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -30,11 +36,15 @@ async function fetchPendingStudents(
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
-  // solo los alumnos cuyo user sigue PENDIENTE — al aprobar/rechazar
-  // (use-review-account.ts) el status cambia y salen de la cola.
-  const rows = MOCK_PENDING_STUDENT_USERS.filter((u) => u.status === "PENDIENTE")
-    .map(toRow)
-    .filter((row): row is PendingStudentRow => row !== null);
+  const [pendingUsers, profiles] = await Promise.all([
+    apiClient.get<User[]>("/user", { params: { status: "PENDIENTE", role: "ALUMNO" } }),
+    apiClient.get<StudentProfile[]>("/student-profile"),
+  ]);
+
+  const pendingUsersById = new Map(pendingUsers.map((u) => [u.userId, u]));
+  const rows = profiles
+    .filter((p) => p.status === "PENDIENTE" && pendingUsersById.has(p.studentProfileId))
+    .map((p) => toRow(p, pendingUsersById.get(p.studentProfileId)!));
   const filtered = filterRows(rows, filters);
 
   const start = (page - 1) * perPage;
@@ -43,10 +53,7 @@ async function fetchPendingStudents(
   return { items, total: filtered.length, page, perPage };
 }
 
-function toRow(user: (typeof MOCK_PENDING_STUDENT_USERS)[number]): PendingStudentRow | null {
-  const profile = MOCK_STUDENT_PROFILES.find((p) => p.studentProfileId === user.userId);
-  if (!profile) return null;
-
+function toRow(profile: StudentProfile, user: User): PendingStudentRow {
   return {
     ...profile,
     email: user.email,

@@ -1,25 +1,18 @@
 "use client";
 
-// Cambia el estado de una cuenta (empresa o alumno): permite aprobar/rechazar
-// una pendiente y dar de baja una aprobada llevándola a RECHAZADO.
-// Wire: `PATCH /user/{id}` con { status, adminComment } — A-02 (✅) lo confirma.
-//
-// ⚠️ ANDAMIO TEMPORAL: por ahora muta el `status` del user en fixtures (mismo
-// criterio que use-mark-applicant-viewed). TODO(api): reemplazar el cuerpo de
-// `mutationFn` por `apiClient.patch(\`/user/${userId}\`, { status, adminComment })`.
+// aprueba/rechaza una cuenta (empresa o alumno), o da de baja una ya
+// aprobada mandandola a RECHAZADO. pega directo a PATCH /user/{id} con
+// { status, adminComment }, probado en vivo el 28/7 con empresa y alumno.
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  MOCK_COMPANIES,
-  MOCK_COMPANY_USERS,
-  MOCK_PENDING_STUDENT_USERS,
-  MOCK_STUDENT_PROFILES,
-} from "@/lib/fixtures";
+import { apiClient } from "@/lib/api-client";
 import type { AccountResolution } from "@/features/moderacion/types";
+import type { User } from "@/types";
 
 export type ReviewAccountInput = AccountResolution & {
-  /** Tipo de perfil cuya cuenta se modera. */
+  /** de que perfil es la cuenta. no lo usamos para pegarle a la api (el
+   *  endpoint es el mismo para los dos), solo para saber que invalidar. */
   accountType: "student" | "company";
 };
 
@@ -27,26 +20,11 @@ export function useReviewAccount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, accountType, status, adminComment }: ReviewAccountInput) => {
-      // TODO(api): apiClient.patch(`/user/${userId}`, { status, adminComment })
-      const pool = accountType === "student" ? MOCK_PENDING_STUDENT_USERS : MOCK_COMPANY_USERS;
-      const user = pool.find((u) => u.userId === userId);
-      if (user) user.status = status;
-
-      // El backend guarda status/adminComment/reviewedAt también en el perfil
-      // (StudentProfile/Company, no solo en User) — se replica acá para que
-      // las dos fuentes no queden desincronizadas en el mock.
-      const reviewedAt = new Date().toISOString();
-      if (accountType === "student") {
-        const profile = MOCK_STUDENT_PROFILES.find((p) => p.studentProfileId === userId);
-        if (profile) Object.assign(profile, { status, reviewedAt, adminComment: adminComment ?? null });
-      } else {
-        const profile = MOCK_COMPANIES.find((p) => p.companyId === userId);
-        if (profile) Object.assign(profile, { status, reviewedAt, adminComment: adminComment ?? null });
-      }
-    },
+    mutationFn: ({ userId, status, adminComment }: ReviewAccountInput) =>
+      apiClient.patch<User>(`/user/${userId}`, { status, adminComment }),
     onSuccess: () => {
-      // Invalida ambas colas (empresas y alumnos) — todas cuelgan de "moderacion".
+      // invalidamos todo lo que empiece con "moderacion", asi entran tanto
+      // empresas como alumnos sin tener que acordarse de las dos keys
       void queryClient.invalidateQueries({ queryKey: ["moderacion"] });
     },
   });
