@@ -109,3 +109,9 @@ export interface UpdateCompanyInput {
 }
 
 export const COMPANY_DESCRIPTION_MAX = 1000;
+
+/** Límite de la "Descripción" en Formación académica y Experiencia laboral
+ *  (Mi perfil, alumno) — no viene del backend (sin `@Size` documentado en
+ *  ENDPOINTS.md), es un tope de UX para que el textarea no crezca sin
+ *  límite. Mismo criterio que `COMPANY_DESCRIPTION_MAX`. */
+export const PROFILE_ITEM_DESCRIPTION_MAX = 1000;
