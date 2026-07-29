@@ -2,21 +2,21 @@
 
 // Opciones del filtro de oferta en "Postulantes": todas las ofertas de la
 // empresa, sin aplicar los filtros activos (mismo criterio que
-// `features/puestos/hooks/use-company-vacancies.ts`).
-//
-// ⚠️ ANDAMIO TEMPORAL sobre fixtures — ver use-company-applicants.ts. Va por
-// `useQuery` igual que el resto del dominio: la lista de ofertas de la empresa
-// es dato de servidor (`GET /vacancy?companyId=`), así la forma ya queda lista
-// para el swap al backend.
+// `features/puestos/hooks/use-company-vacancies.ts`). Reusa el fetch de
+// vacantes propias de `use-company-applicants.ts` (mismo dominio, mismo
+// `GET /vacancy` sin paginar + filtro por `companyId`).
 
 import { useQuery } from "@tanstack/react-query";
 
 import { MOCK_VACANCIES } from "@/lib/fixtures";
+import { fetchCompanyVacancies } from "@/features/postulaciones/hooks/use-company-applicants";
 
 interface VacancyOption {
   value: string;
   label: string;
 }
+
+const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function companyVacancyOptionsQueryKey(companyId: string | undefined) {
@@ -26,13 +26,24 @@ export function companyVacancyOptionsQueryKey(companyId: string | undefined) {
 export function useCompanyVacancyOptions(companyId: string | undefined): VacancyOption[] {
   const { data } = useQuery({
     queryKey: companyVacancyOptionsQueryKey(companyId),
-    queryFn: () =>
-      MOCK_VACANCIES.filter((v) => v.companyId === companyId).map((v) => ({
-        value: v.vacancyId,
-        label: v.name,
-      })),
+    queryFn: ({ signal }) => fetchVacancyOptions(companyId as string, signal),
     enabled: Boolean(companyId),
   });
 
   return data ?? [];
+}
+
+async function fetchVacancyOptions(
+  companyId: string,
+  signal?: AbortSignal,
+): Promise<VacancyOption[]> {
+  if (MOCK_ROLE) {
+    return MOCK_VACANCIES.filter((v) => v.companyId === companyId).map((v) => ({
+      value: v.vacancyId,
+      label: v.name,
+    }));
+  }
+
+  const vacancies = await fetchCompanyVacancies(companyId, signal);
+  return vacancies.map((vacancy) => ({ value: vacancy.vacancyId, label: vacancy.name }));
 }
