@@ -75,7 +75,11 @@ const companySchema = z.object({
   name: z.string().trim().min(1, "Ingresá la razón social."),
   industry: z.string().trim().min(1, "Ingresá el rubro."),
   description: z.string().trim().min(1, "Contanos brevemente a qué se dedica la empresa."),
-  webUrl: z.string().trim().min(1, "Ingresá el sitio web."),
+  webUrl: z
+    .string()
+    .trim()
+    .min(1, "Ingresá el sitio web.")
+    .pipe(z.url("Ingresá una URL válida.")),
   linkedinUrl: z.string().trim().min(1, "Ingresá el LinkedIn de la empresa."),
   location: z.string().min(1, "Elegí un departamento."),
 });

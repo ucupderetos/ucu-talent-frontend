@@ -141,6 +141,12 @@ const registerSchema = z
       }
       if (!values.webUrl) {
         ctx.addIssue({ code: "custom", path: ["webUrl"], message: "Ingresá el sitio web." });
+      } else if (!z.url().safeParse(values.webUrl).success) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["webUrl"],
+          message: "Ingresá una URL válida.",
+        });
       }
       if (!values.linkedinUrl) {
         ctx.addIssue({
