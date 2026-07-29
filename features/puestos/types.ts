@@ -54,12 +54,38 @@ export interface VacancyInput {
  * (`PUT /vacancy/{id}`, docs/ENDPOINTS.md) — a diferencia de `VacancyInput`
  * (`POST /vacancy` / `CreateVacancyRequest`), NO lleva `companyId` ni
  * `areaId`: el backend ya sabe de qué vacante se trata por el `{id}` de la
- * URL, y el área queda fija desde la creación (el contrato no la deja
- * editar). A-06 (qué campos quedan editables antes de la 1ª postulación)
- * sigue abierto — mientras tanto se deja editar todo lo que el contrato
- * permite, sin restringir por estado ni por cantidad de postulantes.
+ * URL, y el área queda fija desde la creación (el contrato no la deja editar).
+ *
+ * ⚠️ **NO se deriva de `VacancyInput` con `Omit`.** Ese atajo mandaba `salary`
+ * (el nombre que usa `CreateVacancyRequest`), pero `UpdateVacancyRequest` llama
+ * al MISMO campo **`salaryRange`** — nombres distintos a propósito entre los dos
+ * DTOs, el backend no los unificó (ENDPOINTS.md, "salary/salaryRange"). Con el
+ * `Omit` el rango salarial se mandaba con la key equivocada y el backend lo
+ * ignoraba en silencio. Por eso acá es una interface explícita que espeja el
+ * wire real.
+ *
+ * A-06 quedó RESUELTO por backend (antes estaba abierto): `PUT /vacancy/{id}`
+ * se bloquea entero con `403 "El Puesto ya tiene postulaciones."` si la vacante
+ * tiene alguna postulación — es todo-o-nada, no "algunos campos sí, otros no".
+ * El gate de UI vive en `vacancy-table.tsx` (no ofrecer "Editar" con
+ * `applicantsCount > 0`).
  */
-export type VacancyUpdateInput = Omit<VacancyInput, "companyId" | "areaId">;
+export interface VacancyUpdateInput {
+  name: string;
+  description: string;
+  requirements: string;
+  contractType: ContractType;
+  modality: Modality;
+  /** ⚠️ `salaryRange`, NO `salary` — ver el aviso de arriba. */
+  salaryRange: string;
+  location: Department;
+  /** `YYYY-MM-DD`. Read-only en el form de edición: se reenvía el valor previo
+   *  de la vacante (no se mueve la fecha de publicación de algo ya publicado). */
+  publicationDate: string;
+  /** `YYYY-MM-DD`. Editable: extender/acortar la búsqueda (dispara el auto-cierre
+   *  por cron cuando se cumple — ver `Vacancy`, `@/types`). */
+  closingDate: string;
+}
 
 /**
  * Filtros del feed de vacantes (vista alumno) tal como se resuelven HOY en el

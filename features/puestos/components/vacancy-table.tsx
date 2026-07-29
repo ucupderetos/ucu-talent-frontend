@@ -127,26 +127,41 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
         <TooltipContent>Ver postulantes</TooltipContent>
       </Tooltip>
 
-      {/* Editar (PUT /vacancy/{id}) queda afuera solo en `FINALIZADO`: es un
-          estado terminal (AGENTS.md), no tiene sentido seguir ajustando una
-          búsqueda ya cerrada. El resto de las restricciones de edición
-          (A-06) siguen abiertas — por ahora se deja editar todo lo que el
-          contrato permite. */}
-      {vacancy.status !== "FINALIZADO" && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" asChild>
-              <Link
-                href={`/puestos/${vacancy.vacancyId}/editar`}
-                aria-label={`Editar ${vacancy.name}`}
-              >
-                <PencilIcon className="size-4" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Editar oferta</TooltipContent>
-        </Tooltip>
-      )}
+      {/* Editar (`PUT /vacancy/{id}`) no se ofrece en dos casos:
+          - `FINALIZADO`: estado terminal (AGENTS.md), el backend lo rechaza.
+          - con postulaciones: A-06 quedó RESUELTO — el backend da
+            `403 "El Puesto ya tiene postulaciones."` si `applicantsCount > 0`
+            (ENDPOINTS.md). En vez de dejar completar el form y comerse el 403 al
+            guardar, se muestra el botón deshabilitado con el motivo. */}
+      {vacancy.status !== "FINALIZADO" &&
+        (vacancy.applicantsCount > 0 ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* Radix no dispara el tooltip sobre un `Button` deshabilitado (no
+                  recibe eventos de puntero); el `span` envolvente sí. */}
+              <span tabIndex={0}>
+                <Button variant="ghost" size="icon" disabled aria-label={`Editar ${vacancy.name}`}>
+                  <PencilIcon className="size-4" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>No se puede editar: ya tiene postulaciones</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" asChild>
+                <Link
+                  href={`/puestos/${vacancy.vacancyId}/editar`}
+                  aria-label={`Editar ${vacancy.name}`}
+                >
+                  <PencilIcon className="size-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Editar oferta</TooltipContent>
+          </Tooltip>
+        ))}
 
       {/* La empresa dueña solo puede cerrar, y solo desde `PUBLICADO`
           (RF-PUE-03). Retirar una vacante a `PENDIENTE` es potestad del
