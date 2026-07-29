@@ -12,7 +12,9 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { ListPagination } from "@/components/pagination/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { useSession } from "@/hooks/use-session";
 import {
   useCompanyVacancies,
   useCompanyVacancyFilterOptions,
@@ -20,11 +22,28 @@ import {
 import { VacancyFilters } from "@/features/puestos/components/vacancy-filters";
 import { VacancyTable } from "@/features/puestos/components/vacancy-table";
 import type { CompanyVacancyFilters, CompanyVacancyOrder } from "@/features/puestos/types";
+import type { AccountStatus } from "@/types";
 
 const DEFAULT_FILTERS: CompanyVacancyFilters = { order: "recent", page: 1, perPage: 5 };
 
+// RN-02 / RF-MOD-04: mismo criterio que `PENDING_STATUS_MESSAGE` de
+// `vacancy-detail-view.tsx` (RN-16, gate de "Aplicar") — acá es el gate de
+// "Crear nueva oferta".
+const BLOCKED_STATUS_MESSAGE: Partial<Record<AccountStatus, string>> = {
+  PENDIENTE:
+    "Tu cuenta está pendiente de aprobación. Vas a poder publicar vacantes cuando se apruebe.",
+  RECHAZADO: "Tu cuenta no fue aprobada, así que no podés publicar vacantes.",
+};
+
 export function CompanyVacanciesView() {
+  const { user } = useSession();
   const { company, isLoading: isLoadingCompany } = useCurrentCompany();
+
+  // RN-02 / RF-MOD-04: el estado no restringe el acceso, restringe la acción
+  // de publicar puestos. `User.status` es la fuente canónica (AGENTS.md), no
+  // `Company.status` (mismo valor duplicado, pero éste ya está en la sesión
+  // sin fetch extra).
+  const canCreateOffer = user?.status === "APROBADO";
 
   // Filtrado inmediato (sin "Aplicar filtros"): cada cambio de filtro vuelve
   // a la página 1, mismo criterio que el resto de las pantallas con
@@ -64,15 +83,7 @@ export function CompanyVacanciesView() {
           onOrderChange={changeOrder}
         />
 
-        <Button
-          asChild
-          className="bg-ucu-blue text-white hover:bg-ucu-blue/90"
-        >
-          <Link href="/crear-oferta/informacion-basica">
-            <PlusIcon />
-            Crear nueva oferta
-          </Link>
-        </Button>
+        <CreateOfferAction canCreateOffer={canCreateOffer} status={user?.status} />
       </div>
 
       {isLoading && <TableSkeleton />}
@@ -109,6 +120,53 @@ export function CompanyVacanciesView() {
         </>
       )}
     </div>
+  );
+}
+
+/** Botón "Crear nueva oferta" con el gate de RN-02 (cuenta no `APROBADO`). El
+ *  layout del wizard (`crear-oferta/layout.tsx`) repite el mismo gate por si
+ *  se llega por URL directa — acá solo se evita el click. */
+function CreateOfferAction({
+  canCreateOffer,
+  status,
+}: {
+  canCreateOffer: boolean;
+  status: AccountStatus | undefined;
+}) {
+  if (canCreateOffer) {
+    return (
+      <Button asChild className="bg-ucu-blue text-white hover:bg-ucu-blue/90">
+        <Link href="/crear-oferta/informacion-basica">
+          <PlusIcon />
+          Crear nueva oferta
+        </Link>
+      </Button>
+    );
+  }
+
+  const blockedMessage = status && BLOCKED_STATUS_MESSAGE[status];
+
+  return (
+    <Tooltip>
+      {/* El `<span>` (no el `Button` deshabilitado) es el trigger real:
+          `disabled:pointer-events-none` del propio `Button` le impediría
+          recibir el hover que dispara el tooltip (mismo patrón que
+          `vacancy-table.tsx`). */}
+      <TooltipTrigger asChild>
+        <span className="inline-flex">
+          <Button
+            disabled
+            className="pointer-events-none bg-ucu-blue text-white"
+          >
+            <PlusIcon />
+            Crear nueva oferta
+          </Button>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        {blockedMessage ?? "Todavía no podés publicar vacantes."}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
