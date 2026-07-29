@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/select";
 import { MapPinIcon, HomeIcon, LaptopIcon } from "lucide-react";
 
-import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
+import { CONTRACT_TYPES, useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { cn } from "@/lib/utils";
+import type { ContractType } from "@/types";
 
 const TITLE_MAX = 100;
 
@@ -33,6 +34,20 @@ const MODALITY_OPTIONS = [
   { value: "REMOTO", label: "Remota", helper: "A distancia", icon: LaptopIcon },
 ] as const;
 
+// Diccionario de presentación — el valor del enum va en inglés/mayúscula, la
+// UI lo traduce acá (AGENTS.md, "Idioma del código"). Enum real de Backend
+// (`vacancy/ContractType.java`), no un texto libre.
+export const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
+  FULL_TIME: "Full-time",
+  PART_TIME: "Part-time",
+  FREELANCE: "Freelance",
+  PASANTIA: "Pasantía",
+  CONTRATO_FIJO: "Contrato fijo",
+  CONTRATO_INDEFINIDO: "Contrato indefinido",
+  SUPLENCIA: "Suplencia",
+  BECA: "Beca",
+};
+
 export function JobBasicInfoForm() {
   const { form } = useCreateJobForm();
   const {
@@ -44,8 +59,10 @@ export function JobBasicInfoForm() {
 
   const name = useWatch({ control, name: "name" }) ?? "";
   const areaId = useWatch({ control, name: "areaId" });
+  const contractType = useWatch({ control, name: "contractType" });
   const modality = useWatch({ control, name: "modality" });
   const location = useWatch({ control, name: "location" });
+  const publicationDate = useWatch({ control, name: "publicationDate" }) ?? "";
 
   return (
     <Card>
@@ -101,13 +118,27 @@ export function JobBasicInfoForm() {
 
             <Field data-invalid={Boolean(errors.contractType)}>
               <FieldLabel htmlFor="contractType">Tipo de contrato *</FieldLabel>
-              <Input
-                id="contractType"
-                className="h-11"
-                placeholder="Pasantía, Full-time, Part-time..."
-                aria-invalid={Boolean(errors.contractType)}
-                {...register("contractType")}
-              />
+              <Select
+                value={contractType ?? ""}
+                onValueChange={(v) =>
+                  setValue("contractType", v as ContractType, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger
+                  id="contractType"
+                  className="w-full data-[size=default]:h-11"
+                  aria-invalid={Boolean(errors.contractType)}
+                >
+                  <SelectValue placeholder="Seleccioná un tipo de contrato" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTRACT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {CONTRACT_TYPE_LABEL[type]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FieldError errors={[errors.contractType]} />
             </Field>
           </FieldSet>
@@ -173,6 +204,33 @@ export function JobBasicInfoForm() {
             </Select>
             <FieldError errors={[errors.location]} />
           </Field>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Field data-invalid={Boolean(errors.publicationDate)}>
+              <FieldLabel htmlFor="publicationDate">Fecha de publicación *</FieldLabel>
+              <Input
+                id="publicationDate"
+                type="date"
+                className="h-11"
+                aria-invalid={Boolean(errors.publicationDate)}
+                {...register("publicationDate")}
+              />
+              <FieldError errors={[errors.publicationDate]} />
+            </Field>
+
+            <Field data-invalid={Boolean(errors.closingDate)}>
+              <FieldLabel htmlFor="closingDate">Fecha de cierre *</FieldLabel>
+              <Input
+                id="closingDate"
+                type="date"
+                className="h-11"
+                min={publicationDate || undefined}
+                aria-invalid={Boolean(errors.closingDate)}
+                {...register("closingDate")}
+              />
+              <FieldError errors={[errors.closingDate]} />
+            </Field>
+          </div>
         </FieldGroup>
       </CardContent>
     </Card>

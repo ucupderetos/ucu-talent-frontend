@@ -46,8 +46,13 @@ export function usePublishJob() {
       areaId: values.areaId,
       contractType: values.contractType,
       modality: values.modality,
-      salaryRange: values.salaryRange,
+      // El form le dice "rango salarial" al usuario (así lo pide
+      // `UpdateVacancyRequest.salaryRange`), pero `CreateVacancyRequest`
+      // real espera `salary` — ver el aviso en `VacancyInput`, types.ts.
+      salary: values.salaryRange,
       location: values.location,
+      publicationDate: values.publicationDate,
+      closingDate: values.closingDate,
     };
 
     return mutation.mutateAsync(payload);

@@ -3,12 +3,14 @@
 // La entidad `Vacancy` vive en @/types (la comparten moderacion y postulaciones).
 // Acá va solo lo específico: filtros, orden e inputs de formulario.
 
-import type { Company, Department, Modality, Vacancy, VacancyStatus } from "@/types";
+import type { Company, ContractType, Department, Modality, Vacancy, VacancyStatus } from "@/types";
 
 /**
- * Payload para crear o editar una vacante. Wire: `CreateVacancyRequest` — lo
- * usan tanto `POST /vacancy` como `PUT /vacancy/{id}` (el PUT reemplaza el
- * objeto entero, no es un patch parcial).
+ * Payload para crear una vacante. Wire: `CreateVacancyRequest`
+ * (`vacancy/dto/CreateVacancyRequest.java`, verificado contra el código
+ * fuente del backend — ninguna versión de `docs/ENDPOINTS.md` documentaba
+ * `publicationDate`/`closingDate` como input obligatorio, ni que el campo de
+ * sueldo acá se llama `salary`, no `salaryRange`).
  *
  * ⚠️ A diferencia de `StudentProfile`/`Company`/`Admin`, acá `companyId` NO se
  * ignora ni se deriva del token — el backend lo pide `@NotBlank` en el
@@ -16,8 +18,20 @@ import type { Company, Department, Modality, Vacancy, VacancyStatus } from "@/ty
  * (sale de `useSession()`, ya que `User.role === "EMPRESA"` implica que
  * `userId` = `companyId`).
  *
+ * ⚠️ **`publicationDate`/`closingDate` son obligatorias, no autogeneradas.**
+ * La empresa las elige en el form; el backend valida que `publicationDate`
+ * no sea anterior a hoy, que `closingDate` no sea anterior a `publicationDate`,
+ * y que no pase más de un año entre las dos. `closingDate` además dispara el
+ * auto-cierre por cron el día que se cumple — ver el aviso en `Vacancy`,
+ * `@/types`.
+ *
  * La empresa no elige el estado inicial: la vacante nace `PUBLICADO`
  * (post-moderación, DEC-01) sin importar lo que se mande.
+ *
+ * `UpdateVacancyRequest` (el `PUT /vacancy/{id}`) es un shape DISTINTO — sin
+ * `companyId`/`areaId` (no se reasignan) y con `salaryRange` en vez de
+ * `salary` (inconsistencia real del backend entre los dos DTOs, no un typo
+ * de este archivo — confirmado contra el código fuente de los dos).
  */
 export interface VacancyInput {
   companyId: string;
@@ -25,10 +39,14 @@ export interface VacancyInput {
   description: string;
   requirements: string;
   areaId: string;
-  contractType: string;
+  contractType: ContractType;
   modality: Modality;
-  salaryRange: string;
+  salary: string;
   location: Department;
+  /** `YYYY-MM-DD`, del `<input type="date">` del form. */
+  publicationDate: string;
+  /** `YYYY-MM-DD`, del `<input type="date">` del form. */
+  closingDate: string;
 }
 
 /**
@@ -105,9 +123,11 @@ export interface CompanyVacancyStatusChange {
 /**
  * Orden de la tabla de ofertas de la empresa.
  *
- * `recent`/`oldest` se basan en `publishedAt`. El MER no tiene un
- * `Vacancy.createdAt`, así que una vacante en `pending` (nunca publicada) no
- * tiene fecha propia para ordenar — queda al final en `recent`.
+ * `recent`/`oldest` se basan en `publicationDate` — obligatoria y siempre
+ * seteada (la define la empresa al crear, no el backend al aprobar; `Vacancy`
+ * sí tiene `createdAt` en el wire real, pero `publicationDate` es la fecha de
+ * negocio: "cuándo entra al feed", que puede diferir de cuándo se creó el
+ * registro).
  */
 export type CompanyVacancyOrder = "recent" | "oldest" | "applicants";
 
@@ -116,9 +136,7 @@ export type CompanyVacancyOrder = "recent" | "oldest" | "applicants";
  *  query params de un GET paginado.
  *  `statuses`/`areaIds`/`locations`: multi-selección, ver `vacancy-filters.tsx`.
  *  `publishedFrom`/`publishedTo`: rango sobre `Vacancy.publicationDate`
- *  (fechas `yyyy-MM-dd`, del `<input type="date">` de la barra de filtros).
- *  Una vacante sin `publicationDate` (todavía `PENDIENTE`) queda fuera de
- *  cualquier rango que se aplique. */
+ *  (fechas `yyyy-MM-dd`, del `<input type="date">` de la barra de filtros). */
 export interface CompanyVacancyFilters {
   search?: string;
   statuses?: VacancyStatus[];
