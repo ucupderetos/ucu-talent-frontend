@@ -23,6 +23,18 @@ export interface UpdateStudentProfileInput {
 }
 
 /**
+ * Borrador compartido entre "Información personal" y "Habilidades" —
+ * viven en pestañas separadas (decisión de UI), pero los cuatro campos son
+ * UN solo recurso para el backend: `PUT /student-profile/{id}` los exige
+ * todos no vacíos en cada request, así que cada pestaña necesita saber los
+ * valores vigentes de la otra (aunque no se hayan guardado desde ahí) para
+ * poder guardar. `StudentProfileView` es dueño de este estado y se lo pasa a
+ * las dos pestañas junto con el setter — ver el comentario en
+ * `student-profile-view.tsx`.
+ */
+export type StudentProfileDraft = UpdateStudentProfileInput;
+
+/**
  * "Mi perfil" (vista alumno): el `StudentProfile` del MER más sus listas de
  * `Education`/`WorkExperience` — lo que arma `use-student-profile.ts` para
  * alimentar las pestañas de la pantalla. No es una entidad del MER, por eso

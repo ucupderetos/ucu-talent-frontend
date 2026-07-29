@@ -15,6 +15,19 @@
 // acá vía ref (openCreateDialog), para poder alinearlo con el título en vez
 // de dejarlo dentro del tab component.
 //
+// ⚠️ "Información personal" y "Habilidades" son pestañas separadas (decisión
+// de UI), pero comparten un mismo borrador (`draft`, estado de acá) de los
+// cuatro campos que en el backend son UN solo recurso: `PUT
+// /student-profile/{id}` exige `phoneNumber`/`linkedinUrl`/`skills`/
+// `description` no vacíos en cada request. Sin compartir el borrador, guardar
+// una pestaña pisaba los campos de la otra con "" (todavía sin valor en un
+// alumno recién registrado) y el backend rechazaba los dos casos por
+// separado — nunca se podía guardar ninguna de las dos primero (encontrado en
+// QA manual, reproducido contra el backend real). Con el borrador
+// compartido, guardar desde CUALQUIERA de las dos manda también lo que se
+// haya tocado en la otra, aunque esa otra pestaña no se haya guardado
+// todavía. Ver `StudentProfileDraft` en features/perfil/types.ts.
+//
 // ⚠️ Se elige el layout por media query (JS), NO montando los dos y ocultando
 // uno con `hidden`/`lg:hidden`. Montar ambos duplicaba el contenido en el DOM:
 // `PersonalInfoTab` renderiza inputs con `id` fijos, y dos copias => IDs
@@ -29,8 +42,14 @@
 // email/teléfono y las pestañas "Idiomas"/"Documentos"/"Preferencias" no
 // tienen entidad ni endpoint todavía — quedan afuera hasta que se definan.
 
-import { useRef } from "react";
-import { BriefcaseIcon, GraduationCapIcon, PlusIcon, SparklesIcon, UserIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import {
+  BriefcaseIcon,
+  GraduationCapIcon,
+  PlusIcon,
+  SparklesIcon,
+  UserIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/layout/empty-state";
@@ -49,6 +68,17 @@ import {
   type WorkExperienceTabHandle,
 } from "@/features/perfil/components/work-experience-tab";
 import { useStudentProfile } from "@/features/perfil/hooks/use-student-profile";
+import type { StudentProfileDraft } from "@/features/perfil/types";
+import type { StudentProfile } from "@/types";
+
+function toDraft(profile: StudentProfile): StudentProfileDraft {
+  return {
+    phoneNumber: profile.phoneNumber ?? "",
+    linkedinUrl: profile.linkedinUrl ?? "",
+    description: profile.description ?? "",
+    skills: profile.skills,
+  };
+}
 
 export function StudentProfileView() {
   const { user, isLoading: isLoadingSession } = useSession();
@@ -59,6 +89,25 @@ export function StudentProfileView() {
   const educationRef = useRef<EducationTabHandle>(null);
   const workExperienceRef = useRef<WorkExperienceTabHandle>(null);
 
+  // Borrador compartido entre "Información personal" y "Habilidades" — ver
+  // el aviso de arriba sobre por qué hace falta. Se siembra UNA sola vez con
+  // el perfil del servidor (no en cada refetch): las dos pestañas ya
+  // mantienen esto actualizado con sus propios guardados exitosos, re-sembrar
+  // encima pisaría una edición sin guardar de la otra pestaña. Se ajusta
+  // durante el render (no en un efecto) siguiendo el patrón documentado de
+  // React para "derivar estado la primera vez que un dato está disponible" —
+  // evita el round-trip extra de un efecto.
+  const [draft, setDraft] = useState<StudentProfileDraft | null>(null);
+  const [seeded, setSeeded] = useState(false);
+  if (!seeded && data?.profile) {
+    setSeeded(true);
+    setDraft(toDraft(data.profile));
+  }
+
+  function updateDraft(patch: Partial<StudentProfileDraft>) {
+    setDraft((current) => (current ? { ...current, ...patch } : current));
+  }
+
   // `lg` de Tailwind = 1024px. Se monta un solo layout (ver el aviso de arriba).
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
@@ -66,14 +115,14 @@ export function StudentProfileView() {
     <div className="flex flex-col gap-6">
       {isLoading && <ProfileSkeleton />}
 
-      {!isLoading && (isError || !data || !user) && (
+      {!isLoading && (isError || !data || !user || !draft) && (
         <EmptyState
           title="No pudimos cargar tu perfil"
           description="Revisá tu conexión y volvé a intentar."
         />
       )}
 
-      {!isLoading && data && user && (
+      {!isLoading && data && user && draft && (
         <div className="flex flex-col gap-6">
           <StudentAccountStatusBanner status={user.status} />
 
@@ -102,7 +151,7 @@ export function StudentProfileView() {
               </TabsList>
 
               <TabsContent value="personal" className="mt-4">
-                <PersonalInfoTab profile={data.profile} />
+                <PersonalInfoTab profile={data.profile} draft={draft} onDraftChange={updateDraft} />
               </TabsContent>
 
               <TabsContent value="experiencia" className="mt-4">
@@ -120,7 +169,11 @@ export function StudentProfileView() {
               </TabsContent>
 
               <TabsContent value="habilidades" className="mt-4">
-                <SkillsTab profile={data.profile} />
+                <SkillsTab
+                  studentProfileId={data.profile.studentProfileId}
+                  draft={draft}
+                  onDraftChange={updateDraft}
+                />
               </TabsContent>
             </Tabs>
           )}
@@ -129,7 +182,7 @@ export function StudentProfileView() {
           {!isDesktop && (
             <div className="flex flex-col gap-6">
               <ProfileSection icon={UserIcon} title="Información personal">
-                <PersonalInfoTab profile={data.profile} />
+                <PersonalInfoTab profile={data.profile} draft={draft} onDraftChange={updateDraft} />
               </ProfileSection>
 
               <ProfileSection
@@ -177,7 +230,11 @@ export function StudentProfileView() {
               </ProfileSection>
 
               <ProfileSection icon={SparklesIcon} title="Habilidades">
-                <SkillsTab profile={data.profile} />
+                <SkillsTab
+                  studentProfileId={data.profile.studentProfileId}
+                  draft={draft}
+                  onDraftChange={updateDraft}
+                />
               </ProfileSection>
             </div>
           )}
