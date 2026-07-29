@@ -47,16 +47,15 @@ const jobFormSchema = z.object({
   areaId: z.string().trim().min(1, "Seleccioná un área."),
   contractType: z.enum(CONTRACT_TYPES, "Seleccioná un tipo de contrato."),
   modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
-  location: z.enum(DEPARTMENTS as [Department, ...Department[]]).optional(),
+  location: z.enum(DEPARTMENTS as [Department, ...Department[]], {
+    message: "Seleccioná un departamento.",
+  }),
   description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
   requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
   salary: z.string().trim().min(1, "Ingresá el rango salarial."),
   publicationDate: z.string().min(1, "Ingresá la fecha de publicación."),
   closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
 }).refine(
-  (data) => data.modality === "REMOTO" || Boolean(data.location),
-  { message: "La ubicación es obligatoria salvo que la modalidad sea remota.", path: ["location"] },
-).refine(
   (data) => !data.publicationDate || !data.closingDate || data.closingDate >= data.publicationDate,
   { message: "La fecha de cierre no puede ser anterior a la de publicación.", path: ["closingDate"] },
 );

@@ -36,19 +36,13 @@ export function usePublishJob() {
   /** Arma el VacancyInput real (con companyId de la empresa logueada) a
    *  partir de los valores del form, y dispara la mutación.
    *
-   *  A-15: RF-PUE-01 dice que `location` no es obligatorio si la modalidad
-   *  es remota, pero VacancyInput.location no es opcional — el back todavía
-   *  no resolvió ese caso. Frenamos con un error explícito en vez de mandar
-   *  "" silenciosamente, para no ocultar el gap. */
+   *  A-15: `location` es obligatorio en `CreateVacancyRequest` para TODAS las
+   *  modalidades (incluida REMOTO) — el contrato no confirma la nulabilidad
+   *  condicional que preveía RF-PUE-01. El schema del form ya lo exige, así
+   *  que `values.location` siempre llega definido. */
   function publish(values: JobFormValues) {
     if (!company) {
       throw new Error("No se pudo resolver la empresa logueada.");
-    }
-
-    if (!values.location) {
-      throw new Error(
-        "El backend todavía no define qué mandar como ubicación para puestos remotos (A-15). No se puede publicar.",
-      );
     }
 
     const payload: VacancyInput = {

@@ -138,7 +138,9 @@ function makeEditJobSchema(publicationDate: string) {
         .max(TITLE_MAX, `Máximo ${TITLE_MAX} caracteres.`),
       contractType: z.enum(CONTRACT_TYPES, "Seleccioná un tipo de contrato."),
       modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
-      location: z.enum(DEPARTMENTS as [Department, ...Department[]]).optional(),
+      location: z.enum(DEPARTMENTS as [Department, ...Department[]], {
+        message: "Seleccioná un departamento.",
+      }),
       description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
       requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
       salaryMode: z.enum(SALARY_MODES),
@@ -147,10 +149,6 @@ function makeEditJobSchema(publicationDate: string) {
       salaryMax: z.string().trim().optional(),
       salaryText: z.string().trim().optional(),
       closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
-    })
-    .refine((data) => data.modality === "REMOTO" || Boolean(data.location), {
-      message: "La ubicación es obligatoria salvo que la modalidad sea remota.",
-      path: ["location"],
     })
     .refine((data) => !data.closingDate || data.closingDate >= publicationDate, {
       message: "La fecha de cierre no puede ser anterior a la de publicación.",
@@ -303,10 +301,10 @@ export function EditJobForm({
       name: values.name,
       contractType: values.contractType,
       modality: values.modality,
-      // El refine ya garantiza `location` salvo modalidad REMOTO — A-15 sigue
-      // sin definir qué mandar ahí (ver use-publish-job.ts), así que se manda
-      // el valor previo de la vacante como fallback en vez de "".
-      location: (values.location ?? vacancy.location) as Department,
+      // A-15: `location` es obligatorio para todas las modalidades (incluida
+      // REMOTO); el schema ya lo exige, así que `values.location` siempre
+      // llega definido.
+      location: values.location,
       description: values.description,
       requirements: values.requirements,
       salary,
@@ -426,9 +424,7 @@ export function EditJobForm({
             </Field>
 
             <Field data-invalid={Boolean(errors.location)}>
-              <FieldLabel htmlFor="location">
-                Departamento / Ciudad {modality !== "REMOTO" && "*"}
-              </FieldLabel>
+              <FieldLabel htmlFor="location">Departamento / Ciudad *</FieldLabel>
               <Select
                 value={location ?? ""}
                 onValueChange={(v) => setValue("location", v as Department, { shouldValidate: true })}

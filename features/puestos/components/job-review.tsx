@@ -68,7 +68,7 @@ export function JobReview() {
             {/* TODO: nombre real de la empresa, desde la sesión/Company */}
             <p className="text-sm text-muted-foreground">{company?.name}</p>
             <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
-              {location && modality !== "REMOTO" && (
+              {location && (
                 <span className="flex items-center gap-1.5">
                   <MapPinIcon className="size-4" />
                   {DEPARTMENT_LABELS[location as keyof typeof DEPARTMENT_LABELS] ?? location}
