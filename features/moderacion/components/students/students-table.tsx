@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AccountStatusBadge } from "@/features/moderacion/components/account-status-badge";
 import { StudentModerationActions } from "@/features/moderacion/components/students/student-moderation-actions";
 import type { StudentRow } from "@/features/moderacion/types";
 import type { DocumentType } from "@/types";
@@ -59,6 +60,7 @@ export function StudentsTable({ rows }: { rows: StudentRow[] }) {
             <TableHead>Usuario</TableHead>
             <TableHead>Carrera</TableHead>
             <TableHead>Email</TableHead>
+            <TableHead>Estado</TableHead>
             <TableHead>Fecha de registro</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
@@ -89,6 +91,9 @@ export function StudentsTable({ rows }: { rows: StudentRow[] }) {
               </TableCell>
               <TableCell>{student.degreeName}</TableCell>
               <TableCell className="text-muted-foreground">{student.email}</TableCell>
+              <TableCell>
+                <AccountStatusBadge status={student.status} />
+              </TableCell>
               <TableCell>{formatDate(student.registeredAt)}</TableCell>
               <TableCell className="text-right">
                 <StudentModerationActions
