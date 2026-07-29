@@ -7,17 +7,16 @@ import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
 import type { Vacancy } from "@/types";
 
-// ⚠️ `salary` → `salaryRange` por el mismo motivo que `use-edit-job.ts`
-// (AGENTS.md A-15): probado a mano en Swagger, `PUT /vacancy/{id}` solo
-// aplica el monto si el campo se llama `salaryRange`, no `salary` como dice
-// `docs/ENDPOINTS.md`. Acá en `POST /vacancy` NO está probado — se aplica
-// por analogía (mismo DTO de escritura documentado con el mismo campo,
-// mismo rename a medio hacer del lado backend) para no dejar un bug conocido
-// sin corregir, pero **falta confirmar contra Swagger igual que se hizo con
-// el PUT** antes de dar esto por cerrado.
+// ⚠️ `POST /vacancy` espera `salary`, NO `salaryRange` — a diferencia del
+// `PUT` (`use-edit-job.ts`). No es un rename simétrico entre los dos DTOs de
+// escritura: verificado 2026-07-29 contra el código fuente del backend
+// (`vacancy/dto/CreateVacancyRequest.java`, rama `dev`), `salary` es el campo
+// real y además es `@NotBlank` — mandar `salaryRange` deja `salary=null` y el
+// backend responde `400 "El salario es obligatorio"`, rompiendo la creación.
+// Por eso acá se postea `payload` tal cual (con `salary`); el mapeo a
+// `salaryRange` es exclusivo del `PUT`, donde el DTO sí usa ese nombre.
 function publishJobRequest(payload: VacancyInput): Promise<Vacancy> {
-  const { salary, ...rest } = payload;
-  return apiClient.post<Vacancy>("/vacancy", { ...rest, salaryRange: salary });
+  return apiClient.post<Vacancy>("/vacancy", payload);
 }
 
 export function usePublishJob() {

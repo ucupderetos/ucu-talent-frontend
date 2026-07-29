@@ -64,14 +64,16 @@ export interface VacancyInput {
  * vive en `use-edit-job.ts`, no acá (AGENTS.md, A-15). Por eso es una
  * interface explícita, no un `Omit`.
  *
- * A-06 (qué campos quedan editables antes de la 1ª postulación) — resuelto
- * como decisión de front, el backend no lo valida:
+ * A-06 (qué se puede editar) — resuelto por el BACKEND, no es decisión de
+ * front: `PUT /vacancy/{id}` (`VacancyServiceImpl.updateVacancy`, rama `dev`)
+ * rechaza la edición entera con `403` si la vacante tiene aunque sea una
+ * postulación (`"El Puesto ya tiene postulaciones."`) o ya está `FINALIZADO`
+ * (`"El Puesto ya finalizó."`). El front espeja ese gate como UX:
  * - `FINALIZADO`: no editable en absoluto (`EditVacancyView` bloquea antes
  *   de montar el form).
- * - Con >=1 postulaciones (sin importar el estado): el resto de los campos
- *   pasa a solo lectura, con la explicación en pantalla
- *   (`EditJobForm.isLocked`) — para no cambiarle la información del puesto
- *   a quien ya se postuló.
+ * - Con >=1 postulaciones: el form entero pasa a solo lectura, con la
+ *   explicación en pantalla (`EditJobForm.isLocked`) — mismo bloqueo que el
+ *   backend, para no dejar completar un form que se comería el 403.
  * - Sin postulaciones y no `FINALIZADO`: todo lo que este tipo permite queda
  *   editable.
  */
