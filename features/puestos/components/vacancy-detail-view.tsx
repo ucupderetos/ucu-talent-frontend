@@ -37,25 +37,13 @@ import { useSession } from "@/hooks/use-session";
 import { getVacancyDetailPreviewExtras } from "@/features/puestos/components/vacancy-detail-preview-mock";
 import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
-import type { AccountStatus, ContractType, Modality } from "@/types";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import type { AccountStatus, Modality } from "@/types";
 
 const MODALITY_LABEL: Record<Modality, string> = {
   PRESENCIAL: "Presencial",
   REMOTO: "Remota",
   HIBRIDO: "Híbrida",
-};
-
-// Enum real de Backend (`vacancy/ContractType.java`) — ver el aviso en
-// `job-basic-info-form.tsx`.
-const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
-  FULL_TIME: "Full-time",
-  PART_TIME: "Part-time",
-  FREELANCE: "Freelance",
-  PASANTIA: "Pasantía",
-  CONTRATO_FIJO: "Contrato fijo",
-  CONTRATO_INDEFINIDO: "Contrato indefinido",
-  SUPLENCIA: "Suplencia",
-  BECA: "Beca",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
@@ -143,7 +131,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <BriefcaseIcon className="size-4" />
-                {CONTRACT_TYPE_LABEL[vacancy.contractType]}
+                {CONTRACT_TYPE_LABELS[vacancy.contractType]}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarIcon className="size-4" />

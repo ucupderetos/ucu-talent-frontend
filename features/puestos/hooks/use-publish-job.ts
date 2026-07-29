@@ -1,24 +1,33 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
+import type { Vacancy } from "@/types";
 
 // POST /vacancy real. El backend fuerza el status inicial, no lo mandamos.
-// ⚠️ TODO(areaId): hoy `areaId` sale de AREAS_PLACEHOLDER en
-// job-basic-info-form.tsx — hasta conectar GET /area (A-20) el back va a
-// rechazar el valor. Se pega al endpoint real igual, para no simular un éxito
-// falso: si falla, el error se surfacea en la pantalla de revisión (toast).
-function publishJobRequest(payload: VacancyInput): Promise<void> {
-  return apiClient.post<void>("/vacancy", payload);
+// `VacancyInput` ya trae `salary`/`publicationDate`/`closingDate` con la forma
+// que espera `CreateVacancyRequest` (el mapeo `salaryRange`→`salary` lo hace
+// `publish()` abajo, con los valores del form), así que se postea tal cual.
+function publishJobRequest(payload: VacancyInput): Promise<Vacancy> {
+  return apiClient.post<Vacancy>("/vacancy", payload);
 }
 
 export function usePublishJob() {
   const { company } = useCurrentCompany();
-  const mutation = useMutation({ mutationFn: publishJobRequest });
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: publishJobRequest,
+    onSuccess: () => {
+      // Prefijo del queryKey de companyVacanciesQueryKey() — invalida todas
+      // las variantes de filtros/paginación de "Mis ofertas" para esta
+      // empresa a la vez (TanStack matchea por prefijo).
+      queryClient.invalidateQueries({ queryKey: ["puestos", "empresa", company?.companyId] });
+    },
+  });
 
   /** Arma el VacancyInput real (con companyId de la empresa logueada) a
    *  partir de los valores del form, y dispara la mutación.

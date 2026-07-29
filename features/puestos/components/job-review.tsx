@@ -15,10 +15,9 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-import { CONTRACT_TYPE_LABEL } from "@/features/puestos/components/job-basic-info-form";
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
-import type { ContractType } from "@/types";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 
 import { useCurrentCompany } from "@/hooks/use-current-company";
 
@@ -78,7 +77,7 @@ export function JobReview() {
               {contractType && (
                 <span className="flex items-center gap-1.5">
                   <BriefcaseIcon className="size-4" />
-                  {CONTRACT_TYPE_LABEL[contractType as ContractType] ?? contractType}
+                  {CONTRACT_TYPE_LABELS[contractType as keyof typeof CONTRACT_TYPE_LABELS] ?? contractType}
                 </span>
               )}
               {modality && (
@@ -88,11 +87,11 @@ export function JobReview() {
                 </span>
               )}
               {salaryRange && (
-                  <span className="flex items-center gap-1.5">
-                    <BanknoteIcon className="size-4" />
-                    {salaryRange}
-                  </span>
-                )}
+                <span className="flex items-center gap-1.5">
+                  <BanknoteIcon className="size-4" />
+                  {salaryRange}
+                </span>
+              )}
               {publicationDate && (
                 <span className="flex items-center gap-1.5">
                   <CalendarIcon className="size-4" />
