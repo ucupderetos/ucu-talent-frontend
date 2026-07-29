@@ -27,7 +27,7 @@ import type {
 } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
-const ALL_STATUSES: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADA"];
+const ALL_STATUSES: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADO"];
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function applicationsQueryKey(filters: AdminApplicationFilters) {
