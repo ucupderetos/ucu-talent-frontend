@@ -42,6 +42,7 @@ import { useSession } from "@/hooks/use-session";
 import { EducationTab, type EducationTabHandle } from "@/features/perfil/components/education-tab";
 import { PersonalInfoTab } from "@/features/perfil/components/personal-info-tab";
 import { SkillsTab } from "@/features/perfil/components/skills-tab";
+import { StudentAccountStatusBanner } from "@/features/perfil/components/student-account-status-banner";
 import { StudentProfileHeader } from "@/features/perfil/components/student-profile-header";
 import {
   WorkExperienceTab,
@@ -74,6 +75,8 @@ export function StudentProfileView() {
 
       {!isLoading && data && user && (
         <div className="flex flex-col gap-6">
+          <StudentAccountStatusBanner status={user.status} />
+
           <StudentProfileHeader profile={data.profile} user={user} />
 
           {/* Desktop: tabs (solo en pantallas anchas, para que no se achiquen) */}

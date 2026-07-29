@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/layout/empty-state";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -30,8 +30,23 @@ import {
   useDeleteWorkExperience,
   useUpdateWorkExperience,
 } from "@/features/perfil/hooks/use-work-experience";
+import { PROFILE_ITEM_DESCRIPTION_MAX } from "@/features/perfil/types";
 import type { WorkExperienceInput } from "@/features/perfil/types";
+import { ApiError } from "@/lib/api-client";
+import { applyFieldErrors } from "@/lib/form-errors";
 import type { WorkExperience } from "@/types";
+
+const WORK_EXPERIENCE_KNOWN_FIELDS = new Set([
+  "company",
+  "position",
+  "startDate",
+  "endDate",
+  "description",
+]);
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", { month: "short", year: "numeric" });
 
@@ -211,13 +226,37 @@ function WorkExperienceDialog({
   });
 
   const isCurrent = useWatch({ control: form.control, name: "isCurrent" });
+  const startDate = useWatch({ control: form.control, name: "startDate" });
+  const description = useWatch({ control: form.control, name: "description" }) ?? "";
 
   return (
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <form
           onSubmit={form.handleSubmit(async (values) => {
-            await onSubmit(values);
+            form.clearErrors("root");
+            try {
+              await onSubmit(values);
+            } catch (err) {
+              // Mismo gap que en "Formación académica": un bad request del
+              // backend no se mostraba en ningún lado (encontrado en QA manual).
+              if (err instanceof ApiError && err.fieldErrors) {
+                const { unmapped } = applyFieldErrors(
+                  err.fieldErrors,
+                  form.setError,
+                  WORK_EXPERIENCE_KNOWN_FIELDS,
+                );
+                if (unmapped.length) {
+                  form.setError("root", { type: "server", message: unmapped.join(" · ") });
+                }
+              } else {
+                form.setError("root", {
+                  type: "server",
+                  message:
+                    err instanceof Error ? err.message : "No se pudo guardar. Intentá nuevamente.",
+                });
+              }
+            }
           })}
           noValidate
         >
@@ -226,24 +265,41 @@ function WorkExperienceDialog({
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-2">
-            <Field>
+            {form.formState.errors.root?.message && (
+              <p className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">
+                {form.formState.errors.root.message}
+              </p>
+            )}
+
+            <Field data-invalid={Boolean(form.formState.errors.position)}>
               <FieldLabel htmlFor="we-position">Cargo</FieldLabel>
               <Input id="we-position" {...form.register("position")} />
+              <FieldError errors={[form.formState.errors.position]} />
             </Field>
 
-            <Field>
+            <Field data-invalid={Boolean(form.formState.errors.company)}>
               <FieldLabel htmlFor="we-company">Empresa</FieldLabel>
               <Input id="we-company" {...form.register("company")} />
+              <FieldError errors={[form.formState.errors.company]} />
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field>
+              <Field data-invalid={Boolean(form.formState.errors.startDate)}>
                 <FieldLabel htmlFor="we-start">Desde</FieldLabel>
-                <Input id="we-start" type="date" {...form.register("startDate")} />
+                <Input id="we-start" type="date" max={todayIso()} {...form.register("startDate")} />
+                <FieldError errors={[form.formState.errors.startDate]} />
               </Field>
-              <Field>
+              <Field data-invalid={Boolean(form.formState.errors.endDate)}>
                 <FieldLabel htmlFor="we-end">Hasta</FieldLabel>
-                <Input id="we-end" type="date" disabled={isCurrent} {...form.register("endDate")} />
+                <Input
+                  id="we-end"
+                  type="date"
+                  min={startDate || undefined}
+                  max={todayIso()}
+                  disabled={isCurrent}
+                  {...form.register("endDate")}
+                />
+                <FieldError errors={[form.formState.errors.endDate]} />
               </Field>
             </div>
 
@@ -258,17 +314,33 @@ function WorkExperienceDialog({
               )}
             />
 
-            <Field>
+            <Field data-invalid={Boolean(form.formState.errors.description)}>
               <FieldLabel htmlFor="we-description">Descripción</FieldLabel>
-              <Textarea id="we-description" className="min-h-24" {...form.register("description")} />
+              <Textarea
+                id="we-description"
+                className="min-h-24 max-h-40 overflow-y-auto"
+                maxLength={PROFILE_ITEM_DESCRIPTION_MAX}
+                {...form.register("description")}
+              />
+              <p className="text-right text-xs text-muted-foreground">
+                {description.length}/{PROFILE_ITEM_DESCRIPTION_MAX}
+              </p>
+              <FieldError errors={[form.formState.errors.description]} />
             </Field>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={form.formState.isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit">Guardar</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

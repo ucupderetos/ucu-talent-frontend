@@ -51,14 +51,26 @@ async function fetchVacancy(vacancyId: string): Promise<VacancyDetail | null> {
  * `GET /vacancy-application/me` es el mismo endpoint que arma "Mis
  * postulaciones" (`features/postulaciones/hooks/use-my-applications.ts`) —
  * se pega directo acá en vez de importar el hook de ese dominio (regla de
- * AGENTS.md: no importar entre `features/`), pero se usa DELIBERADAMENTE la
- * misma queryKey para que TanStack Query dedupe el fetch si las dos
- * pantallas están montadas a la vez (AGENTS.md: "Query ya deduplica por
- * queryKey", el motivo por el que no hace falta un Context compartido).
+ * AGENTS.md: no importar entre `features/`).
+ *
+ * ⚠️ Antes esto usaba la MISMA queryKey que `useMyApplications`
+ * (`["postulaciones", "mias", studentProfileId]`) a propósito, para que
+ * TanStack Query dedupe el fetch. Se revierte: los dos hooks cachean shapes
+ * DISTINTAS bajo esa key (acá, el array crudo de `{ vacancyId }`; en
+ * `useMyApplications`, `MyApplicationRow[]` ya resuelto con `vacancy`/
+ * `companyName`/`areaName`) — Query no sabe que son incompatibles, así que
+ * si este hook puebla el cache primero (ej. se visitó el detalle de una
+ * vacante y después "Mis postulaciones"), la pantalla de postulaciones lee
+ * el array crudo como si fuera `MyApplicationRow[]` y explota con
+ * `Cannot read properties of undefined (reading 'areaId')` (encontrado en QA
+ * manual del flujo de alumno). Se agrega un sufijo para que la key sea
+ * DISTINTA — el prefijo `["postulaciones", "mias", studentProfileId]` sigue
+ * siendo el mismo, así que el `invalidateQueries` de `useApplyToVacancy` de
+ * abajo (que invalida por ese prefijo) sigue refrescando las dos pantallas.
  */
 export function useHasApplied(vacancyId: string, studentProfileId: string | undefined) {
   const query = useQuery({
-    queryKey: ["postulaciones", "mias", studentProfileId] as const,
+    queryKey: ["postulaciones", "mias", studentProfileId, "vacancyIds"] as const,
     queryFn: () => apiClient.get<{ vacancyId: string }[]>("/vacancy-application/me"),
     enabled: studentProfileId != null,
   });
@@ -140,9 +152,10 @@ export function useApplyToVacancy(vacancyId: string, studentProfileId: string | 
         studentProfileId,
       }),
     onSuccess: () => {
-      // Misma queryKey que `useHasApplied` arriba y que `useMyApplications`
-      // (features/postulaciones/hooks/use-my-applications.ts) — invalidar acá
-      // alcanza para que las dos pantallas se actualicen solas.
+      // Invalida por PREFIJO: matchea tanto la key de `useHasApplied` arriba
+      // (que le agrega el sufijo "vacancyIds") como la de `useMyApplications`
+      // (features/postulaciones/hooks/use-my-applications.ts) — las dos
+      // pantallas se actualizan solas con una sola invalidación.
       queryClient.invalidateQueries({ queryKey: ["postulaciones", "mias", studentProfileId] });
     },
   });

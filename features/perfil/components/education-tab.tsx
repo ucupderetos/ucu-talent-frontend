@@ -36,9 +36,22 @@ import {
   useDeleteEducation,
   useUpdateEducation,
 } from "@/features/perfil/hooks/use-education";
+import { PROFILE_ITEM_DESCRIPTION_MAX } from "@/features/perfil/types";
 import type { EducationInput } from "@/features/perfil/types";
+import { ApiError } from "@/lib/api-client";
+import { applyFieldErrors } from "@/lib/form-errors";
 import type { Degree, DegreeLevel, Education } from "@/types";
 
+// ⚠️ `LICENCIATURA` y `GRADO` son dos valores REALES y distintos del enum del
+// backend (`Education.DegreeLevel`, docs/ENDPOINTS.md) — no se puede fusionar
+// ni sacar uno de los dos acá, un `PUT`/`POST` con un valor inventado rompe
+// contra la API. Lo que sí generaba la confusión reportada en QA ("Licenciatura
+// y grado es lo mismo, no hay campo de Ingeniería"): las carreras de Ingeniería
+// SÍ están en el catálogo real de `GET /degree` (Ingeniería Civil, Industrial,
+// en Informática, etc. — confirmado contra el endpoint), lo que faltaba era
+// aclarar que esas carreras van con nivel "Grado", no "Licenciatura" (en
+// Uruguay el título de Ingeniero es un grado, no una licenciatura) — de ahí el
+// texto de ayuda debajo del selector, no un cambio del enum.
 const DEGREE_LEVEL_LABEL: Record<DegreeLevel, string> = {
   TECNICATURA: "Tecnicatura",
   LICENCIATURA: "Licenciatura",
@@ -46,6 +59,19 @@ const DEGREE_LEVEL_LABEL: Record<DegreeLevel, string> = {
   POSGRADO: "Posgrado",
   DOCTORADO: "Doctorado",
 };
+
+const EDUCATION_KNOWN_FIELDS = new Set([
+  "degreeId",
+  "degreeLevel",
+  "institution",
+  "startDate",
+  "endDate",
+  "description",
+]);
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", { month: "short", year: "numeric" });
 
@@ -235,6 +261,8 @@ function EducationDialog({
 
   const isCurrent = useWatch({ control: form.control, name: "isCurrent" });
   const degreeId = useWatch({ control: form.control, name: "degreeId" });
+  const startDate = useWatch({ control: form.control, name: "startDate" });
+  const description = useWatch({ control: form.control, name: "description" }) ?? "";
   const degrees = useDegrees();
 
   // Institución obligatoria cuando la carrera elegida NO es de la UCU
@@ -248,7 +276,30 @@ function EducationDialog({
       <DialogContent className="sm:max-w-md">
         <form
           onSubmit={form.handleSubmit(async (values) => {
-            await onSubmit(values);
+            form.clearErrors("root");
+            try {
+              await onSubmit(values);
+            } catch (err) {
+              // Bad request del backend (ej. institución faltante, fechas
+              // inválidas) no se mostraba en ningún lado — quedaba como una
+              // promesa rechazada sin manejar (encontrado en QA manual).
+              if (err instanceof ApiError && err.fieldErrors) {
+                const { unmapped } = applyFieldErrors(
+                  err.fieldErrors,
+                  form.setError,
+                  EDUCATION_KNOWN_FIELDS,
+                );
+                if (unmapped.length) {
+                  form.setError("root", { type: "server", message: unmapped.join(" · ") });
+                }
+              } else {
+                form.setError("root", {
+                  type: "server",
+                  message:
+                    err instanceof Error ? err.message : "No se pudo guardar. Intentá nuevamente.",
+                });
+              }
+            }
           })}
           noValidate
         >
@@ -257,6 +308,12 @@ function EducationDialog({
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-2">
+            {form.formState.errors.root?.message && (
+              <p className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">
+                {form.formState.errors.root.message}
+              </p>
+            )}
+
             <Field data-invalid={Boolean(form.formState.errors.degreeId)}>
               <FieldLabel htmlFor="ed-degree">Carrera *</FieldLabel>
               <Controller
@@ -298,6 +355,10 @@ function EducationDialog({
 
             <Field data-invalid={Boolean(form.formState.errors.degreeLevel)}>
               <FieldLabel htmlFor="ed-level">Nivel *</FieldLabel>
+              <p className="text-sm text-muted-foreground">
+                Elegí &quot;Licenciatura&quot; si tu título se llama así (ej. Enfermería).
+                &quot;Grado&quot; es para el resto de las carreras de grado, como Ingeniería.
+              </p>
               <Controller
                 control={form.control}
                 name="degreeLevel"
@@ -326,6 +387,7 @@ function EducationDialog({
                 <Input
                   id="ed-start"
                   type="date"
+                  max={todayIso()}
                   aria-invalid={Boolean(form.formState.errors.startDate)}
                   {...form.register("startDate", { required: true })}
                 />
@@ -333,7 +395,14 @@ function EducationDialog({
               </Field>
               <Field>
                 <FieldLabel htmlFor="ed-end">Hasta</FieldLabel>
-                <Input id="ed-end" type="date" disabled={isCurrent} {...form.register("endDate")} />
+                <Input
+                  id="ed-end"
+                  type="date"
+                  min={startDate || undefined}
+                  max={todayIso()}
+                  disabled={isCurrent}
+                  {...form.register("endDate")}
+                />
               </Field>
             </div>
 
@@ -348,17 +417,33 @@ function EducationDialog({
               )}
             />
 
-            <Field>
+            <Field data-invalid={Boolean(form.formState.errors.description)}>
               <FieldLabel htmlFor="ed-description">Descripción</FieldLabel>
-              <Textarea id="ed-description" className="min-h-20" {...form.register("description")} />
+              <Textarea
+                id="ed-description"
+                className="min-h-20 max-h-40 overflow-y-auto"
+                maxLength={PROFILE_ITEM_DESCRIPTION_MAX}
+                {...form.register("description")}
+              />
+              <p className="text-right text-xs text-muted-foreground">
+                {description.length}/{PROFILE_ITEM_DESCRIPTION_MAX}
+              </p>
+              <FieldError errors={[form.formState.errors.description]} />
             </Field>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={form.formState.isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit">Guardar</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
