@@ -42,6 +42,13 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   year: "numeric",
 });
 
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
+
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
+}
+
 const moderationMessage: Record<AccountStatus, string> = {
   PENDIENTE:
     "Revisá la información de la empresa antes de aprobar o rechazar su registro.",
@@ -156,28 +163,31 @@ export function CompanyDetailView({ companyId }: { companyId: string }) {
             <CardTitle>Información adicional</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <CompanyLink
-              href={company.webUrl}
-              icon={GlobeIcon}
-              label="Sitio web"
-            />
-            <CompanyLink
-              href={company.linkedinUrl}
-              icon={LinkIcon}
-              label="LinkedIn"
-            />
-            <div className="flex min-w-0 items-center gap-3 rounded-lg border bg-muted/20 p-3">
-              <CalendarDaysIcon
-                className="size-5 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Registrada el</p>
-                <p className="truncate text-sm font-medium">
-                  {dateFormatter.format(new Date(company.registeredAt))}
+            {company.webUrl && (
+              <CompanyLink href={company.webUrl} icon={GlobeIcon} label="Sitio web" />
+            )}
+            {company.linkedinUrl && (
+              <CompanyLink href={company.linkedinUrl} icon={LinkIcon} label="LinkedIn" />
+            )}
+            {!company.webUrl && !company.linkedinUrl && (
+              <p className="text-sm text-muted-foreground">
+                La empresa no agregó enlaces externos.
+              </p>
+            )}
+
+            <CompanyDate label="Registrada el" value={company.registeredAt} />
+            {company.reviewedAt && (
+              <CompanyDate label="Revisada el" value={company.reviewedAt} />
+            )}
+
+            {company.adminComment && (
+              <div className="rounded-lg border bg-muted/20 p-3">
+                <p className="text-xs text-muted-foreground">Comentario de moderación</p>
+                <p className="mt-1 whitespace-pre-line text-sm leading-6">
+                  {company.adminComment}
                 </p>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -246,5 +256,17 @@ function CompanyLink({
         aria-hidden
       />
     </a>
+  );
+}
+
+function CompanyDate({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-lg border bg-muted/20 p-3">
+      <CalendarDaysIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-medium">{formatDate(value)}</p>
+      </div>
+    </div>
   );
 }

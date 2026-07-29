@@ -283,6 +283,10 @@ export interface AdminCompanyDetail extends AdminCompanyRow {
   description: string;
   webUrl: string;
   linkedinUrl: string;
+  /** `CompanyResponse` los expone directo (A-18). El detalle los muestra si
+   *  están presentes — ver la card "Información adicional". */
+  reviewedAt: string | null;
+  adminComment: string | null;
 }
 
 /**
