@@ -107,6 +107,7 @@ function filterRows(rows: StudentRow[], filters: StudentFilters): StudentRow[] {
       return false;
     if (filters.areaIds?.length && (!row.areaId || !filters.areaIds.includes(row.areaId)))
       return false;
+    if (filters.statuses?.length && !filters.statuses.includes(row.status)) return false;
     if (search) {
       const normalizedSearch = search.replace(/\D/g, "");
       const matchesText = `${row.name} ${row.surname} ${row.email}`.toLowerCase().includes(search);

@@ -1,8 +1,8 @@
 "use client";
 
 // Barra de filtros de "Usuarios": búsqueda (siempre visible, ancho fijo) + un
-// botón único "Filtros" que abre un panel con dos MultiSelect (carrera, área)
-// — mismo patrón que `features/puestos/components/vacancy-filters.tsx`
+// botón único "Filtros" que abre un panel con tres MultiSelect (estado,
+// carrera, área) — mismo patrón que `companies-filters.tsx`
 // (AGENTS.md, "Barras de filtros"). Controlado desde afuera — este componente
 // no sabe de dónde vienen los datos, solo emite el filtro nuevo.
 //
@@ -18,8 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
+import { ACCOUNT_STATUS_LABEL } from "@/features/moderacion/components/account-status-badge";
 import type { StudentFilters } from "@/features/moderacion/types";
-import type { Area, Degree } from "@/types";
+import type { AccountStatus, Area, Degree } from "@/types";
 
 export function StudentsFilters({
   filters,
@@ -32,10 +33,13 @@ export function StudentsFilters({
   areas: Area[];
   onChange: (filters: StudentFilters) => void;
 }) {
-  const activeCount = (filters.degreeIds?.length ?? 0) + (filters.areaIds?.length ?? 0);
+  const activeCount =
+    (filters.statuses?.length ?? 0) +
+    (filters.degreeIds?.length ?? 0) +
+    (filters.areaIds?.length ?? 0);
 
   function clearAll() {
-    onChange({ ...filters, degreeIds: [], areaIds: [] });
+    onChange({ ...filters, statuses: [], degreeIds: [], areaIds: [] });
   }
 
   return (
@@ -63,6 +67,22 @@ export function StudentsFilters({
           </Button>
         </PopoverTrigger>
         <FilterPopoverContent activeCount={activeCount} onClearAll={clearAll}>
+          <FilterSection label="Estado">
+            <MultiSelect
+              label="Estado"
+              placeholder="Todos los estados"
+              options={Object.entries(ACCOUNT_STATUS_LABEL).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              selected={filters.statuses ?? []}
+              onChange={(statuses) =>
+                onChange({ ...filters, statuses: statuses as AccountStatus[] })
+              }
+              className="w-full"
+            />
+          </FilterSection>
+
           <FilterSection label="Carrera">
             <MultiSelect
               label="Carrera"

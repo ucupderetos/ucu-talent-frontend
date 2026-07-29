@@ -95,6 +95,7 @@ export interface StudentFilters {
   search?: string;
   degreeIds?: string[];
   areaIds?: string[];
+  statuses?: AccountStatus[];
   page?: number;
   perPage?: number;
 }
