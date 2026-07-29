@@ -11,7 +11,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { FeedVacancyRow } from "@/features/puestos/types";
-import type { Department } from "@/types";
+import type { ContractType, Department } from "@/types";
+
+/** Enum real de Backend (`vacancy/ContractType.java`) — ver el aviso en
+ *  `job-basic-info-form.tsx`. Exportado por el mismo motivo que
+ *  `DEPARTMENT_LABEL` abajo: `vacancy-feed-table.tsx` lo reusa. */
+export const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
+  FULL_TIME: "Full-time",
+  PART_TIME: "Part-time",
+  FREELANCE: "Freelance",
+  PASANTIA: "Pasantía",
+  CONTRATO_FIJO: "Contrato fijo",
+  CONTRATO_INDEFINIDO: "Contrato indefinido",
+  SUPLENCIA: "Suplencia",
+  BECA: "Beca",
+};
 
 /**
  * Duplica el diccionario de RegisterForm.tsx/CompleteProfileForm.tsx — no hay
@@ -97,14 +111,12 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
             </span>
             <span className="flex items-center gap-1.5">
               <BriefcaseIcon className="size-4 shrink-0" aria-hidden />
-              {vacancy.contractType}
+              {CONTRACT_TYPE_LABEL[vacancy.contractType]}
             </span>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            {vacancy.publishedAt
-              ? `Publicado el ${dateFormatter.format(new Date(vacancy.publishedAt))}`
-              : "Sin fecha de publicación"}
+            Publicado el {dateFormatter.format(new Date(vacancy.publicationDate))}
           </p>
         </CardContent>
       </Card>

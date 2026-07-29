@@ -46,7 +46,7 @@ const VACANCIES_ROUTE = "/moderacion/ofertas";
 const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "Pendientes",
   VISTO: "Vistas",
-  FINALIZADA: "Finalizadas",
+  FINALIZADO: "Finalizadas",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
@@ -162,7 +162,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: AdminVacancyDetail }) {
             <OverviewItem
               icon={CalendarDaysIcon}
               label="Publicación"
-              value={formatDate(vacancy.publishedAt, "Sin publicar")}
+              value={formatDate(vacancy.publicationDate, "Sin publicar")}
             />
           </dl>
         </CardContent>
@@ -291,15 +291,15 @@ function VacancyInformation({ vacancy }: { vacancy: AdminVacancyDetail }) {
         <DetailRow label="Ubicación" value={formatDepartment(vacancy.location)} />
         <DetailRow
           label="Remuneración"
-          value={vacancy.salaryRange || "No especificada"}
+          value={vacancy.salary || "No especificada"}
         />
         <DetailRow
           label="Publicación"
-          value={formatDate(vacancy.publishedAt, "Sin publicar")}
+          value={formatDate(vacancy.publicationDate, "Sin publicar")}
         />
         <DetailRow
           label="Cierre"
-          value={formatDate(vacancy.finalizedAt, "Sin fecha de cierre")}
+          value={formatDate(vacancy.closingDate, "Sin fecha de cierre")}
         />
         <Separator />
         <div className="flex flex-col gap-1.5">

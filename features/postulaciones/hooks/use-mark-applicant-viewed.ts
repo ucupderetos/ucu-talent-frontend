@@ -11,9 +11,12 @@
 // fixtures en memoria como sustituto. TODO(api): cuando exista, pasa a
 // `apiClient.put(...)`.
 //
-// `VISTO → FINALIZADA` NO se implementa acá: es automático en cascada al
-// cerrar la vacante (lo dispara el sistema, no la empresa) — no hay ninguna
-// acción de la empresa que lo gatille desde esta pantalla.
+// `VISTO → FINALIZADO` NO se implementa acá. ⚠️ Tampoco es automático en el
+// backend real (corrige una versión anterior de este comentario): cerrar la
+// vacante (`VacancyServiceImpl`) solo dispara el mail de cierre, nunca toca
+// `VacancyApplication.status` — verificado contra el código fuente. Esa
+// transición sigue siendo `PUT /vacancy-application/{id}` explícito, sin
+// acción de la empresa que lo gatille todavía en esta pantalla.
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

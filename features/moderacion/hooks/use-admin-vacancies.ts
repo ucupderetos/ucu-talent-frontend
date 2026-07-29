@@ -118,7 +118,7 @@ function allVacancyDetails(): AdminVacancyDetail[] {
     const applicationStatusCounts: Record<VacancyApplicationStatus, number> = {
       PENDIENTE: 0,
       VISTO: 0,
-      FINALIZADA: 0,
+      FINALIZADO: 0,
     };
 
     for (const application of applications) {
@@ -135,9 +135,9 @@ function allVacancyDetails(): AdminVacancyDetail[] {
       area: area ? { ...area } : null,
       parentArea: parentArea ? { ...parentArea } : null,
       applicationStatusCounts,
-      // `selected` se eliminó del contrato (ver types/index.ts) — sin dato para
-      // computar la métrica. Se deja en 0 hasta que el contrato lo reponga.
-      selectedApplicationCount: 0,
+      // `accepted` volvió al contrato con otro nombre (ex-`selected`, ver
+      // types/index.ts) — ya se puede computar la métrica real.
+      selectedApplicationCount: applications.filter((a) => a.accepted).length,
     };
   });
 }
@@ -173,8 +173,8 @@ function filterRows(
  * tienen fecha quedan al final y se ordenan por nombre. */
 function sortByPublicationDate(rows: AdminVacancyRow[]): AdminVacancyRow[] {
   return [...rows].sort((a, b) => {
-    const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : -1;
-    const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : -1;
+    const aTime = a.publicationDate ? new Date(a.publicationDate).getTime() : -1;
+    const bTime = b.publicationDate ? new Date(b.publicationDate).getTime() : -1;
 
     return bTime - aTime || a.name.localeCompare(b.name, "es");
   });

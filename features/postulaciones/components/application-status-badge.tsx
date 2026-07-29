@@ -10,13 +10,13 @@ import type { VacancyApplicationStatus } from "@/types";
 export const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "Pendiente",
   VISTO: "Vista",
-  FINALIZADA: "Finalizada",
+  FINALIZADO: "Finalizada",
 };
 
 const APPLICATION_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "bg-warning",
   VISTO: "bg-chart-2",
-  FINALIZADA: "bg-muted-foreground",
+  FINALIZADO: "bg-muted-foreground",
 };
 
 export function ApplicationStatusBadge({ status }: { status: VacancyApplicationStatus }) {
