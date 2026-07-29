@@ -165,9 +165,7 @@ export function JobBasicInfoForm() {
           </Field>
 
           <Field data-invalid={Boolean(errors.location)}>
-            <FieldLabel htmlFor="location">
-              Departamento / Ciudad {modality !== "REMOTO" && "*"}
-            </FieldLabel>
+            <FieldLabel htmlFor="location">Departamento / Ciudad *</FieldLabel>
             <Select
               value={location ?? ""}
               onValueChange={(v) => setValue("location", v as (typeof DEPARTMENTS)[number], { shouldValidate: true })}
