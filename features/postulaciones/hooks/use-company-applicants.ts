@@ -161,18 +161,29 @@ async function fetchStudentProfile(
   }
 }
 
+/** Nombre de respaldo cuando no se pudo resolver el `StudentProfile` del
+ *  postulante (falló su `GET /student-profile/{id}`). Se muestra la fila igual
+ *  —con la oferta, el estado y la fecha, que sí tenemos— para no ocultarle a la
+ *  empresa que ese alumno se postuló. Ver `fetchStudentProfile`. */
+const UNRESOLVED_APPLICANT_NAME = "Postulante (perfil no disponible)";
+
 function toRow(
   application: VacancyApplication,
   vacancyById: Map<string, Vacancy>,
   profileById: Map<string, StudentProfile>,
 ): ApplicantRow | null {
   const vacancy = vacancyById.get(application.vacancyId);
+  // La oferta sale de la lista de vacantes propias ya traída: si no está, la
+  // postulación no es de esta empresa (o la vacante no se pudo cargar) y se
+  // omite. El perfil, en cambio, NO se descarta si falla su fetch: se muestra
+  // la fila con un nombre de respaldo, para no perder al postulante de la vista.
+  if (!vacancy) return null;
+
   const profile = profileById.get(application.studentProfileId);
-  if (!vacancy || !profile) return null;
 
   return {
     application,
-    studentName: `${profile.name} ${profile.surname}`,
+    studentName: profile ? `${profile.name} ${profile.surname}` : UNRESOLVED_APPLICANT_NAME,
     vacancyId: vacancy.vacancyId,
     vacancyName: vacancy.name,
   };
