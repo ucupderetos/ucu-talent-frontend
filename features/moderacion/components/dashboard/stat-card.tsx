@@ -10,12 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 export function StatCard({
   title,
   value,
-  weeklyChange,
+  description,
   icon: Icon,
 }: {
   title: string;
   value: string;
-  weeklyChange: string;
+  description: string;
   icon: LucideIcon;
 }) {
   return (
@@ -32,7 +32,7 @@ export function StatCard({
           </div>
         </div>
 
-        <p className="mt-5 text-sm font-medium text-success">{weeklyChange}</p>
+        <p className="mt-5 text-sm text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   );

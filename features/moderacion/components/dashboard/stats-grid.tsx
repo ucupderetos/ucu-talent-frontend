@@ -25,7 +25,7 @@ export function StatsGrid({ stats }: { stats: DashboardStat[] }) {
           key={stat.id}
           title={stat.title}
           value={stat.value}
-          weeklyChange={stat.weeklyChange}
+          description={stat.description}
           icon={STAT_ICON[stat.id] ?? FileUserIcon}
         />
       ))}

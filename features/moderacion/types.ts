@@ -179,16 +179,9 @@ export interface AdminApplicationFilters {
 // Son view models de una sola pantalla, no entidades del MER — por eso viven
 // acá y no en `@/types`.
 //
-// 🔴 Cobertura parcial: `docs/ENDPOINTS.md` sí tiene endpoints de conteo por
-// dominio (`GET /student-profile/status-summary`, `/company/status-summary`,
-// `/vacancy/status-summary`, `/vacancy-application/status-summary` — útiles
-// para `ApplicationStatusSummary` y los totales de `DashboardStat`), pero no
-// hay nada para `weeklyChange` (delta semanal) ni para `RecentActivityItem`
-// (un feed de actividad reciente cruzando dominios) — esos dos siguen sin
-// endpoint. Hoy los datos salen enteros de
-// `features/moderacion/data/dashboard-mock.ts` a través de
-// `hooks/use-dashboard.ts`; conectar los status-summary es la parte que ya
-// se puede hacer.
+// El hook compone los endpoints de resumen con los listados reales del
+// backend. No hay endpoint para un delta semanal ni para actividad reciente
+// cruzada entre dominios; esos valores no se inventan en el frontend.
 //
 // Los estados salen de los enums core (`VacancyStatus`,
 // `VacancyApplicationStatus`), no de enums propios del dashboard: un segundo
@@ -198,10 +191,8 @@ export interface AdminApplicationFilters {
 // modelo tiene hoy. No hay "Rechazada" en `VacancyStatus` (el Admin solo
 // mueve PUBLICADO ↔ PENDIENTE, nunca a un estado de rechazo), y el desglose
 // de postulaciones es PENDIENTE/VISTO/FINALIZADA — no aceptada/rechazada
-// (DEC-06 la descartó a favor de `selected`, que a su vez se eliminó del
-// contrato cerrado — ver el aviso en `VacancyApplication`, `types/index.ts`).
-// No hay ningún eje de "resultado" para graficar hoy, ni como estado ni como
-// campo aparte.
+// (`accepted` es un booleano separado, no un estado — ver el aviso en
+// `VacancyApplication`, `types/index.ts`).
 // ---------------------------------------------------------------------------
 
 /** Una de las 4 métricas de la fila superior. El ícono no es un dato: lo elige
@@ -210,23 +201,23 @@ export interface DashboardStat {
   id: string;
   title: string;
   value: string;
-  weeklyChange: string;
+  description: string;
 }
 
 export interface RecentVacancy {
-  id: string;
-  position: string;
-  company: string;
-  /** ISO 8601 — el formato de fecha lo decide la vista, no el dato. */
-  publishedAt: string;
-  applications: number | null;
+  vacancyId: string;
+  name: string;
+  companyName: string;
+  /** ISO 8601 (fecha) — el formato lo decide la vista. */
+  publicationDate: string;
+  applicationCount: number;
   status: VacancyStatus;
 }
 
 export interface PendingCompanyValidation {
-  id: string;
+  companyId: string;
   name: string;
-  description: string;
+  industry: string;
   /** ISO 8601. */
   registeredAt: string;
 }

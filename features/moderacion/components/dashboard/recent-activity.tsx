@@ -2,10 +2,8 @@
 
 // Feed de actividad reciente del dashboard.
 //
-// Cada ítem linkea al LISTADO de admin que le corresponde, no a un detalle: no
-// hay pantalla de detalle por empresa/oferta/usuario todavía, y un href a
-// /empresas/{id} sería un 404. Cuando existan, se cambia el `href` de acá
-// (y vuelve a hacer falta el id).
+// El contrato actual no ofrece un feed general de actividad. El componente
+// conserva el estado vacío real y queda listo para consumirlo cuando exista.
 
 import Link from "next/link";
 import {
@@ -69,7 +67,7 @@ export function RecentActivity({ activities }: { activities: RecentActivityItem[
           <div className="p-5">
             <EmptyState
               title="Sin actividad reciente"
-              description="Los movimientos de la plataforma van a aparecer acá."
+              description="Todavía no hay una fuente de actividad disponible."
             />
           </div>
         ) : (

@@ -38,9 +38,12 @@ function percentageOf(count: number, total: number): number {
 function donutBackground(statuses: ApplicationStatusSummary[], total: number): string {
   let end = 0;
 
-  const sections = statuses.map((item) => {
+  const sections = statuses.map((item, index) => {
     const start = end;
-    end = start + percentageOf(item.count, total);
+    // El redondeo se usa solo para el texto. En el gráfico mantenemos la
+    // proporción exacta y cerramos el último tramo en 100% para no dejar huecos.
+    end =
+      index === statuses.length - 1 ? 100 : start + (item.count / total) * 100;
     return `${STATUS_COLOR[item.status].css} ${start}% ${end}%`;
   });
 

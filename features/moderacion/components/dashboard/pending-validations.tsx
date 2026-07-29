@@ -2,9 +2,6 @@
 
 // Empresas esperando validación, en el dashboard. Muestra solo las 3 primeras;
 // el resto se ve en la pantalla de Validaciones.
-//
-// "Detalles" va al listado de Validaciones y no a un detalle por empresa: esa
-// pantalla no existe todavía.
 
 import Link from "next/link";
 import { Building2Icon } from "lucide-react";
@@ -25,7 +22,11 @@ import type { PendingCompanyValidation } from "@/features/moderacion/types";
 const VISIBLE_COUNT = 3;
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-UY");
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!match) return "—";
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString("es-UY");
 }
 
 export function PendingValidations({
@@ -53,7 +54,7 @@ export function PendingValidations({
           </div>
         ) : (
           visible.map((validation, index) => (
-            <div key={validation.id}>
+            <div key={validation.companyId}>
               <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <Avatar className="size-10 rounded-lg">
@@ -65,7 +66,7 @@ export function PendingValidations({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{validation.name}</p>
                     <p className="truncate text-sm text-muted-foreground">
-                      {validation.description}
+                      {validation.industry}
                     </p>
                   </div>
                 </div>
@@ -79,7 +80,7 @@ export function PendingValidations({
                   </div>
 
                   <Button asChild variant="outline">
-                    <Link href="/moderacion/validaciones">Detalles</Link>
+                    <Link href={`/moderacion/empresas/${validation.companyId}`}>Detalles</Link>
                   </Button>
                 </div>
               </div>
