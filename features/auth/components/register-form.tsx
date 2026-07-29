@@ -31,6 +31,7 @@ import { useRegister, type RegistrationProfile } from "@/features/auth/hooks/use
 import type { Registration } from "@/features/auth/types";
 import { ApiError } from "@/lib/api-client";
 import { DEPARTMENT_OPTIONS } from "@/lib/departments";
+import { applyFieldErrors } from "@/lib/form-errors";
 import { cn } from "@/lib/utils";
 import { isValidDocumentNumber } from "@/lib/validators";
 import type { Department, DocumentType } from "@/types";
@@ -177,6 +178,29 @@ type RegisterValues = z.infer<typeof registerSchema>;
 /** Campos que valida el botón "Continuar" antes de pasar al paso 2. */
 const ACCOUNT_STEP_FIELDS = ["role", "email", "password", "confirmPassword"] as const;
 
+/** Campos que el backend puede devolver en `errores` (A-19). Las keys espejan
+ *  1 a 1 los DTOs de registro (`CreateUserRequest` / `CreateStudentProfile
+ *  Request` / `CreateCompanyRequest`, verificado contra el código del backend),
+ *  que son los mismos nombres que usa RHF acá — por eso el mapeo es directo. */
+const BACKEND_FIELD_NAMES = new Set([
+  "email",
+  "password",
+  "name",
+  "surname",
+  "documentType",
+  "documentNumber",
+  "industry",
+  "description",
+  "webUrl",
+  "linkedinUrl",
+  "location",
+]);
+
+/** De esos, los que se editan en el paso "cuenta": si el backend rechaza uno,
+ *  hay que volver a ese paso para que el error sea visible (el submit real vive
+ *  en el paso "perfil"). */
+const ACCOUNT_STEP_ERROR_FIELDS = new Set(["email", "password"]);
+
 function toRegistration(values: RegisterValues): Registration {
   return {
     email: values.email,
@@ -251,6 +275,8 @@ export function RegisterForm() {
     try {
       await submitRegistration(toRegistration(values), toProfile(values));
     } catch (cause) {
+      if (!(cause instanceof ApiError)) return;
+
       // El 409 (email duplicado, paso 1) se muestra en el campo, no en el
       // banner genérico — `useRegister().error` ya lo silencia para ese caso.
       // El campo `email` vive en el paso "cuenta": si el submit se dispara
@@ -258,12 +284,23 @@ export function RegisterForm() {
       // quedaba seteado en un campo que no se renderizaba y el usuario no lo
       // veía hasta volver manualmente al paso 1. Por eso el catch también
       // vuelve al paso donde el campo es visible.
-      if (cause instanceof ApiError && cause.status === 409) {
+      if (cause.status === 409) {
         setStep("cuenta");
         setError("email", {
           type: "manual",
           message: "Ese email ya está registrado. ¿Ya tenés cuenta? Iniciá sesión.",
         });
+        return;
+      }
+
+      // A-19: errores por campo del backend (ej. documento inválido, URL mal
+      // formada) pegados a su control. Lo no mapeable cae en el banner genérico
+      // que ya muestra `useRegister().error` para un 400.
+      if (cause.fieldErrors) {
+        const { applied } = applyFieldErrors(cause.fieldErrors, setError, BACKEND_FIELD_NAMES);
+        if (applied.some((field) => ACCOUNT_STEP_ERROR_FIELDS.has(field))) {
+          setStep("cuenta");
+        }
       }
     }
   }

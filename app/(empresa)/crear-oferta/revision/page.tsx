@@ -5,10 +5,11 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api-client";
+import { applyFieldErrors } from "@/lib/form-errors";
 import { JobWizardHeader } from "@/features/puestos/components/job-wizard-header";
 import { JobReview } from "@/features/puestos/components/job-review";
 import { JobReviewCompanyInfo } from "@/features/puestos/components/job-review-company-info";
-import { useCreateJobForm, type JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
+import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { usePublishJob } from "@/features/puestos/hooks/use-publish-job";
 
 // A qué paso del wizard pertenece cada campo — para poder mandar de vuelta a
@@ -49,13 +50,13 @@ export default function RevisionPage() {
    *  `formState`) y navega al paso más temprano que tenga un error, para que
    *  la empresa lo vea sin tener que adivinar dónde buscarlo. */
   function applyFieldErrorsAndNavigate(fieldErrors: Record<string, string>) {
-    const values = form.getValues();
-    let targetStep: 1 | 2 | null = null;
+    // `known` = los campos que el form realmente tiene, para pegar cada mensaje
+    // a su control (los que no, quedan en `unmapped`, cubiertos por el toast).
+    const known = new Set(Object.keys(form.getValues()));
+    applyFieldErrors(fieldErrors, form.setError, known);
 
-    for (const [field, message] of Object.entries(fieldErrors)) {
-      if (field in values) {
-        form.setError(field as keyof JobFormValues, { type: "server", message });
-      }
+    let targetStep: 1 | 2 | null = null;
+    for (const field of Object.keys(fieldErrors)) {
       if (STEP_1_FIELDS.has(field)) {
         targetStep = 1;
       } else if (STEP_2_FIELDS.has(field) && targetStep !== 1) {

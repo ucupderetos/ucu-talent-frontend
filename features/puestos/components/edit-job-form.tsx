@@ -6,11 +6,14 @@
 // guiado. El área se muestra de solo lectura — `UpdateVacancyRequest` no la
 // incluye (ver VacancyUpdateInput en features/puestos/types.ts).
 //
-// A-06 (resuelto, decisión de front): con >=1 postulaciones el resto de los
-// campos también pasa a solo lectura (`isLocked`, ver EditVacancyView), para
-// no cambiarle la información del puesto a alguien que ya se postuló. El
-// caso FINALIZADO (no editable en absoluto) lo filtra EditVacancyView antes
-// de montar este form.
+// A-06 (resuelto por backend): `PUT /vacancy/{id}` devuelve
+// `403 "El Puesto ya tiene postulaciones."` si la vacante tiene aunque sea
+// una postulación (verificado contra `VacancyServiceImpl.updateVacancy`, rama
+// `dev`). Con >=1 postulaciones ponemos el form entero en solo lectura
+// (`isLocked`, ver EditVacancyView) — es el mismo gate que el backend, como
+// UX, para no dejar completar un form que se comería el 403 al guardar. El
+// caso FINALIZADO (también rechazado por el backend) lo filtra EditVacancyView
+// antes de montar este form.
 
 import { useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +35,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { CONTRACT_TYPES, CONTRACT_TYPE_OPTIONS } from "@/lib/contract-types";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
+import { applyFieldErrors } from "@/lib/form-errors";
 import { cn } from "@/lib/utils";
 import type { VacancyDetail, VacancyUpdateInput } from "@/features/puestos/types";
 import type { ContractType, Department, Modality } from "@/types";
@@ -191,7 +195,11 @@ function makeEditJobSchema(publicationDate: string) {
 
 type EditJobFormValues = z.infer<ReturnType<typeof makeEditJobSchema>>;
 
-const SALARY_KNOWN_FIELDS = new Set([
+// Campos que este form puede pegar 1 a 1 a un control. `salary` queda afuera a
+// propósito: en la UI está partido en moneda/mínimo/máximo (o texto libre), así
+// que un error del backend en `salary` no tiene un único control donde caer —
+// `applyFieldErrors` lo devuelve en `unmapped` y va al banner de `root`.
+const MAPPABLE_FIELDS = new Set([
   "name",
   "contractType",
   "modality",
@@ -213,9 +221,10 @@ export function EditJobForm({
   onSubmit: (values: VacancyUpdateInput) => void;
   isSubmitting: boolean;
   onCancel: () => void;
-  /** Requerimiento de negocio (A-06, resuelto): con >=1 postulaciones los
-   *  campos quedan solo lectura, para no cambiarle la información a alguien
-   *  que ya se postuló. El backend no lo valida — es un gate de front. */
+  /** A-06 (resuelto por backend): con >=1 postulaciones el `PUT /vacancy/{id}`
+   *  devuelve `403 "El Puesto ya tiene postulaciones."`. Ponemos los campos en
+   *  solo lectura como UX (espejo del gate real del backend), para no dejar
+   *  editar un form que fallaría al guardar. */
   isLocked?: boolean;
   applicantsCount?: number;
   /**
@@ -272,18 +281,9 @@ export function EditJobForm({
   useEffect(() => {
     if (!apiFieldErrors) return;
 
-    const unmapped: string[] = [];
-
-    for (const [field, message] of Object.entries(apiFieldErrors)) {
-      if (SALARY_KNOWN_FIELDS.has(field)) {
-        setError(field as keyof EditJobFormValues, { type: "server", message });
-      } else {
-        // `salary` (y cualquier otro campo que el backend agregue y este
-        // form no sepa mapear) cae acá.
-        unmapped.push(message);
-      }
-    }
-
+    // `salary` (y cualquier campo que el backend agregue y este form no sepa
+    // mapear) vuelve en `unmapped` → banner general de `root`.
+    const { unmapped } = applyFieldErrors(apiFieldErrors, setError, MAPPABLE_FIELDS);
     if (unmapped.length > 0) {
       setError("root", { type: "server", message: unmapped.join(" · ") });
     }
@@ -584,6 +584,7 @@ export function EditJobForm({
                   className="h-11"
                   min={publicationDate}
                   aria-invalid={Boolean(errors.closingDate)}
+                  disabled={isLocked}
                   {...register("closingDate")}
                 />
                 <FieldError errors={[errors.closingDate]} />

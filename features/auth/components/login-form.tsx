@@ -12,6 +12,12 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { AuthFormSkeleton } from "@/features/auth/components/auth-layout";
 import { useLogin } from "@/features/auth/hooks/use-login";
+import { ApiError } from "@/lib/api-client";
+import { applyFieldErrors } from "@/lib/form-errors";
+
+/** Campos que el backend puede devolver en `errores` (A-19). El caso típico de
+ *  login es 401/429 (banner), pero un 400 por campo se pega igual a su control. */
+const BACKEND_FIELD_NAMES = new Set(["email", "password"]);
 
 /**
  * Sin restricción de dominio (decisión de equipo, ver `RegisterForm`): un
@@ -36,6 +42,7 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -47,9 +54,13 @@ export function LoginForm() {
       onSubmit={handleSubmit(async ({ email, password }) => {
         try {
           await login({ email, password });
-        } catch {
-          // `useLogin().error` ya expone el mensaje (401/400/etc.) de forma
-          // reactiva — acá solo evitamos que el rechazo quede sin capturar.
+        } catch (cause) {
+          // `useLogin().error` ya expone el mensaje general (401/429/etc.) de
+          // forma reactiva; acá solo mapeamos un eventual error por campo (A-19)
+          // a su control. Lo no mapeable queda cubierto por ese banner.
+          if (cause instanceof ApiError && cause.fieldErrors) {
+            applyFieldErrors(cause.fieldErrors, setError, BACKEND_FIELD_NAMES);
+          }
         }
       })}
       noValidate

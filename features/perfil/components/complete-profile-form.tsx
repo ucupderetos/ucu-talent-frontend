@@ -25,10 +25,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCompleteProfile } from "@/features/perfil/hooks/use-complete-profile";
+import { ApiError } from "@/lib/api-client";
 import { homeRouteFor } from "@/lib/auth";
 import { DEPARTMENT_OPTIONS } from "@/lib/departments";
+import { applyFieldErrors } from "@/lib/form-errors";
 import { isValidDocumentNumber } from "@/lib/validators";
 import type { Department, DocumentType, Role } from "@/types";
+
+// Campos que el backend puede devolver en `errores` (A-19), espejando 1 a 1 los
+// DTOs de perfil (`CreateStudentProfileRequest` / `CreateCompanyRequest`,
+// verificado contra el código del backend) y los nombres de RHF de acá.
+const STUDENT_BACKEND_FIELDS = new Set(["name", "surname", "documentType", "documentNumber"]);
+const COMPANY_BACKEND_FIELDS = new Set([
+  "name",
+  "industry",
+  "description",
+  "webUrl",
+  "linkedinUrl",
+  "location",
+]);
 
 /** Wire: `common.DocumentType`. Labels en español para UI. */
 const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
@@ -79,6 +94,7 @@ function StudentForm() {
     control,
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<StudentValues>({
     resolver: zodResolver(studentSchema),
@@ -86,8 +102,16 @@ function StudentForm() {
   });
 
   async function onSubmit(values: StudentValues) {
-    await complete("ALUMNO", values);
-    router.replace(homeRouteFor("ALUMNO"));
+    try {
+      await complete("ALUMNO", values);
+      router.replace(homeRouteFor("ALUMNO"));
+    } catch (cause) {
+      // A-19: errores por campo (ej. documento inválido) pegados a su control.
+      // Lo no mapeable cae en el banner `error` que ya expone el hook.
+      if (cause instanceof ApiError && cause.fieldErrors) {
+        applyFieldErrors(cause.fieldErrors, setError, STUDENT_BACKEND_FIELDS);
+      }
+    }
   }
 
   return (
@@ -155,6 +179,7 @@ function CompanyForm() {
     control,
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<CompanyValues>({
     resolver: zodResolver(companySchema),
@@ -169,8 +194,16 @@ function CompanyForm() {
   });
 
   async function onSubmit(values: CompanyValues) {
-    await complete("EMPRESA", { ...values, location: values.location as Department });
-    router.replace(homeRouteFor("EMPRESA"));
+    try {
+      await complete("EMPRESA", { ...values, location: values.location as Department });
+      router.replace(homeRouteFor("EMPRESA"));
+    } catch (cause) {
+      // A-19: errores por campo pegados a su control. Lo no mapeable cae en el
+      // banner `error` que ya expone el hook.
+      if (cause instanceof ApiError && cause.fieldErrors) {
+        applyFieldErrors(cause.fieldErrors, setError, COMPANY_BACKEND_FIELDS);
+      }
+    }
   }
 
   return (
