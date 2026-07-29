@@ -127,6 +127,10 @@ function allCompanyDetails(): AdminCompanyDetail[] {
       description: company.description,
       webUrl: company.webUrl,
       linkedinUrl: company.linkedinUrl,
+      // A-18: el wire real (`CompanyResponse`) los trae directo; en fixtures
+      // salen del propio `Company`. Pueden ser `null` — la card los oculta.
+      reviewedAt: company.reviewedAt,
+      adminComment: company.adminComment,
     };
   });
 }
