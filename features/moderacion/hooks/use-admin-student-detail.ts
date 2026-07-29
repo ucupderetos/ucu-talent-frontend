@@ -43,7 +43,7 @@ async function fetchAdminStudentDetail(
 
   const [educationRecords, workExperience, degrees, areas] = await Promise.all([
     fetchEducation(studentProfileId),
-    apiClient.get<WorkExperience[]>("/work-experience", { params: { studentProfileId } }),
+    fetchWorkExperience(studentProfileId),
     apiClient.get<Degree[]>("/degree"),
     apiClient.get<Area[]>("/area"),
   ]);
@@ -60,10 +60,26 @@ async function fetchAdminStudentDetail(
   return { user, profile, education, workExperience };
 }
 
-/** si tira 404 es que el alumno todavia no cargo educacion. */
+/** 404 (o lista vacia) = el alumno todavia no cargo educacion: la seccion
+ *  queda vacia sin romper el detalle. Otros errores SI se propagan — el detalle
+ *  es de un solo alumno, no conviene ocultarlos (a diferencia de la tabla,
+ *  `use-students.ts`, que degrada cualquier error para no caerse por una fila). */
 async function fetchEducation(studentProfileId: string): Promise<Education[]> {
   try {
     return await apiClient.get<Education[]>("/education", { params: { studentProfileId } });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return [];
+    throw error;
+  }
+}
+
+/** Mismo criterio que `fetchEducation`: 404 (o lista vacia) = el alumno no
+ *  cargo experiencia — la seccion queda vacia sin romper el detalle. Antes esta
+ *  llamada no tenia manejo de 404 y un alumno sin experiencia podia tumbar todo
+ *  el detalle. */
+async function fetchWorkExperience(studentProfileId: string): Promise<WorkExperience[]> {
+  try {
+    return await apiClient.get<WorkExperience[]>("/work-experience", { params: { studentProfileId } });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return [];
     throw error;

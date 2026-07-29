@@ -81,15 +81,20 @@ async function toRow(
   };
 }
 
-/** si tira 404 es que el alumno todavia no cargo ninguna educacion, la fila
- *  sigue siendo valida, solo que sin carrera/area para mostrar. */
+/** La carrera/area es dato secundario de la fila: ante CUALQUIER error de la
+ *  API en `/education` (404 sin educacion cargada, lista vacia, o un 5xx del
+ *  backend) la fila se muestra sin carrera/area en vez de tumbar la tabla
+ *  entera por un solo alumno — es un `Promise.all` sobre todas las filas. Solo
+ *  se propagan errores que NO son de la API (bugs reales). A diferencia del
+ *  detalle (`use-admin-student-detail.ts`), que si surface el error porque es
+ *  de un solo alumno. */
 async function fetchEducation(studentProfileId: string): Promise<Education[]> {
   try {
     return await apiClient.get<Education[]>("/education", {
       params: { studentProfileId },
     });
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return [];
+    if (error instanceof ApiError) return [];
     throw error;
   }
 }
