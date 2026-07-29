@@ -32,7 +32,7 @@ export function StudentProfileHeader({
           </AvatarFallback>
         </Avatar>
 
-        <div className="grid flex-1 grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex flex-1 flex-wrap gap-x-10 gap-y-3">
           <InfoItem label="Nombre completo" value={`${profile.name} ${profile.surname}`} />
           <InfoItem label="Email" value={user.email} />
           <InfoItem
@@ -48,7 +48,7 @@ export function StudentProfileHeader({
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-32 flex-1 sm:flex-none">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="truncate text-sm font-medium">{value}</p>
     </div>
