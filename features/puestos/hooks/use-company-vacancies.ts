@@ -87,10 +87,7 @@ function filterRows(
     if (filters.areaIds?.length && !filters.areaIds.includes(row.areaId)) return false;
     if (filters.locations?.length && !filters.locations.includes(row.location)) return false;
     if (filters.publishedFrom || filters.publishedTo) {
-      // Sin `publishedAt` (vacante todavía `PENDIENTE`) no hay fecha para
-      // comparar contra el rango: queda afuera.
-      if (!row.publishedAt) return false;
-      const publishedDate = row.publishedAt.slice(0, 10);
+      const publishedDate = row.publicationDate.slice(0, 10);
       if (filters.publishedFrom && publishedDate < filters.publishedFrom) return false;
       if (filters.publishedTo && publishedDate > filters.publishedTo) return false;
     }
@@ -119,10 +116,11 @@ function sortRows(
   }
 }
 
-/** 0 para vacantes sin `publishedAt` (todavía `PENDIENTE`): el wire real
- *  no tiene `createdAt`, así que no hay una fecha mejor para ordenarlas. */
+/** `publicationDate` siempre está seteada (la define la empresa al crear, no
+ *  el backend al aprobar — ver el aviso en `Vacancy`, `@/types`), así que no
+ *  hace falta un caso para "todavía sin publicar". */
 function publishedTimestamp(row: CompanyVacancyRow): number {
-  return row.publishedAt ? new Date(row.publishedAt).getTime() : 0;
+  return new Date(row.publicationDate).getTime();
 }
 
 /**

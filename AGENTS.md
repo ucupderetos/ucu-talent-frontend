@@ -30,11 +30,46 @@ saca los datos personales de `User`, agrega la entidad `Admin`, agrega
 `Vacancy_Application.selected` y agrega un segundo correo automático. Esos puntos del SRS
 están desactualizados y se van a corregir en una revisión posterior del documento.
 
-⚠️ **A su vez, `docs/ENDPOINTS.md` (fuente #3, recibido 2026-07-27) revierte uno de esos
-puntos del MER**: `selected` no aparece en ningún lado del contrato cerrado. Por la regla
-de precedencia de arriba (gana la fuente de más abajo), esto se trata como la definición
-vigente — `selected` se eliminó de `types/index.ts` y de la UI que dependía de él. Ver
+⚠️ **A su vez, `docs/ENDPOINTS.md` (fuente #3, recibido 2026-07-27) parecía revertir uno de
+esos puntos del MER**: `selected` no aparecía en ningún lado de esa primera versión del
+contrato. Eso se dio por definitivo un tiempo — hasta verificar contra la fuente #4 de
+abajo, que lo revierte otra vez: el campo existe, solo que con otro nombre. Ver
 *Postulaciones: máquina de estados*.
+
+### Fuente #4 (2026-07-28): el código fuente del backend le gana a su propio `ENDPOINTS.md`
+
+El repo de backend (`ucupderetos/ucu-talent-backend`) tiene **su propio `docs/ENDPOINTS.md`**,
+más detallado que la copia local de este repo (`docs/ENDPOINTS.md`, fuente #3) — y las dos
+copias **no siempre coinciden entre sí**, y ninguna de las dos coincide siempre con el
+código real. Verificado leyendo los DTOs/entidades/servicios del backend directo (`gh api`
+contra `ucupderetos/ucu-talent-backend`, rama `dev`) en vez de confiar en cualquiera de los
+dos markdown:
+
+- El `ENDPOINTS.md` del backend afirma que `ALUMNO` nace `APROBADO` y `EMPRESA` nace
+  `PENDIENTE` — **falso contra su propio código** (`UserServiceImpl.create`: los dos branches
+  de rol asignan `PENDIENTE`, sin diferencia real). La copia local de este repo tenía razón.
+- El `ENDPOINTS.md` del backend no documentaba que la empresa dueña **no puede** cerrar una
+  vacante `PENDIENTE` (solo desde `PUBLICADO`) — confirmado contra `VacancyServiceImpl.
+  updateVacancyStatus`, que lo prohíbe con `403`.
+- Ninguna de las dos copias de `ENDPOINTS.md` documentaba `Vacancy.publicationDate`/
+  `closingDate` (obligatorias al crear, no autogeneradas), que `salary`/`salaryRange` son
+  nombres DISTINTOS según el endpoint (`CreateVacancyRequest` vs. `UpdateVacancyRequest`),
+  que `contractType` es un enum real (`ContractType.java`), ni el cron de auto-cierre por
+  `closingDate`.
+- Ninguna de las dos documentaba que `accepted` (ex-`selected` del MER) sí existe en
+  `VacancyApplicationResponse`, ni el endpoint dedicado para marcarlo
+  (`PATCH /vacancy-application/{id}/accept`).
+- `CreateVacancyApplicationRequest.studentProfileId` es `@NotBlank` en el DTO real, aunque
+  el controller lo pise con el del token — mandar solo `{ vacancyId }` (lo que indicaban las
+  dos copias de `ENDPOINTS.md`) hace fallar la request con `400`.
+
+**Regla práctica desde acá**: cuando se pueda, verificar contra el código fuente del
+backend (los DTOs/records y los `*ServiceImpl` son los más confiables — las anotaciones
+`@Schema`/`@Operation` de Swagger a veces también mienten) en vez de confiar ciegamente en
+cualquiera de los dos `ENDPOINTS.md`. Cuando el código fuente no está a mano, la copia
+local de `docs/ENDPOINTS.md` (fuente #3) sigue siendo el mejor default — pero un aviso de
+"ya está arreglado" o "así lo tenemos documentado" de backend no reemplaza probarlo (ver
+también el caso de CORS en *El backend ya está levantado*, más abajo).
 
 ## Contexto del proyecto
 
@@ -518,8 +553,17 @@ los errores de RHF.
   vía `@ucu.edu.uy` que preveía el SRS (RF-AUT-01, RN-01) **se descartó**. Todo alumno se
   registra igual, con documento, y queda `PENDIENTE` hasta que un **Admin lo apruebe a
   mano** contra el padrón (`UniversityRegistry`) → `APROBADO` o `RECHAZADO`, vía
-  `PATCH /user/{id}`. 🔄 **Confirmado, pero `api-dev` hoy hace nacer al alumno `APROBADO`
-  en `POST /user`** — falta el cambio de backend (ver A-01).
+  `PATCH /user/{id}`. ✅ **Confirmado directo contra el código fuente del backend**
+  (`UserServiceImpl.create`, rama `dev`): los dos branches de rol (`ALUMNO`/`EMPRESA`)
+  setean `AccountStatus.PENDIENTE` — es efectivamente un `if`/`else` sin diferencia. Esto
+  es más fuerte que "confirmado de palabra": el `ENDPOINTS.md` propio del repo de backend
+  (`ucu-talent-backend/docs/ENDPOINTS.md`) dice lo contrario — "`ALUMNO` nace `APROBADO`,
+  `EMPRESA` nace `PENDIENTE`" — pero esa afirmación **no coincide con su propio código**,
+  así que se descarta como error de esa doc, no como cambio de comportamiento (ver la nota
+  sobre las fuentes al principio de este archivo). Una vez `APROBADO`/`RECHAZADO`, el Admin
+  puede alternar libremente entre esos dos (`PATCH /user/{id}` es reversible en ese sentido:
+  puede pasar de `RECHAZADO` a `APROBADO` más tarde, y viceversa) — lo único que
+  `UserServiceImpl.updateStatus` bloquea con `409` es volver a `PENDIENTE`.
 - **El estado no restringe el acceso, restringe la acción.** Es el mismo criterio para
   los dos roles:
   - Alumno `PENDIENTE` o `RECHAZADO`: entra, arma su perfil, navega el feed y ve el
@@ -534,20 +578,43 @@ los errores de RHF.
 - Vacante (`Vacancy`): **post-moderación (DEC-01)** — nace ya `PUBLICADO` **por default**
   al crearse, sin aprobación previa por puesto (RN-03). Estados **confirmados**:
   `enum(PENDIENTE, PUBLICADO, FINALIZADO)` — **sin `RECHAZADO`** (se descartó) **ni
-  `paused`**. ✅ **Cerrado en `docs/ENDPOINTS.md`, con dos endpoints separados por
-  actor**: `PATCH /vacancy/status/{id}` (EMPRESA + dueña) y `PUT /vacancy/status/{id}`
-  (ADMIN, `UpdateVacancyStatusAdminRequest`). Las transiciones NO son simétricas por rol:
-  - **La empresa dueña SOLO cierra**: `PUBLICADO → FINALIZADO` o `PENDIENTE → FINALIZADO`
-    (terminal, RF-PUE-03). No hay mail en la segunda.
-  - **El Admin SOLO mueve `PUBLICADO ↔ PENDIENTE`** — nunca a `FINALIZADO`. ⚠️ Esto
-    corrige una versión anterior de este párrafo, que decía que el Admin "daba de baja"
-    a `FINALIZADO`: **`docs/ENDPOINTS.md` es explícito en que "dar de baja" para el Admin
-    es `PUBLICADO → PENDIENTE`** (se conservan las postulaciones, no hay baja física). El
-    cierre terminal es una acción exclusiva de la empresa.
+  `paused`**. ✅ **Confirmado contra el código fuente del backend** (`vacancy/VacancyStatus.java`),
+  con dos endpoints separados por actor: `PATCH /vacancy/status/{id}` (EMPRESA + dueña) y
+  `PUT /vacancy/status/{id}` (ADMIN, `UpdateVacancyStatusAdminRequest`). Las transiciones
+  NO son simétricas por rol:
+  - **La empresa dueña SOLO cierra desde `PUBLICADO`** — `PUBLICADO → FINALIZADO`
+    (terminal, RF-PUE-03). ⚠️ **NO puede cerrar desde `PENDIENTE`** — corrige una versión
+    anterior de este párrafo (y de una nota más abajo, en *Estado actual del repo*) que
+    decía que sí podía, apoyada en el `ENDPOINTS.md` del propio repo de backend. El código
+    fuente real (`VacancyServiceImpl.updateVacancyStatus`, rama `dev`) lo prohíbe
+    explícitamente: `if (existing.getStatus() == PENDIENTE) throw new
+    ForbiddenOperationException("El Puesto está en revisión.")` — un `403`, no un `409`.
+    Mientras el Admin la tiene en revisión, la empresa no puede tocarla. `vacancy-table.tsx`
+    ya estaba bien (el botón "Cerrar" solo sale para `PUBLICADO`); era la doc la que estaba
+    mal.
+  - **El Admin SOLO mueve `PUBLICADO ↔ PENDIENTE`** — nunca a `FINALIZADO`, aunque esto es
+    **política, no algo que el código fuerce**: `updateVacancyStatusAdmin` acepta cualquier
+    `VacancyStatus` en el body salvo que la vacante YA esté `FINALIZADO` — no hay un chequeo
+    explícito que impida mandar `status: FINALIZADO`. El front nunca ofrece esa opción en la
+    UI de Admin, así que no es un problema práctico, pero no depender de que el backend lo
+    vaya a rechazar solo. "Dar de baja" para el Admin es `PUBLICADO → PENDIENTE` (se
+    conservan las postulaciones, no hay baja física) — eso sigue confirmado.
 
   Impacto: el panel de admin es una **bandeja de revisión de lo ya publicado** (últimas
   24h destacadas — RF-MOD-01), no una cola de aprobación previa ni una que pueda cerrar
   vacantes. La empresa ve su vacante viva apenas la crea.
+
+  ⚠️ **`closingDate` es obligatoria al crear y dispara un cierre automático.** No estaba
+  documentada en ninguna versión de `ENDPOINTS.md` (ni la local ni la del backend) hasta
+  que se verificó contra el código fuente: `CreateVacancyRequest.closingDate` es
+  `@NotNull`, y un cron diario en el backend
+  (`VacancyServiceImpl.finalizeExpiredVacancies`, 00:00 America/Montevideo) pasa a
+  `FINALIZADO` toda vacante `PUBLICADO` cuya `closingDate` ya pasó, y dispara el mail de
+  cierre a cada postulante — sin que la empresa haga nada. `publicationDate` también es
+  obligatoria al crear (no la autogenera el backend al aprobar/publicar); el back valida
+  que no sea anterior a hoy, que `closingDate` no sea anterior a `publicationDate`, y que
+  no pase más de un año entre las dos. El form de "Publicar oferta" (`job-basic-info-form.tsx`)
+  ya pide las dos fechas.
 - Cada route group (`(auth)`, `(alumno)`, `(empresa)`, `(admin)`) lleva su propio
   `layout.tsx` que valida el rol antes de renderizar. Ya existen: son de 3 líneas y
   delegan en `RoleGuard` (`features/auth/components/role-guard.tsx`).
@@ -666,38 +733,77 @@ Ya no es una asunción: `ENDPOINTS.md` lo define.
 - `lib/api-client.ts` manda `credentials: "include"` para que el browser adjunte la cookie
   en cross-origin.
 
+⚠️ **`POST /auth/login` tiene rate limit — no documentado en ninguna versión de
+`ENDPOINTS.md`, verificado contra el código fuente del backend.** Doble límite en memoria:
+5 intentos/60s por email, 20 intentos/60s por IP. Al excederse devuelve `429 Too Many
+Requests` (`application/problem+json`, header `Retry-After` con los segundos de bloqueo) y
+escala progresivamente si la misma key reincide (30s → 3min → 15min, se resetea solo tras
+24h sin infracciones). `login-form.tsx` hoy no distingue `429` de otros errores — si
+`api-client.ts` ya expone bien el `detail`/`Retry-After` (ver A-19), es un buen próximo paso
+mostrar el tiempo de espera en vez del mensaje genérico de error de login.
+
 ### Postulaciones: máquina de estados
 
 ```
-VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADA)
+VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)
 ```
 
-⚠️ El valor terminal es **`FINALIZADA`** (femenino, por "postulación") — no confundir con
-`VacancyStatus.FINALIZADO`.
+⚠️ **El valor terminal es `FINALIZADO` (masculino), NO `FINALIZADA`.** Varias versiones
+anteriores de este archivo (y de `types/index.ts`) insistían en que era femenino "por
+postulación", justo para no confundirlo con `VacancyStatus.FINALIZADO` — esa distinción
+**no existe en el wire real**: verificado directo contra el enum fuente del backend
+(`vacancyapplication/VacancyApplicationStatus.java`), los dos enums usan la misma palabra.
+Si algo en el código sigue comparando contra `"FINALIZADA"`, está mal.
 
 | Transición | Disparador | Actor |
 |---|---|---|
 | (alta) → `PENDIENTE` | el alumno se postula | Alumno |
 | `PENDIENTE` → `VISTO` | la empresa abre el perfil del postulante | Empresa dueña |
-| `VISTO` → `FINALIZADA` | **automático**, en cascada al finalizar el puesto | Sistema |
+| `VISTO` → `FINALIZADO` | acción explícita de la empresa (`PUT /vacancy-application/{id}`) | Empresa dueña |
+
+⚠️ **La última transición NO es automática — corrige una versión anterior de esta
+tabla**, que decía "automático, en cascada al finalizar el puesto, Sistema". Verificado
+contra el código fuente (`VacancyApplicationServiceImpl`/`VacancyServiceImpl`/
+`VacancyFinalizationNotifier`): cerrar una vacante (por la empresa, o por el cron de
+`closingDate` — ver *Roles y control de acceso*) **solo dispara el mail de cierre a cada
+postulante**, nunca toca `VacancyApplication.status`. La única función que cambia el
+status de una postulación es `VacancyApplicationServiceImpl.update`, llamada
+exclusivamente desde `PUT /vacancy-application/{id}` (empresa dueña, acción explícita) —
+no hay ningún otro caller. El frontend todavía no tiene una acción de UI para disparar
+`VISTO → FINALIZADO` (ver `use-mark-applicant-viewed.ts`, que solo cubre
+`PENDIENTE → VISTO`).
 
 - El estado **nunca retrocede** (RN-08). Una transición inválida devuelve `409` y no
   modifica la postulación.
 - Un alumno no puede postularse dos veces al mismo puesto: `UNIQUE (vacancy_id,
   student_profile_id)` (RN-05). El segundo intento devuelve `409`.
+- **El alumno puede retirar su propia postulación**: `DELETE /vacancy-application/{id}`
+  (dueño = el alumno postulante, verificado contra `VacancyApplicationController.delete`).
+  No documentado en ninguna versión de `ENDPOINTS.md`; sin UI en el front todavía.
+- **Postularse exige que el alumno tenga al menos un registro de `Education`** — resuelve
+  A-07 (antes "el backend no lo valida, decisión de front"): sí lo valida, `409` con el
+  mensaje "El alumno debe tener al menos un registro de educacion para postularse" si no
+  tiene ninguno (`VacancyApplicationServiceImpl.create`). El front no lo pre-valida — el
+  mensaje de error real del backend ya lo explica (ver `use-vacancy.ts`).
+- **También hace falta que la vacante esté `PUBLICADO`**: postular a una `PENDIENTE`
+  devuelve `409` ("Solo se puede postular a vacantes en estado PUBLICADO"). `ApplyAction`
+  (`vacancy-detail-view.tsx`) ya bloquea el botón en ese caso.
 
-⚠️ **`selected` SE ELIMINÓ — reversión respecto de una versión anterior de esta
-sección.** El MER aprobado lo tenía (`Vacancy_Application.selected: boolean`, independiente
-del status, para no necesitar `ACEPTADO`/`RECHAZADO` — DEC-06) y A-17 llegó a darlo como
-"confirmado por backend, todavía no en `api-dev`". **`docs/ENDPOINTS.md` — el contrato
-cerrado — no lo incluye en ningún lado**: ni en `VacancyApplicationResponse` ni en
-`UpdateVacancyApplicationRequest` (`{ status: VISTO | FINALIZADA }`, sin más campos). Se
-trata como una reversión real de esa confirmación previa, no como un vacío del documento.
-Consecuencia concreta: **no hay forma de distinguir "seleccionado" de "no seleccionado"**
-en una postulación `FINALIZADA` — la barra de progreso de "Mis postulaciones"
-(`features/postulaciones/components/application-progress.tsx`) ya no lo muestra, solo
-marca que la postulación llegó a su fin. Si el backend reintroduce el campo más adelante,
-revisar `types/index.ts` (`VacancyApplication`) primero.
+⚠️ **`accepted` volvió — reversión de una reversión.** El MER aprobado tenía `selected`
+(`Vacancy_Application.selected: boolean`, DEC-06); una revisión anterior de esta sección
+lo daba por eliminado porque ninguna versión de `docs/ENDPOINTS.md` (ni la local ni la del
+backend) lo documentaba. **Verificado contra el código fuente del backend, no contra esa
+doc**: el campo existe, se llama `accepted` (no `selected`) y vive en
+`VacancyApplicationResponse` — boolean, default `false`, de solo lectura salvo por
+`PATCH /vacancy-application/{id}/accept` (empresa dueña, sin operación inversa). Define el
+contenido del mail de cierre (`VacancyFinalizationNotifier`: `accepted === true` →
+`sendVacancySelectedEmail`, si no → `sendVacancyClosedEmail`) — es decir, el criterio que
+esta sección daba como "no definido en `docs/ENDPOINTS.md`" sí está definido, solo que en
+el código, no en ese doc. **Sigue sin viajar en `VacancyApplicationStudentResponse`**
+(`GET /vacancy-application/me`) — el alumno sigue sin poder ver si quedó seleccionado; la
+barra de progreso de "Mis postulaciones"
+(`features/postulaciones/components/application-progress.tsx`) sigue sin mostrarlo, y eso
+sí sigue siendo correcto. `types/index.ts` (`VacancyApplication.accepted`) ya lo tiene.
 
 ### Mails: los dos son del backend, el frontend no manda ninguno
 
@@ -825,9 +931,11 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
   `Area` (jerárquica: `parentAreaId`), `Company`, `StudentProfile`, `UniversityRegistry`
   (el padrón — tabla de consulta, sin FK a `User`), `Degree`, `Education`,
   `WorkExperience`, `Modality: enum(PRESENCIAL, HIBRIDO, REMOTO)`,
-  `VacancyStatus: enum(PENDIENTE, PUBLICADO, FINALIZADO)`, `Vacancy`,
-  `VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADA)`, `VacancyApplication`
-  (sin `selected` — ver *Postulaciones*), `Paginated<T>`.
+  `VacancyStatus: enum(PENDIENTE, PUBLICADO, FINALIZADO)`,
+  `ContractType: enum(FULL_TIME, PART_TIME, FREELANCE, PASANTIA, CONTRATO_FIJO,
+  CONTRATO_INDEFINIDO, SUPLENCIA, BECA)`, `Vacancy`,
+  `VacancyApplicationStatus: enum(PENDIENTE, VISTO, FINALIZADO)`, `VacancyApplication`
+  (con `accepted` — ver *Postulaciones*), `Paginated<T>`.
 - **`features/<x>/types.ts` → lo específico del dominio**: filtros, payloads de formulario,
   view models. No cruzan a otro dominio, así que no suben.
 
@@ -836,8 +944,9 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 > - `CompanyStatus` y `StudentProfileStatus` → **se unifican en `AccountStatus`**, que
 >   vive en `User` y llega en `GET /me`.
 > - `VacancyApplicationStatus` deja de tener `ACEPTADO`/`RECHAZADO` → es
->   `PENDIENTE, VISTO, FINALIZADA`, sin ningún flag de resultado (`selected` se agregó y
->   después se eliminó — ver *Postulaciones*).
+>   `PENDIENTE, VISTO, FINALIZADO` (masculino, no `FINALIZADA` — corregido tras verificar
+>   contra el enum fuente del backend). El flag de resultado sí existe: se llama `accepted`,
+>   no `selected` — ver *Postulaciones*.
 > - **`MailTemplate` se elimina.** Ver *Mails*.
 > - Se agrega `Admin` (perfil con PK compartida, mismo patrón que los otros dos).
 
@@ -1016,10 +1125,19 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   contra `ENDPOINTS.md`. `hooks/use-session.ts` (capa de sesión app-wide, en el bucket
   `hooks/` de raíz — ver *Estructura de carpetas*) sirve de plantilla del patrón.
 - ✅ **`app/(empresa)/puestos/page.tsx`** — ya existe ("Mis ofertas"), construida por el
-  grupo de empresa. 🔄 Ver `VacancyStatus` en *Roles y control de acceso*: el enum
-  confirmado es `PENDIENTE, PUBLICADO, FINALIZADO` (default `PUBLICADO`), pero `api-dev`
-  todavía expone solo `PENDIENTE, FINALIZADO` — la pantalla los colapsa por ahora; revisar
-  labels/acciones cuando el backend publique el estado `PUBLICADO` (A-14).
+  grupo de empresa. Ver `VacancyStatus` en *Roles y control de acceso*: el enum es
+  `PENDIENTE, PUBLICADO, FINALIZADO` (default `PUBLICADO`, A-14 ✅). **Ya NO colapsa
+  estados** — corrige una versión anterior de esta nota, escrita cuando `api-dev` todavía
+  exponía solo `PENDIENTE, FINALIZADO`: `vacancy-table.tsx` hoy pinta los tres estados
+  distintos vía `VacancyStatusBadge` + `VACANCY_STATUS_DESCRIPTION`, y la acción "Cerrar"
+  sale solo para `PUBLICADO`. ⚠️ Eso último es **correcto, no un gap** — corrige un aviso
+  de una revisión anterior de esta misma nota, que decía lo contrario apoyándose en el
+  `ENDPOINTS.md` del propio repo de backend (no en su código): `VacancyServiceImpl.
+  updateVacancyStatus` (fuente real del backend, verificado en `dev`) **prohíbe
+  explícitamente** que la empresa cierre desde `PENDIENTE` (`403 "El Puesto está en
+  revisión."`) — solo puede cerrar desde `PUBLICADO`. El código de `vacancy-table.tsx` ya
+  estaba bien; era la nota la que estaba mal. "Cerrar" sigue siendo un stub
+  (`notImplemented(...)`), sin mutación real todavía — eso sí sigue pendiente.
 - Las `page.tsx` de `/feed`, `/postulaciones` y `/puestos/[id]/postulantes` siguen siendo
   placeholders.
 - ✅ **`/perfil` es una ruta COMPARTIDA entre alumno y empresa** (route group `(perfil)`,
@@ -1039,17 +1157,32 @@ cp .env.example .env.local
 NEXT_PUBLIC_API_BASE_URL=https://api-dev.ucutalent.tech
 ```
 
-⚠️ **La cookie cross-origin es el primer problema a resolver.** El front corre en
-`http://localhost:3000` y la API en `https://api-dev.ucutalent.tech` — dominios distintos.
-Para que el browser acepte y reenvíe la cookie de sesión hacen falta **las dos puntas**:
+⚠️ **La cookie cross-origin sigue siendo el punto a terminar de cerrar — y hoy hay DOS
+orígenes de frontend, no uno.** Además de `http://localhost:3000` (local), el frontend
+también está deployado en **`https://dev.ucutalent.tech/`** — dominios distintos de la
+API (`https://api-dev.ucutalent.tech`) en los dos casos. Por eso, desde 2026-07-28, probar
+un cambio ya no alcanza con local: hay que verificarlo **también** contra
+`https://dev.ucutalent.tech/`. Para que el browser acepte y reenvíe la cookie de sesión
+hacen falta **las dos puntas**:
 
 - Backend: `Set-Cookie` con `SameSite=None; Secure`, y CORS con
   `Access-Control-Allow-Credentials: true` + `Allow-Origin` explícito
-  (con credenciales, `*` no sirve).
+  **para cada origen que necesite acceso** (con credenciales, `*` no sirve).
 - Front: `credentials: "include"` — eso ya lo hace `lib/api-client.ts`.
 
 Si el login "funciona" pero `GET /me` devuelve 401 en la llamada siguiente, es esto y no
 otra cosa. Ver `A-13`.
+
+✅ **CORS de `https://dev.ucutalent.tech` resuelto (confirmado 2026-07-28, ~20:26 ART).**
+Estuvo roto varias horas ese mismo día — `curl` devolvía `403 Invalid CORS request` para
+ese origen en cualquier endpoint, incluso `GET` simples como `GET /area` (así se detectó:
+QA no podía postularse a una vacante porque nada andaba desde ese dominio, no solo esa
+acción puntual). Infra avisó el fix y se volvió a probar con `curl`: preflight `OPTIONS`
+ahora da `200` + `Access-Control-Allow-Origin: https://dev.ucutalent.tech`, y `GET /area`
+pasa el CORS y llega hasta auth (`401` esperado sin cookie, con `detail` bien formado en
+`application/problem+json`). Sigue abierto lo que ya estaba abierto en A-13 antes de esto:
+confirmar los atributos del `Set-Cookie` (`SameSite=None; Secure`) con un login real desde
+`https://dev.ucutalent.tech` — eso todavía no se probó.
 
 ### Modo mock (en retirada)
 
@@ -1088,36 +1221,34 @@ los literales viejos (`student`/`company`/`admin`).
 
 | # | Estado | Qué aplica |
 |---|---|---|
-| **A-01** | 🔄 | **Confirmado: el alumno nace `PENDIENTE`** (igual que la empresa). Hace todo lo normal (perfil, feed, detalle) **excepto postularse**; un **Admin lo aprueba a mano** contra el padrón (`UniversityRegistry`) → `APROBADO` o `RECHAZADO`, vía `PATCH /user/{id}`. Solo `APROBADO` puede postularse. Implica que el admin construye la **cola de aprobación de alumnos** (RF-MOD-05/06). ⚠️ `api-dev` hoy hace nacer al alumno `APROBADO` en `POST /user` — **falta el cambio de backend**. El RBAC de arriba queda **correcto**. |
+| **A-01** | ✅ | **Confirmado directo contra el código fuente del backend** (`UserServiceImpl.create`, no contra prosa): el alumno nace `PENDIENTE` (igual que la empresa). Hace todo lo normal (perfil, feed, detalle) **excepto postularse**; un **Admin lo aprueba a mano** contra el padrón (`UniversityRegistry`) → `APROBADO` o `RECHAZADO`, vía `PATCH /user/{id}`. Solo `APROBADO` puede postularse. Implica que el admin construye la **cola de aprobación de alumnos** (RF-MOD-05/06). El RBAC de arriba queda **correcto**. Ver *Roles y control de acceso* para el aviso sobre por qué esto contradice al `ENDPOINTS.md` del propio repo de backend (esa doc está mal, no el comportamiento). |
 | **A-02** | ✅ | Moderación **existe**: `PATCH /user/{id}` (status + `adminComment`, se guarda en `StudentProfile`/`Company`), `PUT /vacancy/status/{id}` (admin), `reviewedAt`, y `*/status-summary`. El dominio `moderacion` ya puede escribir hooks. |
 | **A-03** | ✅ | `skills` es `string[]` (solo en `StudentProfile`). El orden por coincidencia (RF-FEED-01) **se descarta** — `Vacancy` no lleva `skills`. |
-| **A-04** | 🔄 | El feed **va a ir paginado** (backend lo está implementando). Tratar `Paginated<T>` como contrato futuro; revisar nombres de params/envoltorio al salir. |
-| **A-05** | ✅ | El **filtrado del feed queda en el front** por ahora (fetch-all + en memoria, ver *Barras de filtros*). No esperar endpoint de filtros del backend. |
+| **A-04** | ✅ | **`GET /vacancy` (el que usa hoy el feed) NO se pagina, y no va a hacerlo** — `docs/ENDPOINTS.md` es explícito (secciones 1 y 5): devuelve la colección completa sin paginación de servidor. Front resuelve filtro, orden y paginación visual enteramente en memoria — ya implementado así en `use-feed-vacancies.ts`. ⚠️ **Matiz nuevo, verificado contra el código fuente del backend**: SÍ existe paginación real de servidor, pero en un endpoint DISTINTO que el front todavía no usa — `GET /vacancy/search` (ADMIN) y `GET /vacancy/student/search` (autenticado, ya filtra por `PUBLICADO`), los dos devuelven `Page<VacancyResponse>` con filtros combinables (área con subáreas, carrera, tipo de contrato, modalidad, localidad, keyword) y orden (`sortBy`/`sortDirection`). Ninguna versión de `ENDPOINTS.md` (ni la local ni la del backend) lo documenta. Migrar el feed a `/vacancy/student/search` reemplazaría buena parte del filtrado/paginado en memoria de A-05 — es una mejora real disponible, pero no se adoptó en esta pasada (cambia toda la capa de fetching del feed, alcance para otra tarea). `Paginated<T>` (`types/index.ts`) sigue existiendo como view model **in-memory del front** para las pantallas que ya lo simulan (tablas de postulantes, moderación, "Mis ofertas") — no está atado a ninguno de los dos casos de arriba. |
+| **A-05** | ✅ | El **filtrado del feed queda en el front** por ahora (fetch-all + en memoria, ver *Barras de filtros*). ⚠️ Ya no es del todo cierto que no hay "endpoint de filtros del backend" — ver el matiz de A-04, `GET /vacancy/student/search` sí filtra combinado del lado del servidor. Se documenta acá igual porque el front no lo adoptó todavía. |
 | **A-08** | ✅ | `PUT /student-profile/{id}` existe (dueño): edita `phoneNumber`, `linkedinUrl`, `skills`, `description`. `name`/`surname`/documento **no** se editan por ahí. |
 | **A-09** | ✅ | `hasProfile: boolean` confirmado en `MeResponse` (`docs/ENDPOINTS.md`). `use-session.ts` hoy lo deriva del `404` del perfil — sigue siendo correcto, es candidato a simplificarse leyendo el campo directo. `name` **no** se agrega — el navbar sigue con el 2º fetch al perfil, es el diseño definitivo. |
 | **A-10** | ✅ | Documento **único por el par `(documentType, documentNumber)`**. La **validez** del documento (dígito verificador, etc.) la valida el **backend**; el front solo valida superficie (cantidad y tipo de caracteres). **Implementado**: `lib/validators.ts` (`isValidDocumentNumber`) — cédula/DNI solo dígitos, exactamente 8; pasaporte alfanumérico 6–9, limpiando puntos/comas/guiones/espacios antes de medir. Lo consumen los dos formularios del paso 2 (`register-form.tsx`, `complete-profile-form.tsx`), que muestran el tipo como `Select` y bloquean el avance con mensaje inline. |
 | **A-12** | 🔄 | Gaps de autorización **corregidos en backend** — falta actualizar `api-dev`. Asumir ownership/roles aplicados. |
 | **A-14** | ✅ | `VacancyStatus = PENDIENTE, PUBLICADO, FINALIZADO`, default **`PUBLICADO`** (post-moderación). **Sin `RECHAZADO`.** Dos endpoints separados por actor: `PATCH /vacancy/status/{id}` (EMPRESA + dueña, cierre) y `PUT /vacancy/status/{id}` (ADMIN, `PUBLICADO ↔ PENDIENTE`). **El Admin NUNCA llega a `FINALIZADO`** — "dar de baja" para el Admin es `PUBLICADO → PENDIENTE`, corrigiendo lo que decía una versión anterior de esta fila. Ver *Roles y control de acceso*. |
-| **A-15** | 🔄 | `contractType` sigue siendo `string` libre — el contrato cerrado no confirma un enum ni sus valores; queda abierto. `salaryRange` **se queda como está** — el contrato lo mantiene tal cual, no se renombra a `salary` (esta fila decía lo contrario antes de tener `docs/ENDPOINTS.md`). `location` sigue como campo requerido en `CreateVacancyRequest` — el contrato no confirma la nulabilidad condicional a `REMOTO` que se anticipaba acá; tratar como no resuelto. Sin orden por skills. |
-| **A-17** | ⚠️ | **Reversión, no confirmación**: `selected` **NO** está en `docs/ENDPOINTS.md` — ni en `VacancyApplicationResponse` ni en `UpdateVacancyApplicationRequest`. Se eliminó de `types/index.ts` y de la barra de progreso de "Mis postulaciones" (ver *Postulaciones*). La cascada `VISTO → FINALIZADA` al finalizar el puesto sigue vigente (no depende de `selected`). |
+| **A-15** | ✅ | **`contractType` es un enum real**, no `string` libre — corrige lo que decía esta fila antes (que el contrato no lo confirmaba): `vacancy/ContractType.java` en el backend define `FULL_TIME, PART_TIME, FREELANCE, PASANTIA, CONTRATO_FIJO, CONTRATO_INDEFINIDO, SUPLENCIA, BECA`. Verificado contra el código fuente, no contra ningún `ENDPOINTS.md` (ninguna versión, ni la local ni la del backend, lo documentaba como enum). `types/index.ts` ya tiene `ContractType`, y el form de "Publicar oferta" ya usa un `Select` en vez de texto libre. ⚠️ **El campo de sueldo tiene un nombre DISTINTO según el endpoint** — no es indecisión de esta fila, es una inconsistencia real del backend entre sus dos DTOs: `CreateVacancyRequest.salary` (`POST /vacancy`) vs. `UpdateVacancyRequest.salaryRange` (`PUT /vacancy/{id}`). `VacancyInput` (`features/puestos/types.ts`) ya lo resuelve mandando el campo que corresponde a cada uno. `location` sigue como campo requerido en `CreateVacancyRequest` — el contrato no confirma la nulabilidad condicional a `REMOTO` que se anticipaba acá; tratar como no resuelto. Sin orden por skills. Ver también el aviso de `publicationDate`/`closingDate` (obligatorias, no autogeneradas) en *Roles y control de acceso*. |
+| **A-17** | ✅ | **Reversión de una reversión — `accepted` (ex-`selected`) SÍ existe.** Una versión anterior de esta fila lo daba por eliminado porque ninguna versión de `ENDPOINTS.md` lo documentaba; verificado contra el código fuente del backend (no contra esa doc): `VacancyApplicationResponse.accepted` (boolean) es real, se marca vía `PATCH /vacancy-application/{id}/accept` (empresa dueña) y define el contenido del mail de cierre. `types/index.ts` (`VacancyApplication.accepted`) ya lo tiene. Sigue sin viajar en `VacancyApplicationStudentResponse` (`GET /vacancy-application/me`) — el alumno sigue sin verlo, la barra de progreso de "Mis postulaciones" sigue sin mostrarlo, y eso sigue siendo correcto. Ver *Postulaciones*. |
 | **A-18** | ✅ | `CompanyResponse` expone `status`, `reviewedAt`, `adminComment` (y `StudentProfileResponse` también, más `description` — ver *Roles y control de acceso*). El admin ve/filtra por estado. |
-| **A-19** | ✅ | Error `application/problem+json` con mapa por campo bajo la key **`errores`**: `{ detail, title, status, instance, errores: { campo: mensaje } }`. Mapear `errores` a `setError` de RHF y tipar así `ApiError`. |
+| **A-19** | ✅ | Error `application/problem+json` con mapa por campo bajo la key **`errores`**: `{ detail, title, status, instance, errores: { campo: mensaje } }`. Mapear `errores` a `setError` de RHF y tipar así `ApiError`. Implementado en `lib/api-client.ts` (`errorMessage` lee `detail`, `ApiError.fieldErrors` expone `errores` — sin consumidores todavía en los formularios). |
+| **A-06** | ✅ | **Resuelto: NO es una decisión de front — el backend bloquea la edición entera.** Corrige lo que decía esta fila antes ("el backend no bloquea"). `VacancyServiceImpl.updateVacancy` (fuente del backend): si la vacante tiene aunque sea una postulación (`vacancyApplicationRepository.existsByVacancyId(id)`), `PUT /vacancy/{id}` devuelve `403 "El Puesto ya tiene postulaciones."` — no hay edición parcial de "solo estos campos siguen editables", es todo o nada. También bloquea si la vacante ya está `FINALIZADO`. |
+| **A-07** | ✅ | **Resuelto: SÍ, el backend lo exige.** Corrige lo que decía esta fila antes ("el backend no lo valida, decisión de front"). `VacancyApplicationServiceImpl.create` devuelve `409` ("El alumno debe tener al menos un registro de educacion para postularse") si `EducationService.getByStudentProfileId` viene vacío. El front no lo pre-valida — se apoya en que `use-vacancy.ts` ahora muestra el `detail` real del backend en vez de un mensaje genérico (ver *Postulaciones*). |
+| **A-13** | ✅ | **CORS.** Confirmado OK para `http://localhost:3000` desde el principio. `https://dev.ucutalent.tech` (el frontend deployado) estuvo unas horas fuera de la whitelist el 2026-07-28 (`403 Invalid CORS request` hasta en `GET` simples) — infra lo arregló ese mismo día, reconfirmado con `curl` ~20:26 ART: preflight da `200` + `Allow-Origin` correcto, y `GET /area` pasa el CORS y llega a auth. Lo que queda de esta fila **no es CORS**: confirmar los atributos del `Set-Cookie` (`SameSite=None; Secure`) con un login real — no probado todavía. |
 
 ### 🔴 Todavía abierto
 
 | # | Qué falta |
 |---|---|
 | **A-11** | **Subida de archivos** — **queda confirmar** el mecanismo (multipart vs. URL prefirmada) y los límites. Sin endpoint todavía. |
-| **A-13** | **Cookie cross-origin.** CORS del servidor **confirmado OK** (origin explícito + `Allow-Credentials`); faltan los atributos del `Set-Cookie` (`SameSite=None; Secure`), que se ven con un login. Prueba definitiva: front real contra `api-dev` (que `GET /me` no dé 401 tras el login). |
-| **A-16** | **Nombre de la cookie de sesión** — se confirma leyendo el `Set-Cookie` de un login (necesario para `proxy.ts`). |
+| **A-16** | **Nombre de la cookie de sesión** — se confirma leyendo el `Set-Cookie` de un login (necesario para `proxy.ts`). Requiere el login real desde `https://dev.ucutalent.tech` que quedó pendiente en A-13. |
 | **A-20** | **Semilla de `Area`/`Degree` en `api-dev`** — se confirma con `GET /area`/`GET /degree` logueado. |
 
-### 🟡 Definiciones de UI (sin bloqueo de backend)
-
-| # | Qué falta |
-|---|---|
-| **A-06** | **Qué campos del puesto quedan editables** antes de la 1ª postulación (RN-06). El backend **no** bloquea; es decisión de front. |
-| **A-07** | **¿Se exige ≥1 educación para postularse?** (RF-FEED-04). El backend **no** lo valida; decisión de front. |
+No quedan ítems en "🟡 Definiciones de UI (sin bloqueo de backend)" — los dos que había (A-06, A-07)
+se resolvieron contra el código fuente del backend, ver la tabla de arriba.
 
 ## Fuera de alcance del proyecto
 
@@ -1133,9 +1264,9 @@ Además, **descartado por decisión posterior al SRS**:
   contacto empresa → alumno ocurre enteramente fuera del sistema. Ver *Mails*.
 - **La vía de registro por `@ucu.edu.uy`** (RF-AUT-01, RN-01a) — no hay aprobación
   automática por dominio de correo. Toda cuenta nace `PENDIENTE`.
-- **`VacancyApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADA`,
-  sin ningún flag de resultado (`selected` se eliminó del contrato cerrado — ver
-  *Postulaciones*).
+- **`VacancyApplicationStatus` con `ACEPTADO`/`RECHAZADO`** — es `PENDIENTE, VISTO, FINALIZADO`.
+  El flag de resultado sí existe (se llama `accepted`, no `selected` — ver *Postulaciones*),
+  pero no es un tercer valor del enum de estado: es un campo booleano aparte.
 
 Los correos automáticos son **dos** y los manda el backend: aviso de nueva postulación a
 la empresa, y aviso de cierre a cada postulante al finalizar el puesto. El frontend no

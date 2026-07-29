@@ -14,24 +14,19 @@ import type {
 } from "@/types";
 
 /**
- * Fila de la lista de postulantes que ve la empresa.
+ * Detalle del postulante: la empresa ve el CV completo del candidato.
  *
- * `profile` (`StudentProfile`) ya trae `name`/`surname` directo — a diferencia
- * de la asunción previa a tener el contrato, no hace falta combinarlo con
- * `user`. `user` (`GET /user/{studentProfileId}`) aporta lo que sí es de
- * `User`: `email` y `status` (para saber si el alumno está `APROBADO`).
- * TODO: confirmar si el backend expone esto ya agregado en un solo endpoint o
- * si de verdad hay que pedir `VacancyApplication` + `StudentProfile` + `User`
- * por separado (hoy, según `docs/ENDPOINTS.md`, son 3 requests).
+ * A diferencia de la fila de lista (`ApplicantRow`, más abajo), el detalle SÍ
+ * necesita `StudentProfile` y `User` completos — `GET /vacancy-application/{id}`
+ * devuelve `VacancyApplicationResponse` (`{ vacancyApplicationId, vacancyId,
+ * studentProfileId, status, appliedAt }`, docs/ENDPOINTS.md sección 6), que no
+ * trae ni nombre ni email. Hacen falta requests separados a
+ * `GET /student-profile/{id}` y `GET /user/{id}` para completar la pantalla.
  */
-interface ApplicantListItem {
+interface ApplicantDetail {
   application: VacancyApplication;
   profile: StudentProfile;
   user: User;
-}
-
-/** Detalle del postulante: la empresa ve el CV completo del candidato. */
-interface ApplicantDetail extends ApplicantListItem {
   education: Education[];
   workExperience: WorkExperience[];
 }
@@ -62,11 +57,33 @@ export interface ApplicantFilters {
 }
 
 /**
- * Fila de la tabla de "Postulantes": junta `ApplicantListItem` con el nombre
- * de la oferta a la que corresponde (necesario porque esta vista es cruzada,
- * no de una vacante a la vez).
+ * Fila de la tabla de "Postulantes".
+ *
+ * ⚠️ **`VacancyApplicantResponse` (con `studentName` resuelto) NO EXISTE en
+ * el backend real — corrige la versión anterior de este comentario.** Las dos
+ * copias de `ENDPOINTS.md` (la local y la del propio repo de backend) lo
+ * documentaban así, pero `VacancyApplicationController.getByVacancyId`
+ * (fuente del backend, `GET /vacancy-application?vacancyId={id}`) devuelve
+ * `List<VacancyApplicationResponse>` — el mismo shape que todos los demás
+ * endpoints de postulaciones: `{ vacancyApplicationId, vacancyId,
+ * studentProfileId, status, appliedAt, accepted }`, **sin `studentName`**.
+ * Para mostrar el nombre hace falta resolver `StudentProfile` por
+ * `studentProfileId` — 1+N requests (o `GET /student-profile` completo +
+ * `Map`, mismo patrón que `use-my-applications.ts` con `Company`/`Area`), no
+ * el único `GET` que asumía el diseño anterior. Como este hook todavía está
+ * sobre fixtures (`use-company-applicants.ts`, sin conectar), no es un bug en
+ * producción hoy — pero conectar esto tiene que resolver `studentName` así,
+ * no asumiendo que ya viene resuelto. El nombre de la oferta (`vacancyName`)
+ * tampoco viene en la response — esta vista es cruzada a todas las ofertas de
+ * la empresa, así que también hay que resolverlo por `vacancyId`.
+ *
+ * ⚠️ Antes de esto, esta fila extendía `ApplicantListItem` (`StudentProfile` +
+ * `User` completos) — sin `email` en este nivel: no se puede mostrar ni
+ * buscar por email en esta tabla, para eso está el detalle (`ApplicantDetailRow`).
  */
-export interface ApplicantRow extends ApplicantListItem {
+export interface ApplicantRow {
+  application: VacancyApplication;
+  studentName: string;
   vacancyId: string;
   vacancyName: string;
 }

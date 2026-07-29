@@ -1,9 +1,9 @@
 // Cliente HTTP centralizado hacia la API de Spring Boot.
 // Todo el fetching de la app pasa por acá — nunca `fetch()` suelto en un componente.
 //
-// ⚠️ El contrato de la API todavía no está definido. Este archivo define la FORMA
-// del cliente (verbos, errores, base URL), no los endpoints. Los hooks de cada
-// dominio viven en features/<x>/hooks/ y usan estos helpers.
+// Este archivo define la FORMA del cliente (verbos, errores, base URL), no los
+// endpoints — esos están en docs/ENDPOINTS.md (contrato funcional cerrado). Los
+// hooks de cada dominio viven en features/<x>/hooks/ y usan estos helpers.
 //
 // Es agnóstico de la capa de cache: sirve tal cual con TanStack Query o con
 // useEffect + useState (decisión pendiente del equipo).
@@ -38,6 +38,19 @@ export class ApiError extends Error {
   /** Autenticado pero sin permiso para esto (rol equivocado, empresa no aprobada). */
   get isForbidden(): boolean {
     return this.status === 403;
+  }
+
+  /**
+   * Mapa de errores por campo (`{ errores: { campo: mensaje } }`, A-19 en
+   * AGENTS.md — `application/problem+json`). `undefined` si el backend no
+   * mandó ese shape (errores no ligados a un form, red caída, etc.). Pensado
+   * para mapear directo a `setError` de RHF en los formularios.
+   */
+  get fieldErrors(): Record<string, string> | undefined {
+    if (!this.body || typeof this.body !== "object") return undefined;
+    const { errores } = this.body as { errores?: unknown };
+    if (!errores || typeof errores !== "object") return undefined;
+    return errores as Record<string, string>;
   }
 }
 
@@ -116,10 +129,13 @@ function safeJsonParse(text: string): unknown {
 }
 
 function errorMessage(payload: unknown, response: Response): string {
-  // ⚠️ Spring Boot suele mandar { message } o { error }, pero la forma real del
-  // error todavía no está confirmada. Ajustar cuando exista el contrato.
+  // Formato confirmado (A-19 en AGENTS.md): `application/problem+json`, con el
+  // mensaje humano en `detail` — no `message` ni `error`. Se dejan esos dos como
+  // fallback por si algún 5xx no pasa por el manejador de errores del backend
+  // (ej. una página de error default de Spring, que no manda `detail`).
   if (payload && typeof payload === "object") {
-    const candidate = payload as { message?: unknown; error?: unknown };
+    const candidate = payload as { detail?: unknown; message?: unknown; error?: unknown };
+    if (typeof candidate.detail === "string") return candidate.detail;
     if (typeof candidate.message === "string") return candidate.message;
     if (typeof candidate.error === "string") return candidate.error;
   }

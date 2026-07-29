@@ -1,8 +1,9 @@
 "use client";
 
-// trae las empresas pendientes de aprobar. no hay endpoint todavia (el
-// backend no tiene PUT /user ni expone status en Company), asi que por ahora
-// junta todo en memoria sobre lib/fixtures.ts. cuando haya back se cambia
+// trae las empresas pendientes de aprobar. el contrato ya tiene lo necesario
+// (PATCH /user/{id} para aprobar/rechazar, status en CompanyResponse — A-02
+// y A-18 en AGENTS.md), pero el wire todavia no esta conectado: por ahora
+// junta todo en memoria sobre lib/fixtures.ts. cuando se conecte se cambia
 // fetchPendingCompanies por el fetch real y listo.
 
 import { useQuery } from "@tanstack/react-query";

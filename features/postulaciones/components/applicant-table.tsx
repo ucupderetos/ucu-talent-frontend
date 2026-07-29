@@ -29,8 +29,12 @@ function formatDate(iso: string): string {
   return dateFormatter.format(new Date(iso));
 }
 
-function initials(name: string, surname: string): string {
-  return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
+/** `ApplicantRow.studentName` es un único string ya armado (nombre + apellido
+ *  resueltos en el hook por `studentProfileId`, no dos campos separados) — se
+ *  toman las iniciales de las primeras dos palabras. */
+function initials(studentName: string): string {
+  const words = studentName.trim().split(/\s+/);
+  return `${words[0]?.charAt(0) ?? ""}${words[1]?.charAt(0) ?? ""}`.toUpperCase();
 }
 
 export function ApplicantTable({ rows }: { rows: ApplicantRow[] }) {
@@ -54,13 +58,10 @@ export function ApplicantTable({ rows }: { rows: ApplicantRow[] }) {
                   className="flex items-center gap-3 rounded-xs"
                 >
                   <Avatar>
-                    <AvatarFallback>{initials(row.profile.name, row.profile.surname)}</AvatarFallback>
+                    <AvatarFallback>{initials(row.studentName)}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="font-medium hover:underline">
-                      {row.profile.name} {row.profile.surname}
-                    </p>
-                    <p className="truncate text-sm text-muted-foreground">{row.user.email}</p>
+                    <p className="font-medium hover:underline">{row.studentName}</p>
                   </div>
                 </Link>
               </TableCell>

@@ -15,8 +15,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
+import { CONTRACT_TYPE_LABEL } from "@/features/puestos/components/job-basic-info-form";
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
+import type { ContractType } from "@/types";
 
 import { useCurrentCompany } from "@/hooks/use-current-company";
 
@@ -25,6 +27,17 @@ const MODALITY_LABELS: Record<string, string> = {
   HIBRIDO: "Híbrida",
   REMOTO: "Remota",
 };
+
+function formatDate(iso: string): string {
+  // `input type="date"` da `YYYY-MM-DD` — `new Date("YYYY-MM-DD")` lo
+  // interpreta en UTC medianoche, que puede caer un día antes en UTC-3.
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("es-UY", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
 
 export function JobReview() {
   const { company } = useCurrentCompany();
@@ -36,12 +49,8 @@ export function JobReview() {
   const description = useWatch({ control: form.control, name: "description" });
   const requirements = useWatch({ control: form.control, name: "requirements" });
   const salaryRange = useWatch({ control: form.control, name: "salaryRange" });
-
-  const today = new Date().toLocaleDateString("es-UY", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const publicationDate = useWatch({ control: form.control, name: "publicationDate" });
+  const closingDate = useWatch({ control: form.control, name: "closingDate" });
 
   return (
     <Card className="lg:col-span-2">
@@ -69,7 +78,7 @@ export function JobReview() {
               {contractType && (
                 <span className="flex items-center gap-1.5">
                   <BriefcaseIcon className="size-4" />
-                  {contractType}
+                  {CONTRACT_TYPE_LABEL[contractType as ContractType] ?? contractType}
                 </span>
               )}
               {modality && (
@@ -84,10 +93,13 @@ export function JobReview() {
                     {salaryRange}
                   </span>
                 )}
-              <span className="flex items-center gap-1.5">
-                <CalendarIcon className="size-4" />
-                {today}
-              </span>
+              {publicationDate && (
+                <span className="flex items-center gap-1.5">
+                  <CalendarIcon className="size-4" />
+                  Publica el {formatDate(publicationDate)}
+                  {closingDate && ` · cierra el ${formatDate(closingDate)}`}
+                </span>
+              )}
             </div>
           </div>
         </div>

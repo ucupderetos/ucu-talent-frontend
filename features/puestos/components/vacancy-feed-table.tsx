@@ -18,7 +18,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEPARTMENT_LABEL, dateFormatter } from "@/features/puestos/components/vacancy-feed-card";
+import {
+  CONTRACT_TYPE_LABEL,
+  DEPARTMENT_LABEL,
+  dateFormatter,
+} from "@/features/puestos/components/vacancy-feed-card";
 import type { FeedVacancyRow } from "@/features/puestos/types";
 import type { Modality } from "@/types";
 
@@ -73,11 +77,11 @@ export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
               <TableCell className="text-muted-foreground">
                 {MODALITY_LABEL[vacancy.modality]}
               </TableCell>
-              <TableCell className="text-muted-foreground">{vacancy.contractType}</TableCell>
               <TableCell className="text-muted-foreground">
-                {vacancy.publishedAt
-                  ? dateFormatter.format(new Date(vacancy.publishedAt))
-                  : "—"}
+                {CONTRACT_TYPE_LABEL[vacancy.contractType]}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {dateFormatter.format(new Date(vacancy.publicationDate))}
               </TableCell>
               <TableCell>
                 <Button

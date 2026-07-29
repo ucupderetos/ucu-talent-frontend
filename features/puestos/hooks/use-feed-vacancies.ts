@@ -122,11 +122,10 @@ function sortByRecent(rows: FeedVacancyRow[]): FeedVacancyRow[] {
   return [...rows].sort((a, b) => publishedTimestamp(b) - publishedTimestamp(a));
 }
 
-/** 0 para vacantes sin `publishedAt` — el wire real no tiene un
- *  `createdAt` alternativo para ordenarlas (mismo criterio que la tabla de
- *  "Mis ofertas" del lado empresa). */
+/** `publicationDate` siempre está seteada — mismo criterio que la tabla de
+ *  "Mis ofertas" del lado empresa, ver `use-company-vacancies.ts`. */
 function publishedTimestamp(row: FeedVacancyRow): number {
-  return row.publishedAt ? new Date(row.publishedAt).getTime() : 0;
+  return new Date(row.publicationDate).getTime();
 }
 
 /**

@@ -1,5 +1,5 @@
 // Traducción visual de `VacancyApplicationStatus` (RN-08 del SRS: el estado
-// solo avanza PENDIENTE → VISTO → FINALIZADA, nunca retrocede). Un solo lugar
+// solo avanza PENDIENTE → VISTO → FINALIZADO, nunca retrocede). Un solo lugar
 // para no repetir el mapeo en tabla y filtros — mismo patrón que
 // `features/puestos/components/vacancy-status-badge.tsx`.
 
@@ -10,13 +10,13 @@ import type { VacancyApplicationStatus } from "@/types";
 export const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "Pendiente",
   VISTO: "Visto",
-  FINALIZADA: "Finalizado",
+  FINALIZADO: "Finalizado",
 };
 
 const APPLICATION_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "bg-chart-2",
   VISTO: "bg-chart-4",
-  FINALIZADA: "bg-success",
+  FINALIZADO: "bg-success",
 };
 
 export function ApplicationStatusBadge({ status }: { status: VacancyApplicationStatus }) {

@@ -41,12 +41,10 @@ export type Role = "ALUMNO" | "EMPRESA" | "ADMIN";
  * `APROBADO` directo). Resuelve la deuda que tenía el booleano: ahora si se
  * puede distinguir "rechazada" de "todavía no revisada".
  *
- * ⚠️ GAP CONFIRMADO: `docs/ENDPOINTS.md` no tiene NINGÚN endpoint para pasar
- * una cuenta de `PENDIENTE` a `APROBADO`/`RECHAZADO`. La sección 1 (`/user`)
- * solo tiene POST/GET/DELETE, sin PUT. Esto bloquea RF-12 y RF-13 tal como
- * están hoy: no hay forma de que Admin UCU apruebe una empresa ni un alumno
- * desde el frontend porque el backend no expone la acción todavía. Confirmar
- * con el equipo de backend antes de construir `(admin)/moderacion`.
+ * ✅ Resuelto (A-02, `docs/ENDPOINTS.md`): `PATCH /user/{id}` (ADMIN) recibe
+ * `UpdateUserStatusRequest { status: APROBADO | RECHAZADO, adminComment? }`
+ * y aprueba/rechaza tanto alumno como empresa. Ver `use-review-account.ts`
+ * (todavía sobre fixtures, con el wire pendiente de conectar).
  */
 export type AccountStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
@@ -274,7 +272,43 @@ export type Modality = "PRESENCIAL" | "HIBRIDO" | "REMOTO";
  */
 export type VacancyStatus = "PENDIENTE" | "PUBLICADO" | "FINALIZADO";
 
-/** Wire: `VacancyResponse`. */
+/**
+ * Wire: `ContractType` (enum real de Backend — no un `string` libre como se
+ * asumía antes de verificar el código fuente, `vacancy/ContractType.java`).
+ */
+export type ContractType =
+  | "PART_TIME"
+  | "FREELANCE"
+  | "PASANTIA"
+  | "CONTRATO_FIJO"
+  | "CONTRATO_INDEFINIDO"
+  | "SUPLENCIA"
+  | "BECA"
+  | "FULL_TIME";
+
+/**
+ * Wire: `VacancyResponse` (`vacancy/dto/VacancyResponse.java`, fuente del
+ * backend — no coincide con `docs/ENDPOINTS.md` de ningún lado del repo, ni
+ * el local ni el del backend: ninguno de los dos documentaba `publicationDate`/
+ * `closingDate`/`createdAt`/`deletedAt`/`deleted`/`reviewedBy`, y los dos
+ * tenían `salaryRange` en vez de `salary`).
+ *
+ * ⚠️ **No hay `publishedAt`/`finalizedAt`.** La fecha de publicación la
+ * define la EMPRESA al crear el puesto (`publicationDate`, obligatoria en
+ * `CreateVacancyRequest` — no autogenerada), y no hay timestamp de cierre
+ * (`FINALIZADO` no sella nada nuevo, solo cambia `status`/`updatedAt`).
+ *
+ * ⚠️ **`closingDate` dispara un cron diario en Backend**
+ * (`VacancyServiceImpl.finalizeExpiredVacancies`, 00:00 America/Montevideo):
+ * toda vacante `PUBLICADO` con `closingDate <= hoy` pasa sola a `FINALIZADO`
+ * y dispara el mail de cierre a cada postulante — sin acción de la empresa.
+ * Es la primera fuente de verdad de "cuándo se cierra un puesto", no algo
+ * que el frontend necesite simular.
+ *
+ * ⚠️ **`deleted`/`deletedAt`**: `DELETE /vacancy/{id}` es borrado lógico, no
+ * físico — pone `status: FINALIZADO`, `deleted: true`, sella `deletedAt`. Un
+ * puesto ya `FINALIZADO` no se puede volver a borrar (`403`).
+ */
 export interface Vacancy {
   vacancyId: string;
   companyId: string;
@@ -283,18 +317,26 @@ export interface Vacancy {
   name: string;
   description: string;
   requirements: string;
-  contractType: string;
-  salaryRange: string;
+  contractType: ContractType;
+  salary: string;
   modality: Modality;
   status: VacancyStatus;
   location: Department;
-  publishedAt: string | null; // ISO 8601, se sella al crearse (nace PUBLICADO)
+  /** ISO 8601 (fecha), la define la empresa al crear — no autogenerada. */
+  publicationDate: string;
+  /** ISO 8601 (fecha), obligatoria al crear — dispara el auto-cierre por cron. */
+  closingDate: string;
+  /** ISO 8601 (datetime), se sella al crearse. */
+  createdAt: string;
   /** Se sella cada vez que el Admin mueve la vacante PUBLICADO ↔ PENDIENTE. */
-  reviewedAt: string | null; // ISO 8601
-  updatedAt: string | null; // ISO 8601
-  finalizedAt: string | null; // ISO 8601, terminal
+  reviewedAt: string | null; // ISO 8601 (datetime)
+  updatedAt: string | null; // ISO 8601 (datetime)
+  deletedAt: string | null; // ISO 8601 (datetime), soft-delete
+  deleted: boolean;
+  /** userId del Admin que hizo la última revisión (`PUT /vacancy/status/{id}`). */
+  reviewedBy: string | null;
   /** Nota del Admin, si la cargó al pasarla a `PENDIENTE`. */
-  adminComment?: string | null;
+  adminComment: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -302,26 +344,35 @@ export interface Vacancy {
 // ---------------------------------------------------------------------------
 
 /**
- * Wire: `VacancyApplicationStatus`. La transición NO retrocede (lo valida el
- * backend, `409` si se intenta). ⚠️ El valor terminal es `FINALIZADA`
- * (femenino, por "postulación") — no confundir con `VacancyStatus.FINALIZADO`.
+ * Wire: `VacancyApplicationStatus` (`vacancyapplication/VacancyApplicationStatus.java`).
+ * La transición NO retrocede (lo valida el backend, `409` si se intenta).
+ *
+ * ⚠️ **El valor terminal es `FINALIZADO` (masculino), NO `FINALIZADA`.**
+ * Una versión anterior de este archivo (y de AGENTS.md) insistía en que era
+ * femenino "por postulación", para no confundirlo con `VacancyStatus.FINALIZADO`
+ * — esa distinción NO existe en el wire real: los dos enums usan la misma
+ * palabra. Verificado contra el enum fuente del backend, no contra prosa.
  */
-export type VacancyApplicationStatus = "PENDIENTE" | "VISTO" | "FINALIZADA";
+export type VacancyApplicationStatus = "PENDIENTE" | "VISTO" | "FINALIZADO";
 
 /**
- * Wire: `VacancyApplicationResponse` — `{ vacancyApplicationId, vacancyId,
- * studentProfileId, status, appliedAt }`, confirmado en `docs/ENDPOINTS.md`.
+ * Wire: `VacancyApplicationResponse` (`vacancyapplication/dto/VacancyApplicationResponse.java`)
+ * — `{ vacancyApplicationId, vacancyId, studentProfileId, status, appliedAt, accepted }`.
  *
- * ⚠️ **`selected` SE ELIMINÓ.** Estaba en el MER aprobado (ver AGENTS.md —
- * "Postulaciones: máquina de estados") y A-17 lo daba como "confirmado por
- * backend, todavía no en api-dev", pero el contrato cerrado no lo incluye en
- * ningún lado: ni en esta response ni en `UpdateVacancyApplicationRequest`
- * (`{ status: VISTO | FINALIZADA }`, sin más campos). Se trata como una
- * reversión de esa confirmación previa, no como un olvido del documento — si
- * el backend lo reintroduce más adelante, revisar acá primero. Esto también
- * significa que no hay forma de distinguir "seleccionado" de "no
- * seleccionado" en una postulación `FINALIZADA` — ver
- * `features/postulaciones/components/application-progress.tsx`.
+ * ⚠️ **`accepted` volvió — reversión de una reversión.** El MER aprobado
+ * tenía `selected` (DEC-06); `docs/ENDPOINTS.md` (versión anterior, recibida
+ * 2026-07-27) no lo incluía en ningún lado y se lo dio por eliminado — ver
+ * `application-progress.tsx`. Verificado contra el código fuente del backend
+ * (`dev`, no contra ese doc): el campo existe, se llama `accepted` (no
+ * `selected`) y es un booleano de solo-lectura para el alumno — se marca con
+ * `PATCH /vacancy-application/{id}/accept` (empresa dueña, sin operación
+ * inversa) y define el contenido del mail de cierre
+ * (`sendVacancySelectedEmail` vs `sendVacancyClosedEmail`,
+ * `VacancyFinalizationNotifier.java`). **No viaja en
+ * `VacancyApplicationStudentResponse`** (`GET /vacancy-application/me`) — el
+ * alumno sigue sin poder ver si quedó seleccionado, el gap que
+ * `application-progress.tsx` documenta sigue siendo real del lado del alumno,
+ * aunque la empresa/admin sí lo vean.
  */
 export interface VacancyApplication {
   vacancyApplicationId: string;
@@ -330,6 +381,8 @@ export interface VacancyApplication {
   studentProfileId: string;
   status: VacancyApplicationStatus;
   appliedAt: string; // ISO 8601
+  /** Solo presente para empresa dueña/ADMIN — ver el aviso arriba. */
+  accepted: boolean;
 }
 
 // ---------------------------------------------------------------------------

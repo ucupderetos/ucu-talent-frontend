@@ -67,10 +67,26 @@ export function useHasApplied(vacancyId: string, studentProfileId: string | unde
 }
 
 /**
- * Postularse a una vacante — RF-POS-01. Wire: `POST /vacancy-application`,
- * body `{ vacancyId }` (docs/ENDPOINTS.md, sección 6). Requiere ALUMNO +
- * cuenta `APROBADO` — el gate de RN-16 ya lo resuelve `ApplyAction` en
- * `vacancy-detail-view.tsx` antes de llamar a esto.
+ * Postularse a una vacante — RF-POS-01. Wire: `POST /vacancy-application`.
+ *
+ * ⚠️ El body es `{ vacancyId, studentProfileId }`, NO solo `{ vacancyId }`
+ * como decía una versión anterior de este comentario (basada en
+ * `docs/ENDPOINTS.md`, que no lo documentaba así). Verificado contra el
+ * código fuente del backend (`CreateVacancyApplicationRequest.java`):
+ * `studentProfileId` es `@NotBlank` en el DTO — el controller lo pisa con el
+ * del token antes de usarlo (`vacancyapplication/VacancyApplicationController.create`),
+ * pero la validación del body corre ANTES de esa lógica, así que omitirlo
+ * hace fallar la request con `400` igual, aunque el valor en sí sea
+ * decorativo. Mandamos `studentProfileId` real (no un string vacío) para no
+ * depender de esa asimetría.
+ *
+ * Requiere ALUMNO + cuenta `APROBADO` + vacante `PUBLICADO` + al menos un
+ * registro de `Education` — los primeros dos ya los resuelve el gate de
+ * RN-16 en `ApplyAction` (`vacancy-detail-view.tsx`); el de la vacante lo
+ * resuelve ese mismo componente al ocultar el botón si no está `PUBLICADO`;
+ * el de educación no se valida en el front (A-07 seguía abierto, y esto lo
+ * resuelve: el backend SÍ lo exige) — si falta, el mensaje de error de acá
+ * abajo ya lo explica con el texto real del backend.
  *
  * Vive acá (dominio `puestos`) por el mismo motivo que `useHasApplied`: es
  * la única pantalla que la dispara, y así se evita el import cruzado hacia
@@ -80,7 +96,11 @@ export function useApplyToVacancy(vacancyId: string, studentProfileId: string | 
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: () => apiClient.post<VacancyApplication>("/vacancy-application", { vacancyId }),
+    mutationFn: () =>
+      apiClient.post<VacancyApplication>("/vacancy-application", {
+        vacancyId,
+        studentProfileId,
+      }),
     onSuccess: () => {
       // Misma queryKey que `useHasApplied` arriba y que `useMyApplications`
       // (features/postulaciones/hooks/use-my-applications.ts) — invalidar acá
@@ -94,10 +114,13 @@ export function useApplyToVacancy(vacancyId: string, studentProfileId: string | 
   return {
     apply: mutation.mutateAsync,
     isLoading: mutation.isPending,
+    // Un 409 acá puede ser tres cosas distintas (ya postulado, vacante no
+    // PUBLICADO, o sin registros de Education) — ya NO se asume que siempre
+    // es "ya postulado". `apiError.message` trae el `detail` real del
+    // backend (ver A-19, lib/api-client.ts), así que se muestra tal cual en
+    // vez de adivinar cuál de los tres pasó.
     error: mutation.isError
-      ? apiError?.status === 409
-        ? "Ya te postulaste a esta vacante."
-        : "No se pudo enviar la postulación. Intentá nuevamente."
+      ? (apiError?.message ?? "No se pudo enviar la postulación. Intentá nuevamente.")
       : null,
   };
 }

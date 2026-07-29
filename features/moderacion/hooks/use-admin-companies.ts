@@ -2,11 +2,13 @@
 
 // Listado y detalle administrativo de empresas.
 //
-// 🔴 No hay endpoint todavía: `CompanyResponse` no expone `status` (A-18), que
-// es justo lo que esta pantalla necesita para moderar. Esto arma las filas en
-// memoria cruzando `MOCK_COMPANIES` con el `User` de la misma PK, igual que
-// `use-pending-companies.ts`. Cuando exista el contrato, `fetchAdminCompanies`
-// pasa a llamar a apiClient y el resto no cambia.
+// ✅ Resuelto (A-18, `docs/ENDPOINTS.md`): `CompanyResponse` YA expone
+// `status`/`reviewedAt`/`adminComment` directo, así que en el wire real ni
+// hace falta cruzar con `User` para esto. El cruce de acá es solo para
+// obtener `email`/`registeredAt` (que sí viven únicamente en `User`), sobre
+// `MOCK_COMPANIES`/`MOCK_COMPANY_USERS` mientras no está conectado el fetch
+// real, igual que `use-pending-companies.ts`. Cuando se conecte,
+// `fetchAdminCompanies` pasa a llamar a apiClient y el resto no cambia.
 //
 // Se usan los fixtures compartidos y NO un mock propio del dominio a propósito:
 // la moderación (`use-review-account.ts`) muta el `status` en

@@ -31,12 +31,9 @@ export function useReviewVacancy() {
       if (!vacancy) throw new Error(`Vacante ${vacancyId} no encontrada`);
 
       vacancy.status = status;
-      // Al publicar por primera vez se sella la fecha; el resto de las
-      // transiciones no la tocan. La vuelta PENDIENTE → PUBLICADO no la
-      // resetea (`publishedAt` ya quedó seteado desde la creación).
-      if (status === "PUBLICADO" && !vacancy.publishedAt) {
-        vacancy.publishedAt = new Date().toISOString();
-      }
+      // `publicationDate` no se sella acá: la define la empresa al crear el
+      // puesto (`CreateVacancyRequest.publicationDate`, obligatoria) — no es
+      // un timestamp que el backend genere en la transición PENDIENTE → PUBLICADO.
       if (status === "PENDIENTE") {
         vacancy.reviewedAt = new Date().toISOString();
       }

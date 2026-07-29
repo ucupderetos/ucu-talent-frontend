@@ -100,7 +100,7 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {formatDate(vacancy.publishedAt)}
+                {formatDate(vacancy.publicationDate)}
               </TableCell>
               <TableCell>
                 <VacancyRowActions vacancy={vacancy} />
