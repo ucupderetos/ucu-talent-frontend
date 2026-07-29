@@ -4,6 +4,7 @@
 // filtradas/ordenadas/paginadas por el hook y no sabe nada de fixtures ni de
 // TanStack Query.
 
+import { useState } from "react";
 import Link from "next/link";
 import { PencilIcon, PencilOffIcon, UserIcon, XCircleIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -18,6 +19,15 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -26,6 +36,8 @@ import {
   VACANCY_STATUS_DESCRIPTION,
   VacancyStatusBadge,
 } from "@/components/vacancies/vacancy-status-badge";
+import { ApiError } from "@/lib/api-client";
+import { useCloseJob } from "@/features/puestos/hooks/use-close-job";
 import type { CompanyVacancyRow } from "@/features/puestos/types";
 import type { Modality } from "@/types";
 
@@ -43,12 +55,6 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
 
 function formatDate(iso: string | null): string {
   return iso ? dateFormatter.format(new Date(iso)) : "—";
-}
-
-/** Las mutaciones de estado quedan pendientes del contrato de la API — ver
- *  features/puestos/hooks/use-company-vacancies.ts. Por ahora solo avisan. */
-function notImplemented(action: string) {
-  toast.info(`"${action}" todavía no está disponible: falta el contrato de la API.`);
 }
 
 export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
@@ -115,6 +121,23 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
 }
 
 function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const closeJob = useCloseJob();
+
+  async function confirmClose() {
+    try {
+      await closeJob.close(vacancy.vacancyId);
+      toast.success("Oferta finalizada. Ya no aparece en el feed de alumnos.");
+      setConfirmOpen(false);
+    } catch (cause) {
+      toast.error(
+        cause instanceof ApiError
+          ? cause.message
+          : "No se pudo finalizar la oferta. Intentá nuevamente.",
+      );
+    }
+  }
+
   return (
     <div className="flex items-center gap-1">
       <Tooltip>
@@ -221,7 +244,9 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
 
       {/* La empresa dueña solo puede cerrar, y solo desde `PUBLICADO`
           (RF-PUE-03). Retirar una vacante a `PENDIENTE` es potestad del
-          Admin, no de la empresa — ver `VacancyStatus` en types/index.ts. */}
+          Admin, no de la empresa — ver `VacancyStatus` en types/index.ts.
+          Acción irreversible: pasa por un diálogo de confirmación, no se
+          dispara directo desde el ícono. */}
       {vacancy.status === "PUBLICADO" && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -229,15 +254,43 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
               variant="ghost"
               size="icon"
               className="text-destructive hover:text-destructive"
-              aria-label={`Cerrar ${vacancy.name}`}
-              onClick={() => notImplemented("Cerrar oferta")}
+              aria-label={`Finalizar ${vacancy.name}`}
+              onClick={() => setConfirmOpen(true)}
             >
               <XCircleIcon className="size-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Cerrar oferta</TooltipContent>
+          <TooltipContent>Finalizar oferta</TooltipContent>
         </Tooltip>
       )}
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="text-lg">¿Finalizar esta oferta?</DialogTitle>
+            <DialogDescription>
+              <strong>{vacancy.name}</strong> deja de verse en el feed. Esta acción es{" "}
+              <strong>irreversible</strong>: no se puede volver a publicar.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" type="button" className="w-full sm:w-auto">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              type="button"
+              onClick={confirmClose}
+              disabled={closeJob.isLoading}
+              className="w-full sm:w-auto"
+            >
+              {closeJob.isLoading ? "Finalizando..." : "Sí, finalizar oferta"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1136,8 +1136,11 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   updateVacancyStatus` (fuente real del backend, verificado en `dev`) **prohíbe
   explícitamente** que la empresa cierre desde `PENDIENTE` (`403 "El Puesto está en
   revisión."`) — solo puede cerrar desde `PUBLICADO`. El código de `vacancy-table.tsx` ya
-  estaba bien; era la nota la que estaba mal. "Cerrar" sigue siendo un stub
-  (`notImplemented(...)`), sin mutación real todavía — eso sí sigue pendiente.
+  estaba bien; era la nota la que estaba mal. ✅ **"Cerrar" ya no es un stub** — conectado a
+  `PATCH /vacancy/status/{id}` vía `features/puestos/hooks/use-close-job.ts`, con diálogo de
+  confirmación (irreversible) en `vacancy-table.tsx` antes de disparar la mutación. Invalida
+  el detalle, "Mis ofertas" y el feed de alumno, para que la vacante finalizada desaparezca
+  del feed sin recargar la página.
 - Las `page.tsx` de `/feed`, `/postulaciones` y `/puestos/[id]/postulantes` siguen siendo
   placeholders.
 - ✅ **`/perfil` es una ruta COMPARTIDA entre alumno y empresa** (route group `(perfil)`,
