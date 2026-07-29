@@ -3,12 +3,9 @@
 // Acciones de moderación sobre una empresa, compartidas por la tabla y el
 // detalle, con diálogo de confirmación.
 //
-// Escribe de verdad: usa `useReviewAccount`, el mismo hook que la pantalla de
-// Validaciones. El estado de una empresa vive en `User.status`, así que
-// aprobar/rechazar una empresa es exactamente la misma operación que sobre
-// cualquier cuenta — wire: `PATCH /user/{id}` (A-02, resuelto). El hook todavía
-// es un andamio sobre fixtures, pero el swap a `apiClient` está en un solo
-// lugar y esta pantalla no se entera.
+// Escribe contra `PATCH /user/{id}` mediante `useReviewCompanyAccount`. El
+// listado, el detalle y la cola de pendientes comparten la misma raíz de caché,
+// por lo que una decisión se refleja en los tres lugares al invalidarla.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -41,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
-import { useReviewAccount } from "@/features/moderacion/hooks/use-review-account";
+import { useReviewCompanyAccount } from "@/features/moderacion/hooks/use-review-company-account";
 import type { AdminCompanyDetail } from "@/features/moderacion/types";
 import type { AccountStatus } from "@/types";
 
@@ -126,7 +123,7 @@ export function CompanyModerationActions({
 }) {
   const [action, setAction] = useState<CompanyModerationAction | null>(null);
   const [reason, setReason] = useState("");
-  const review = useReviewAccount();
+  const review = useReviewCompanyAccount();
 
   const availableActions = AVAILABLE_ACTIONS[company.status];
   const config = action ? ACTION_CONFIG[action] : null;
@@ -150,7 +147,6 @@ export function CompanyModerationActions({
     review.mutate(
       {
         userId: company.id,
-        accountType: "company",
         status: config.status,
         adminComment: config.requiresReason ? reason.trim() : undefined,
       },

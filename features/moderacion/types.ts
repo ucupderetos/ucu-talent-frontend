@@ -247,10 +247,8 @@ export interface ApplicationStatusSummary {
  * View model del listado administrativo de empresas.
  *
  * Combina Company con los datos de User necesarios para la vista.
- * El estado de aprobación pertenece a User.status.
- *
- * Pendiente: el backend todavía no permite obtener este estado para
- * todas las empresas desde el listado administrativo.
+ * El estado de aprobación pertenece a User.status y CompanyResponse lo
+ * repite; el listado compone ambos recursos por su PK compartida.
  */
 export interface AdminCompanyRow {
   id: string;
@@ -258,7 +256,9 @@ export interface AdminCompanyRow {
   email: string;
   industry: string;
   location: string;
-  registeredAt: string;
+  /** Puede faltar únicamente si la composición administrativa no encuentra
+   * el User que comparte PK con la empresa. */
+  registeredAt: string | null;
   status: AccountStatus;
   initials: string;
 }
@@ -273,6 +273,9 @@ export interface AdminCompanyDetail extends AdminCompanyRow {
   description: string;
   webUrl: string;
   linkedinUrl: string;
+  /** Campos de revisión incluidos en CompanyResponse. */
+  reviewedAt: string | null;
+  adminComment: string | null;
 }
 
 /**

@@ -1,71 +1,83 @@
 "use client";
 
-// trae las empresas pendientes de aprobar. no hay endpoint todavia (el
-// backend no tiene PUT /user ni expone status en Company), asi que por ahora
-// junta todo en memoria sobre lib/fixtures.ts. cuando haya back se cambia
-// fetchPendingCompanies por el fetch real y listo.
+// Cola de empresas pendientes. Comparte la misma lectura real y la misma
+// caché que el listado administrativo de empresas; solo cambia la proyección
+// en memoria para conservar las filas PENDIENTE y aplicar sus filtros.
 
 import { useQuery } from "@tanstack/react-query";
 
-import { MOCK_COMPANIES, MOCK_COMPANY_USERS } from "@/lib/fixtures";
+import {
+  adminCompaniesQueryKey,
+  fetchAdminCompanyDirectory,
+  type AdminCompanyDirectoryEntry,
+} from "@/features/moderacion/hooks/use-admin-companies";
 import type { PendingCompaniesFilters, PendingCompanyRow } from "@/features/moderacion/types";
 import type { Paginated } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
-export function pendingCompaniesQueryKey(filters: PendingCompaniesFilters) {
-  return ["moderacion", "empresas-pendientes", filters] as const;
+/** La cola es una proyección del directorio, no otra lectura del backend. */
+export function pendingCompaniesQueryKey() {
+  return adminCompaniesQueryKey();
 }
 
 export function usePendingCompanies(filters: PendingCompaniesFilters) {
   return useQuery({
-    queryKey: pendingCompaniesQueryKey(filters),
-    queryFn: () => fetchPendingCompanies(filters),
+    queryKey: pendingCompaniesQueryKey(),
+    queryFn: ({ signal }) => fetchAdminCompanyDirectory(signal),
+    select: (directory): Paginated<PendingCompanyRow> =>
+      paginateAndFilterPendingCompanies(directory, filters),
   });
 }
 
-/** Opciones del multiselect de industria: solo las de empresas PENDIENTES,
- *  para no ofrecer opciones que no filtran nada. */
+/** Opciones del multiselect: solo industrias presentes entre las empresas que
+ * siguen pendientes. */
 export function usePendingCompanyIndustries() {
   const { data } = useQuery({
-    queryKey: ["moderacion", "empresas-industrias"],
-    queryFn: () => {
-      const pendingIds = new Set(
-        MOCK_COMPANY_USERS.filter((u) => u.status === "PENDIENTE").map((u) => u.userId),
-      );
-      return Array.from(
-        new Set(MOCK_COMPANIES.filter((c) => pendingIds.has(c.companyId)).map((c) => c.industry)),
-      ).sort();
-    },
+    queryKey: pendingCompaniesQueryKey(),
+    queryFn: ({ signal }) => fetchAdminCompanyDirectory(signal),
+    select: (directory) =>
+      Array.from(
+        new Set(
+          directory
+            .filter(isPendingCompany)
+            .map(({ company }) => company.industry),
+        ),
+      ).sort((a, b) => a.localeCompare(b, "es")),
   });
+
   return data ?? [];
 }
 
-async function fetchPendingCompanies(
+function paginateAndFilterPendingCompanies(
+  directory: AdminCompanyDirectoryEntry[],
   filters: PendingCompaniesFilters,
-): Promise<Paginated<PendingCompanyRow>> {
+): Paginated<PendingCompanyRow> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
-
-  // solo las empresas cuyo user esta pendiente
-  const pendingUserIds = new Set(
-    MOCK_COMPANY_USERS.filter((u) => u.status === "PENDIENTE").map((u) => u.userId),
-  );
-  const rows = MOCK_COMPANIES.filter((c) => pendingUserIds.has(c.companyId)).map(toRow);
+  const rows = directory.filter(isPendingCompany).map(toPendingCompanyRow);
   const filtered = filterRows(rows, filters);
-
   const start = (page - 1) * perPage;
-  const items = filtered.slice(start, start + perPage);
-
-  return { items, total: filtered.length, page, perPage };
-}
-
-function toRow(company: (typeof MOCK_COMPANIES)[number]): PendingCompanyRow {
-  const user = MOCK_COMPANY_USERS.find((u) => u.userId === company.companyId);
 
   return {
+    items: filtered.slice(start, start + perPage),
+    total: filtered.length,
+    page,
+    perPage,
+  };
+}
+
+function isPendingCompany({ company, user }: AdminCompanyDirectoryEntry): boolean {
+  return (user?.status ?? company.status) === "PENDIENTE";
+}
+
+function toPendingCompanyRow({
+  company,
+  user,
+}: AdminCompanyDirectoryEntry): PendingCompanyRow {
+  return {
     ...company,
+    status: user?.status ?? company.status,
     email: user?.email ?? "—",
     registeredAt: user?.registeredAt ?? "",
   };
@@ -75,12 +87,12 @@ function filterRows(
   rows: PendingCompanyRow[],
   filters: PendingCompaniesFilters,
 ): PendingCompanyRow[] {
-  const search = filters.search?.trim().toLowerCase();
+  const search = filters.search?.trim().toLocaleLowerCase("es");
 
   return rows.filter((row) => {
     if (filters.industries?.length && !filters.industries.includes(row.industry)) return false;
     if (search) {
-      const haystack = `${row.name} ${row.industry} ${row.email}`.toLowerCase();
+      const haystack = `${row.name} ${row.industry} ${row.email}`.toLocaleLowerCase("es");
       if (!haystack.includes(search)) return false;
     }
     return true;

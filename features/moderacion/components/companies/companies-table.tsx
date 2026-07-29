@@ -22,8 +22,8 @@ import { CompanyStatusBadge } from "@/features/moderacion/components/companies/c
 import { CompanyModerationActions } from "@/features/moderacion/components/companies/company-moderation-actions";
 import type { AdminCompanyRow } from "@/features/moderacion/types";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-UY");
+function formatDate(iso: string | null): string {
+  return iso ? new Date(iso).toLocaleDateString("es-UY") : "—";
 }
 
 export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) {
