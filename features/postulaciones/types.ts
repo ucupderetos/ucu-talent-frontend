@@ -59,18 +59,27 @@ export interface ApplicantFilters {
 /**
  * Fila de la tabla de "Postulantes".
  *
- * Wire: `VacancyApplicantResponse` (`GET /vacancy-application?vacancyId={id}`,
- * docs/ENDPOINTS.md sección 6) — `{ vacancyApplicationId, vacancyId,
- * studentProfileId, studentName, status, appliedAt }`, más el nombre de la
- * oferta (esta vista es cruzada a todas las ofertas de la empresa, no de una
- * vacante a la vez).
+ * ⚠️ **`VacancyApplicantResponse` (con `studentName` resuelto) NO EXISTE en
+ * el backend real — corrige la versión anterior de este comentario.** Las dos
+ * copias de `ENDPOINTS.md` (la local y la del propio repo de backend) lo
+ * documentaban así, pero `VacancyApplicationController.getByVacancyId`
+ * (fuente del backend, `GET /vacancy-application?vacancyId={id}`) devuelve
+ * `List<VacancyApplicationResponse>` — el mismo shape que todos los demás
+ * endpoints de postulaciones: `{ vacancyApplicationId, vacancyId,
+ * studentProfileId, status, appliedAt, accepted }`, **sin `studentName`**.
+ * Para mostrar el nombre hace falta resolver `StudentProfile` por
+ * `studentProfileId` — 1+N requests (o `GET /student-profile` completo +
+ * `Map`, mismo patrón que `use-my-applications.ts` con `Company`/`Area`), no
+ * el único `GET` que asumía el diseño anterior. Como este hook todavía está
+ * sobre fixtures (`use-company-applicants.ts`, sin conectar), no es un bug en
+ * producción hoy — pero conectar esto tiene que resolver `studentName` así,
+ * no asumiendo que ya viene resuelto. El nombre de la oferta (`vacancyName`)
+ * tampoco viene en la response — esta vista es cruzada a todas las ofertas de
+ * la empresa, así que también hay que resolverlo por `vacancyId`.
  *
- * ⚠️ Antes esta fila extendía `ApplicantListItem` (`StudentProfile` + `User`
- * completos) — el endpoint de LISTA ya resuelve `studentName` directo y no
- * trae `email` ni el resto del perfil, así que forzar el join completo por
- * fila era un mismatch contra el contrato real (habría exigido 1+N requests
- * en vez de uno). Sin `email` acá: no se puede mostrar ni buscar por email en
- * esta tabla — para eso está el detalle (`ApplicantDetailRow`).
+ * ⚠️ Antes de esto, esta fila extendía `ApplicantListItem` (`StudentProfile` +
+ * `User` completos) — sin `email` en este nivel: no se puede mostrar ni
+ * buscar por email en esta tabla, para eso está el detalle (`ApplicantDetailRow`).
  */
 export interface ApplicantRow {
   application: VacancyApplication;

@@ -37,12 +37,25 @@ import { useSession } from "@/hooks/use-session";
 import { getVacancyDetailPreviewExtras } from "@/features/puestos/components/vacancy-detail-preview-mock";
 import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
-import type { AccountStatus, Modality } from "@/types";
+import type { AccountStatus, ContractType, Modality } from "@/types";
 
 const MODALITY_LABEL: Record<Modality, string> = {
   PRESENCIAL: "Presencial",
   REMOTO: "Remota",
   HIBRIDO: "Híbrida",
+};
+
+// Enum real de Backend (`vacancy/ContractType.java`) — ver el aviso en
+// `job-basic-info-form.tsx`.
+const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
+  FULL_TIME: "Full-time",
+  PART_TIME: "Part-time",
+  FREELANCE: "Freelance",
+  PASANTIA: "Pasantía",
+  CONTRATO_FIJO: "Contrato fijo",
+  CONTRATO_INDEFINIDO: "Contrato indefinido",
+  SUPLENCIA: "Suplencia",
+  BECA: "Beca",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
@@ -130,11 +143,11 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <BriefcaseIcon className="size-4" />
-                {vacancy.contractType}
+                {CONTRACT_TYPE_LABEL[vacancy.contractType]}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarIcon className="size-4" />
-                {formatDate(vacancy.publishedAt)}
+                {formatDate(vacancy.publicationDate)}
               </span>
             </div>
 
@@ -244,8 +257,8 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
                 label="Modalidad"
                 value={<Badge variant="outline">{MODALITY_LABEL[vacancy.modality]}</Badge>}
               />
-              {vacancy.salaryRange && (
-                <DetailRow label="Rango salarial" value={vacancy.salaryRange} />
+              {vacancy.salary && (
+                <DetailRow label="Rango salarial" value={vacancy.salary} />
               )}
 
               <div className="flex flex-col gap-1.5 border-t pt-3">
@@ -310,6 +323,18 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
     );
   }
 
+  // El backend solo acepta postulaciones a vacantes `PUBLICADO` (`409` si no
+  // — verificado contra `VacancyApplicationServiceImpl.create`, fuente del
+  // backend). Una vacante `PENDIENTE` sigue siendo visible acá (se llega por
+  // link directo o desde "Mis postulaciones"), pero no se puede aplicar.
+  if (vacancy.status === "PENDIENTE") {
+    return (
+      <Button className="h-10 shrink-0 px-6" disabled>
+        Vacante en revisión
+      </Button>
+    );
+  }
+
   if (hasApplied) {
     return (
       <Button variant="outline" className="h-10 shrink-0 px-6" disabled>
@@ -330,9 +355,12 @@ function ApplyAction({ vacancy }: { vacancy: VacancyDetail }) {
             await apply();
             toast.success("¡Te postulaste con éxito!");
           } catch (err) {
+            // Un 409 acá puede ser "ya postulado", "vacante no PUBLICADO" o
+            // "falta cargar Education" (los tres son 409 reales del
+            // backend) — se muestra el `detail` real en vez de adivinar.
             toast.error(
-              err instanceof ApiError && err.status === 409
-                ? "Ya te postulaste a esta vacante."
+              err instanceof ApiError
+                ? err.message
                 : "No se pudo enviar la postulación. Intentá nuevamente.",
             );
           }

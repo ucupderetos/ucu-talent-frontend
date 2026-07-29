@@ -2,28 +2,29 @@
 
 // Postulaciones del alumno logueado (vista "Mis postulaciones") — RF-POS.
 //
-// `GET /vacancy-application/me` (docs/ENDPOINTS.md, sección 6) ya devuelve
-// vacancyName/companyName/status/vacancyStatus resueltos, pero no areaId ni
-// contractType — se completan cruzando contra `GET /vacancy` (colección
-// completa, sin paginar, sección 5) + `GET /area`, mismo patrón que el feed
-// (`use-feed-vacancies.ts`).
+// ⚠️ `GET /vacancy-application/me` NO devuelve vacancyName/companyName/
+// vacancyStatus resueltos — corrige una versión anterior de este comentario,
+// escrita contra docs/ENDPOINTS.md (que sí los prometía). Verificado contra
+// el código fuente real del backend
+// (`vacancyapplication/dto/VacancyApplicationStudentResponse.java`): el wire
+// es `{ vacancyApplicationId, vacancyId, studentProfileId, status, appliedAt }`,
+// nada más. Se completa cruzando contra `GET /vacancy` (colección completa,
+// sin paginar, sección 5) + `GET /company` + `GET /area`, mismo patrón que el
+// feed (`use-feed-vacancies.ts`).
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
 import type { MyApplicationRow } from "@/features/postulaciones/types";
-import type { Area, Vacancy, VacancyApplication, VacancyApplicationStatus } from "@/types";
+import type { Area, Company, Vacancy, VacancyApplication, VacancyApplicationStatus } from "@/types";
 
 interface MyVacancyApplicationResponse {
   vacancyApplicationId: string;
   vacancyId: string;
-  vacancyName: string;
-  companyId: string;
-  companyName: string;
-  appliedAt: string;
+  studentProfileId: string;
   status: VacancyApplicationStatus;
-  vacancyStatus: Vacancy["status"];
+  appliedAt: string;
 }
 
 /**
@@ -45,14 +46,15 @@ export function useMyApplications(studentProfileId: string | undefined) {
 }
 
 async function fetchMyApplications(studentProfileId: string): Promise<MyApplicationRow[]> {
-  const [applications, vacancies, areas] = await Promise.all([
+  const [applications, vacancies, companies, areas] = await Promise.all([
     apiClient.get<MyVacancyApplicationResponse[]>("/vacancy-application/me"),
     apiClient.get<Vacancy[]>("/vacancy"),
+    apiClient.get<Company[]>("/company"),
     apiClient.get<Area[]>("/area"),
   ]);
 
   const rows = applications
-    .map((item) => toRow(item, studentProfileId, vacancies, areas))
+    .map((item) => toRow(item, studentProfileId, vacancies, companies, areas))
     .filter((row): row is MyApplicationRow => row != null);
 
   return sortByRecent(rows);
@@ -62,11 +64,13 @@ function toRow(
   item: MyVacancyApplicationResponse,
   studentProfileId: string,
   vacancies: Vacancy[],
+  companies: Company[],
   areas: Area[],
 ): MyApplicationRow | null {
   const vacancy = vacancies.find((v) => v.vacancyId === item.vacancyId);
   if (!vacancy) return null;
 
+  const company = companies.find((c) => c.companyId === vacancy.companyId);
   const area = areas.find((a) => a.areaId === vacancy.areaId);
 
   const application: VacancyApplication = {
@@ -75,12 +79,18 @@ function toRow(
     studentProfileId,
     status: item.status,
     appliedAt: item.appliedAt,
+    // `GET /vacancy-application/me` devuelve `VacancyApplicationStudentResponse`
+    // (wire), que a propósito NO trae `accepted` — el alumno no puede ver si
+    // quedó seleccionado (ver el aviso en `VacancyApplication`, types/index.ts).
+    // Hardcodeado en `false`: ninguna pantalla de este dominio lo lee para
+    // decidir nada, es solo para satisfacer el tipo compartido.
+    accepted: false,
   };
 
   return {
     application,
     vacancy,
-    companyName: item.companyName,
+    companyName: company?.name ?? "Empresa no disponible",
     areaName: area?.name ?? "—",
   };
 }
