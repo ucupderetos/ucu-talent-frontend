@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
 import type { FeedFilters, FeedVacancyRow } from "@/features/puestos/types";
-import type { Area, Company, Vacancy } from "@/types";
+import type { Area, Company, ContractType, Vacancy } from "@/types";
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function feedVacanciesQueryKey() {
@@ -134,7 +134,7 @@ function publishedTimestamp(row: FeedVacancyRow): number {
  * no vaya perdiendo opciones a medida que se filtra — mismo criterio que
  * useCompanyVacancyFilterOptions en use-company-vacancies.ts.
  */
-export function useFeedFilterOptions(): { areas: Area[]; contractTypes: string[] } {
+export function useFeedFilterOptions(): { areas: Area[]; contractTypes: ContractType[] } {
   const { data } = useFeedVacanciesQuery();
 
   return useMemo(() => {

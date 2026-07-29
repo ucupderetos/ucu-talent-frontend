@@ -13,8 +13,20 @@ import { vacancyQueryKey } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyUpdateInput } from "@/features/puestos/types";
 import type { Vacancy } from "@/types";
 
+/**
+ * ⚠️ Corrección 2026-07-29 (AGENTS.md A-15): `docs/ENDPOINTS.md` documenta
+ * `UpdateVacancyRequest.salary`, pero probado a mano contra Swagger en
+ * `api-dev`, el `PUT /vacancy/{id}` real solo aplica el cambio si el campo
+ * se llama `salaryRange` — con `salary` el request devuelve 200 pero el
+ * valor queda sin tocar. La `VacancyResponse` de lectura SÍ usa `salary`
+ * (confirmado en el propio Swagger), así que es un wire distinto por
+ * dirección: el back renombró el campo de lectura pero no el de escritura.
+ * Se traduce acá, en el borde de red, para no ensuciar `VacancyUpdateInput`
+ * (que sigue en `salary`, igual que el resto de la UI) con el nombre viejo.
+ */
 function editVacancyRequest(vacancyId: string, payload: VacancyUpdateInput): Promise<Vacancy> {
-  return apiClient.put<Vacancy>(`/vacancy/${vacancyId}`, payload);
+  const { salary, ...rest } = payload;
+  return apiClient.put<Vacancy>(`/vacancy/${vacancyId}`, { ...rest, salaryRange: salary });
 }
 
 export function useEditJob(vacancyId: string) {

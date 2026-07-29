@@ -257,6 +257,23 @@ sortBy? (default PUBLICATION_DATE), sortDirection? (default DESC),
 page? (default 0), size? (default 20), deleted? (solo /search, no /student/search)
 ```
 
+⚠️ **Confirmado 2026-07-29**: `contractType` deja de ser texto libre — cierra como enum
+de 8 valores: `PART_TIME, FREELANCE, PASANTIA, CONTRATO_FIJO, CONTRATO_INDEFINIDO,
+SUPLENCIA, BECA, FULL_TIME` (mezcla inglés/español, así los manda el backend). Front ya
+migrado (`types/index.ts` → `ContractType`, catálogo en `lib/contract-types.ts`).
+
+⚠️ **2026-07-29**: la respuesta real de `GET /vacancy` observada para "Mis
+ofertas" trae, además, `publicationDate` (fecha, no datetime — no
+`publishedAt`), `closingDate` (fecha de cierre planificada, no confirmada acá
+antes), `createdAt`, `deletedAt`, `deleted` y `reviewedBy`, y no incluye
+`finalizedAt`. Todavía no se coordinó con backend si esto reemplaza a
+`publishedAt`/`finalizedAt` de arriba en todo el contrato o es una revisión
+en curso — por eso esta sección no se reescribe entera. Mientras tanto,
+`types/index.ts` (`Vacancy`) agrega esos campos como opcionales sin tocar los
+de arriba, y solo "Mis ofertas" (`vacancy-table.tsx`,
+`use-company-vacancies.ts`, `edit-job-form.tsx`) los consume. Confirmar con
+backend antes de migrar el resto de las pantallas (feed, moderación).
+
 ### Estados y transiciones
 
 | Actor | Transición | Efecto |

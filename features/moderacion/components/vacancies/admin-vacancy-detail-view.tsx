@@ -38,6 +38,7 @@ import { CompanyStatusBadge } from "@/features/moderacion/components/companies/c
 import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
 import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
 import { useAdminVacancyDetail } from "@/features/moderacion/hooks/use-admin-vacancies";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { AdminVacancyDetail } from "@/features/moderacion/types";
 import type { VacancyApplicationStatus } from "@/types";
 
@@ -152,7 +153,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: AdminVacancyDetail }) {
             <OverviewItem
               icon={BriefcaseIcon}
               label="Tipo de contrato"
-              value={vacancy.contractType}
+              value={CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType}
             />
             <OverviewItem
               icon={BuildingIcon}
@@ -283,7 +284,10 @@ function VacancyInformation({ vacancy }: { vacancy: AdminVacancyDetail }) {
         {vacancy.parentArea && (
           <DetailRow label="Área general" value={vacancy.parentArea.name} />
         )}
-        <DetailRow label="Tipo de contrato" value={vacancy.contractType} />
+        <DetailRow
+          label="Tipo de contrato"
+          value={CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType}
+        />
         <DetailRow
           label="Modalidad"
           value={<Badge variant="outline">{VACANCY_MODALITY_LABEL[vacancy.modality]}</Badge>}

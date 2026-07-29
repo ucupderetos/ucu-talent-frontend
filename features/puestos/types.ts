@@ -54,21 +54,28 @@ export interface VacancyInput {
  * (`PUT /vacancy/{id}`, docs/ENDPOINTS.md) — a diferencia de `VacancyInput`
  * (`POST /vacancy` / `CreateVacancyRequest`), NO lleva `companyId` ni
  * `areaId`: el backend ya sabe de qué vacante se trata por el `{id}` de la
- * URL, y el área queda fija desde la creación (el contrato no la deja editar).
+ * URL, y el área queda fija desde la creación (el contrato no la deja
+ * editar).
  *
- * ⚠️ **NO se deriva de `VacancyInput` con `Omit`.** Ese atajo mandaba `salary`
- * (el nombre que usa `CreateVacancyRequest`), pero `UpdateVacancyRequest` llama
- * al MISMO campo **`salaryRange`** — nombres distintos a propósito entre los dos
- * DTOs, el backend no los unificó (ENDPOINTS.md, "salary/salaryRange"). Con el
- * `Omit` el rango salarial se mandaba con la key equivocada y el backend lo
- * ignoraba en silencio. Por eso acá es una interface explícita que espeja el
- * wire real.
+ * ⚠️ **NO se deriva de `VacancyInput` con `Omit`** — no es solo cuestión de
+ * quitarle `companyId`/`areaId`: el `PUT` real solo aplica el cambio de
+ * sueldo si el campo del BODY se llama `salaryRange`, aunque este tipo
+ * (como el resto de la UI) lo exponga como `salary` — esa traducción de red
+ * vive en `use-edit-job.ts`, no acá (AGENTS.md, A-15). Por eso es una
+ * interface explícita, no un `Omit`.
  *
- * A-06 quedó RESUELTO por backend (antes estaba abierto): `PUT /vacancy/{id}`
- * se bloquea entero con `403 "El Puesto ya tiene postulaciones."` si la vacante
- * tiene alguna postulación — es todo-o-nada, no "algunos campos sí, otros no".
- * El gate de UI vive en `vacancy-table.tsx` (no ofrecer "Editar" con
- * `applicantsCount > 0`).
+ * A-06 (qué se puede editar) — resuelto por el BACKEND, no es decisión de
+ * front: `PUT /vacancy/{id}` (`VacancyServiceImpl.updateVacancy`, rama `dev`)
+ * rechaza la edición entera con `403` si la vacante tiene aunque sea una
+ * postulación (`"El Puesto ya tiene postulaciones."`) o ya está `FINALIZADO`
+ * (`"El Puesto ya finalizó."`). El front espeja ese gate como UX:
+ * - `FINALIZADO`: no editable en absoluto (`EditVacancyView` bloquea antes
+ *   de montar el form).
+ * - Con >=1 postulaciones: el form entero pasa a solo lectura, con la
+ *   explicación en pantalla (`EditJobForm.isLocked`) — mismo bloqueo que el
+ *   backend, para no dejar completar un form que se comería el 403.
+ * - Sin postulaciones y no `FINALIZADO`: todo lo que este tipo permite queda
+ *   editable.
  */
 export interface VacancyUpdateInput {
   name: string;
@@ -76,8 +83,10 @@ export interface VacancyUpdateInput {
   requirements: string;
   contractType: ContractType;
   modality: Modality;
-  /** ⚠️ `salaryRange`, NO `salary` — ver el aviso de arriba. */
-  salaryRange: string;
+  /** Wire real de LECTURA (`Vacancy.salary`); el `PUT /vacancy/{id}` real solo
+   *  aplica el cambio si el campo se llama `salaryRange` — la traducción se
+   *  hace en el borde de red (`use-edit-job.ts`), no acá (AGENTS.md, A-15). */
+  salary: string;
   location: Department;
   /** `YYYY-MM-DD`. Read-only en el form de edición: se reenvía el valor previo
    *  de la vacante (no se mueve la fecha de publicación de algo ya publicado). */
@@ -98,7 +107,7 @@ export interface VacancyUpdateInput {
 export interface FeedFilters {
   search?: string;
   areaIds?: string[];
-  contractTypes?: string[];
+  contractTypes?: ContractType[];
 }
 
 /**
@@ -172,8 +181,9 @@ export interface CompanyVacancyStatusChange {
 export type CompanyVacancyOrder = "recent" | "oldest" | "applicants";
 
 /** Filtros de la tabla de "Mis ofertas". Hoy se resuelven en el cliente sobre
- *  fixtures — cuando exista el contrato de la API, probablemente viajen como
- *  query params de un GET paginado.
+ *  los datos ya traídos de `GET /vacancy` (A-05) — cuando exista un contrato
+ *  de filtros del backend, probablemente viajen como query params de un GET
+ *  paginado.
  *  `statuses`/`areaIds`/`locations`: multi-selección, ver `vacancy-filters.tsx`.
  *  `publishedFrom`/`publishedTo`: rango sobre `Vacancy.publicationDate`
  *  (fechas `yyyy-MM-dd`, del `<input type="date">` de la barra de filtros). */
@@ -197,6 +207,13 @@ export interface CompanyVacancyFilters {
 export interface CompanyVacancyRow extends Vacancy {
   areaName: string;
   applicantsCount: number;
+  /** `false` si no se pudo confirmar el conteo (falló `GET
+   *  /vacancy-application?vacancyId={id}`) — en ese caso `applicantsCount`
+   *  vale `0` pero NO es confiable. El gate de edición de A-06
+   *  (`vacancy-table.tsx`) trata "desconocido" como "hay postulantes": más
+   *  seguro ocultar el lápiz de más que dejar editar una oferta que en
+   *  realidad ya tiene postulantes. */
+  applicantsCountKnown: boolean;
   /** Postulaciones de los últimos 7 días. Alimenta el "+N esta semana". */
   newApplicantsThisWeek: number;
 }

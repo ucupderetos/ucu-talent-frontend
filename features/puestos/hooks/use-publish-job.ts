@@ -7,10 +7,14 @@ import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
 import type { Vacancy } from "@/types";
 
-// POST /vacancy real. El backend fuerza el status inicial, no lo mandamos.
-// `VacancyInput` ya trae `salary`/`publicationDate`/`closingDate` con la forma
-// que espera `CreateVacancyRequest` (el mapeo `salaryRange`→`salary` lo hace
-// `publish()` abajo, con los valores del form), así que se postea tal cual.
+// ⚠️ `POST /vacancy` espera `salary`, NO `salaryRange` — a diferencia del
+// `PUT` (`use-edit-job.ts`). No es un rename simétrico entre los dos DTOs de
+// escritura: verificado 2026-07-29 contra el código fuente del backend
+// (`vacancy/dto/CreateVacancyRequest.java`, rama `dev`), `salary` es el campo
+// real y además es `@NotBlank` — mandar `salaryRange` deja `salary=null` y el
+// backend responde `400 "El salario es obligatorio"`, rompiendo la creación.
+// Por eso acá se postea `payload` tal cual (con `salary`); el mapeo a
+// `salaryRange` es exclusivo del `PUT`, donde el DTO sí usa ese nombre.
 function publishJobRequest(payload: VacancyInput): Promise<Vacancy> {
   return apiClient.post<Vacancy>("/vacancy", payload);
 }
@@ -55,10 +59,7 @@ export function usePublishJob() {
       areaId: values.areaId,
       contractType: values.contractType,
       modality: values.modality,
-      // El form le dice "rango salarial" al usuario (así lo pide
-      // `UpdateVacancyRequest.salaryRange`), pero `CreateVacancyRequest`
-      // real espera `salary` — ver el aviso en `VacancyInput`, types.ts.
-      salary: values.salaryRange,
+      salary: values.salary,
       location: values.location,
       publicationDate: values.publicationDate,
       closingDate: values.closingDate,

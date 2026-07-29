@@ -15,9 +15,9 @@ import {
 import { MapPinIcon, HomeIcon, LaptopIcon } from "lucide-react";
 
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
+import { CONTRACT_TYPE_OPTIONS } from "@/lib/contract-types";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { cn } from "@/lib/utils";
-import { CONTRACT_TYPES, CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { useAreas } from "@/features/puestos/hooks/use-areas";
 import type { ContractType } from "@/types";
 
@@ -117,9 +117,9 @@ export function JobBasicInfoForm() {
                   <SelectValue placeholder="Seleccioná un tipo de contrato" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONTRACT_TYPES.map((ct) => (
-                    <SelectItem key={ct} value={ct}>
-                      {CONTRACT_TYPE_LABELS[ct]}
+                  {CONTRACT_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

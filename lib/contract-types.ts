@@ -33,3 +33,9 @@ export const CONTRACT_TYPES = [
   "SUPLENCIA",
   "BECA",
 ] as const satisfies readonly ContractType[];
+
+/** Forma `{value, label}[]` para los Select/MultiSelect que ofrecen el
+ *  catálogo completo (job-basic-info-form.tsx, edit-job-form.tsx). */
+export const CONTRACT_TYPE_OPTIONS: { value: ContractType; label: string }[] = CONTRACT_TYPES.map(
+  (value) => ({ value, label: CONTRACT_TYPE_LABELS[value] }),
+);

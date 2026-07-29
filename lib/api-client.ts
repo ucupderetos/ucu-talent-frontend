@@ -129,13 +129,29 @@ function safeJsonParse(text: string): unknown {
 }
 
 function errorMessage(payload: unknown, response: Response): string {
-  // Formato confirmado (A-19 en AGENTS.md): `application/problem+json`, con el
-  // mensaje humano en `detail` — no `message` ni `error`. Se dejan esos dos como
-  // fallback por si algún 5xx no pasa por el manejador de errores del backend
-  // (ej. una página de error default de Spring, que no manda `detail`).
+  // Wire confirmado (AGENTS.md, A-19): `application/problem+json` con
+  // { detail, title, status, instance, errores: { campo: mensaje } }. Se
+  // priorizan los mensajes de campo (más específicos) sobre `detail`/`title`
+  // genéricos, y se dejan `message`/`error` como fallback por si algún
+  // endpoint todavía no migró a problem+json.
   if (payload && typeof payload === "object") {
-    const candidate = payload as { detail?: unknown; message?: unknown; error?: unknown };
+    const candidate = payload as {
+      detail?: unknown;
+      title?: unknown;
+      message?: unknown;
+      error?: unknown;
+      errores?: unknown;
+    };
+
+    if (candidate.errores && typeof candidate.errores === "object") {
+      const fieldMessages = Object.values(candidate.errores as Record<string, unknown>).filter(
+        (msg): msg is string => typeof msg === "string",
+      );
+      if (fieldMessages.length > 0) return fieldMessages.join(" · ");
+    }
+
     if (typeof candidate.detail === "string") return candidate.detail;
+    if (typeof candidate.title === "string") return candidate.title;
     if (typeof candidate.message === "string") return candidate.message;
     if (typeof candidate.error === "string") return candidate.error;
   }

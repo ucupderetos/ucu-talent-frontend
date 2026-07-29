@@ -5,7 +5,7 @@
 // TanStack Query.
 
 import Link from "next/link";
-import { PencilIcon, UserIcon, XCircleIcon } from "lucide-react";
+import { PencilIcon, PencilOffIcon, UserIcon, XCircleIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -61,6 +61,7 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
             <TableHead>Estado</TableHead>
             <TableHead>Postulantes</TableHead>
             <TableHead>Fecha de publicación</TableHead>
+            <TableHead>Fecha de cierre</TableHead>
             <TableHead className="pl-4">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -99,6 +100,9 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
               <TableCell className="text-muted-foreground">
                 {formatDate(vacancy.publicationDate)}
               </TableCell>
+              <TableCell className="text-muted-foreground">
+                {formatDate(vacancy.closingDate)}
+              </TableCell>
               <TableCell>
                 <VacancyRowActions vacancy={vacancy} />
               </TableCell>
@@ -127,41 +131,93 @@ function VacancyRowActions({ vacancy }: { vacancy: CompanyVacancyRow }) {
         <TooltipContent>Ver postulantes</TooltipContent>
       </Tooltip>
 
-      {/* Editar (`PUT /vacancy/{id}`) no se ofrece en dos casos:
-          - `FINALIZADO`: estado terminal (AGENTS.md), el backend lo rechaza.
-          - con postulaciones: A-06 quedó RESUELTO — el backend da
-            `403 "El Puesto ya tiene postulaciones."` si `applicantsCount > 0`
-            (ENDPOINTS.md). En vez de dejar completar el form y comerse el 403 al
-            guardar, se muestra el botón deshabilitado con el motivo. */}
+      {/* Editar (PUT /vacancy/{id}) queda afuera en `FINALIZADO` (terminal,
+          no tiene sentido seguir ajustando una búsqueda ya cerrada). Con
+          >=1 postulantes (A-06, resuelto: no tiene sentido cambiarle los
+          datos del puesto a alguien que ya se postuló) no se oculta el
+          botón, se lo reemplaza por un lápiz tachado deshabilitado (ver más
+          abajo) para que se entienda *por qué* no se puede editar, en vez de
+          que el botón desaparezca sin explicación. `EditJobForm` mantiene el
+          mismo gate de solo lectura por si se llega por URL directa. */}
+      {vacancy.status !== "FINALIZADO" && vacancy.applicantsCount === 0 && vacancy.applicantsCountKnown && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href={`/puestos/${vacancy.vacancyId}/editar`}
+                aria-label={`Editar ${vacancy.name}`}
+              >
+                <PencilIcon className="size-4" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Editar oferta</TooltipContent>
+        </Tooltip>
+      )}
+
+      {/* Tiene >=1 postulantes confirmados: lápiz tachado (`PencilOffIcon`),
+          deshabilitado, en vez de ocultar el botón — el motivo ya se ve acá
+          mismo, en la columna "Postulantes". */}
       {vacancy.status !== "FINALIZADO" &&
-        (vacancy.applicantsCount > 0 ? (
+        vacancy.applicantsCount > 0 &&
+        vacancy.applicantsCountKnown && (
           <Tooltip>
+            {/* El `<span>` (no el `Button` deshabilitado) es el trigger real:
+                `disabled:pointer-events-none` del propio `Button` (ver
+                components/ui/button.tsx) le impediría recibir el hover que
+                dispara el tooltip. */}
             <TooltipTrigger asChild>
-              {/* Radix no dispara el tooltip sobre un `Button` deshabilitado (no
-                  recibe eventos de puntero); el `span` envolvente sí. */}
-              <span tabIndex={0}>
-                <Button variant="ghost" size="icon" disabled aria-label={`Editar ${vacancy.name}`}>
+              <span className="inline-flex" tabIndex={0}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled
+                  className="pointer-events-none"
+                  aria-label={`No se puede editar ${vacancy.name}: ya tiene postulantes`}
+                >
+                  <PencilOffIcon className="size-4" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              No se puede editar una oferta con postulantes.
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+      {/* `applicantsCountKnown === false` (falló `GET /vacancy-application`
+          para esta fila): no hay forma de saber si tiene postulantes, así
+          que se trata como si los tuviera (más seguro ocultar de más que
+          dejar editar una oferta con postulantes reales). Se muestra un
+          ícono deshabilitado en vez de ocultarlo del todo para que se
+          entienda que es un problema transitorio, no que a esta oferta "no
+          le corresponde" el botón de editar. */}
+      {vacancy.status !== "FINALIZADO" &&
+        vacancy.applicantsCount === 0 &&
+        !vacancy.applicantsCountKnown && (
+          <Tooltip>
+            {/* El `<span>` (no el `Button` deshabilitado) es el trigger real:
+                `disabled:pointer-events-none` del propio `Button` (ver
+                components/ui/button.tsx) le impediría recibir el hover que
+                dispara el tooltip. */}
+            <TooltipTrigger asChild>
+              <span className="inline-flex" tabIndex={0}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled
+                  className="pointer-events-none"
+                  aria-label={`Editar ${vacancy.name}`}
+                >
                   <PencilIcon className="size-4" />
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent>No se puede editar: ya tiene postulaciones</TooltipContent>
+            <TooltipContent>
+              No pudimos confirmar los postulantes de esta oferta. Recargá para reintentar.
+            </TooltipContent>
           </Tooltip>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" asChild>
-                <Link
-                  href={`/puestos/${vacancy.vacancyId}/editar`}
-                  aria-label={`Editar ${vacancy.name}`}
-                >
-                  <PencilIcon className="size-4" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Editar oferta</TooltipContent>
-          </Tooltip>
-        ))}
+        )}
 
       {/* La empresa dueña solo puede cerrar, y solo desde `PUBLICADO`
           (RF-PUE-03). Retirar una vacante a `PENDIENTE` es potestad del
