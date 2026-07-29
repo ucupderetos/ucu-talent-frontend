@@ -6,10 +6,13 @@
 // ⚠️ ANDAMIO TEMPORAL: igual que `features/puestos/hooks/use-company-vacancies.ts`,
 // esto simula un `GET` paginado y filtrado, pero resuelve todo en memoria
 // sobre `lib/fixtures.ts`. TODO(api): cuando se conecte, esto pasa a
-// `apiClient.get<VacancyApplicantResponse[]>("/vacancy-application", { vacancyId })`
-// (docs/ENDPOINTS.md, sección 6) — la respuesta real ya trae `studentName`
-// resuelto, sin `StudentProfile`/`User` completos (ver el aviso en
-// `ApplicantRow`, `features/postulaciones/types.ts`). Acá se simula lo mismo:
+// `apiClient.get<VacancyApplication[]>("/vacancy-application", { vacancyId })`
+// — ⚠️ la respuesta real NO trae `studentName` resuelto: es
+// `VacancyApplicationResponse[]` (`{ vacancyApplicationId, vacancyId,
+// studentProfileId, status, appliedAt, accepted }`), hay que resolver el
+// nombre por `studentProfileId` (1+N, o `GET /student-profile` completo +
+// `Map`, mismo patrón que `use-my-applications.ts`). Ver el aviso en
+// `ApplicantRow`, `features/postulaciones/types.ts`. Acá se simula justo eso:
 // `studentName` sale de `MOCK_STUDENT_PROFILES`, sin tocar `MOCK_APPLICANT_USERS`.
 
 import { useQuery } from "@tanstack/react-query";
@@ -58,8 +61,8 @@ async function fetchCompanyApplicants(
   return { items, total: sorted.length, page, perPage };
 }
 
-/** Junta `VacancyApplication` + nombre del postulante + nombre de la oferta,
- *  para las vacantes de esta empresa — mismos campos que `VacancyApplicantResponse`. */
+/** Junta `VacancyApplication` + nombre del postulante (resuelto por
+ *  `studentProfileId`) + nombre de la oferta, para las vacantes de esta empresa. */
 function buildRows(companyId: string): ApplicantRow[] {
   const ownVacancyIds = new Set(
     MOCK_VACANCIES.filter((v) => v.companyId === companyId).map((v) => v.vacancyId),

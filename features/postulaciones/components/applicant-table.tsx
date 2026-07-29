@@ -29,9 +29,9 @@ function formatDate(iso: string): string {
   return dateFormatter.format(new Date(iso));
 }
 
-/** `studentName` llega como un único string resuelto por el backend
- *  (`VacancyApplicantResponse`, sin `name`/`surname` separados) — se toman
- *  las iniciales de las primeras dos palabras. */
+/** `ApplicantRow.studentName` es un único string ya armado (nombre + apellido
+ *  resueltos en el hook por `studentProfileId`, no dos campos separados) — se
+ *  toman las iniciales de las primeras dos palabras. */
 function initials(studentName: string): string {
   const words = studentName.trim().split(/\s+/);
   return `${words[0]?.charAt(0) ?? ""}${words[1]?.charAt(0) ?? ""}`.toUpperCase();

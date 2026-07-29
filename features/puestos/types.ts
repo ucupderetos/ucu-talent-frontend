@@ -94,9 +94,11 @@ export interface VacancyDetail extends Vacancy {
  * Cambio de estado hecho por la EMPRESA dueña de la vacante — cierre de la
  * búsqueda.
  *
- * La empresa dueña cierra desde `PUBLICADO` o desde `PENDIENTE`, siempre
- * hacia `FINALIZADO` (terminal, RF-PUE-03). Retirar una vacante a
- * `PENDIENTE` es potestad exclusiva del Admin — ver la tabla de
+ * La empresa dueña SOLO cierra desde `PUBLICADO` → `FINALIZADO` (terminal,
+ * RF-PUE-03). ⚠️ NO puede cerrar desde `PENDIENTE`: mientras el Admin la
+ * tiene en revisión, `VacancyServiceImpl.updateVacancyStatus` (fuente del
+ * backend) lo prohíbe con `403 "El Puesto está en revisión."`. Retirar una
+ * vacante a `PENDIENTE` es potestad exclusiva del Admin — ver la tabla de
  * `VacancyStatus` en `types/index.ts`. Tampoco hay "pausar": ese estado no
  * existe en el enum.
  *
