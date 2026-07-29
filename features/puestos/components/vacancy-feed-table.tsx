@@ -6,10 +6,7 @@
 // "Mis ofertas"): puramente de presentación, recibe las filas ya resueltas.
 
 import Link from "next/link";
-import { BookmarkIcon } from "lucide-react";
-import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -45,9 +42,6 @@ export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
             <TableHead>Modalidad</TableHead>
             <TableHead>Tipo de trabajo</TableHead>
             <TableHead>Publicado</TableHead>
-            <TableHead className="w-10">
-              <span className="sr-only">Guardar</span>
-            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -79,17 +73,6 @@ export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {dateFormatter.format(new Date(vacancy.publicationDate))}
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-muted-foreground"
-                  aria-label="Guardar vacante"
-                  onClick={() => toast.info("Guardar vacantes todavía no está disponible.")}
-                >
-                  <BookmarkIcon className="size-4" />
-                </Button>
               </TableCell>
             </TableRow>
           ))}
