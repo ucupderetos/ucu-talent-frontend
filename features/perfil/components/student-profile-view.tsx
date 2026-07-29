@@ -15,6 +15,14 @@
 // acá vía ref (openCreateDialog), para poder alinearlo con el título en vez
 // de dejarlo dentro del tab component.
 //
+// ⚠️ Se elige el layout por media query (JS), NO montando los dos y ocultando
+// uno con `hidden`/`lg:hidden`. Montar ambos duplicaba el contenido en el DOM:
+// `PersonalInfoTab` renderiza inputs con `id` fijos, y dos copias => IDs
+// duplicados (el `htmlFor` del label apuntaba a la copia oculta); además cada
+// tab lleva su propio `useState` de la lista, y dos copias se desincronizaban.
+// Con `useMediaQuery` se monta un solo árbol. El contenido está detrás del
+// estado de carga (skeleton), así que no hay parpadeo ni mismatch de hydration.
+//
 // Alcance de esta primera versión: solo lo que hoy tiene entidad confirmada
 // en el MER/contrato (StudentProfile, Education, WorkExperience, skills).
 // Fecha de nacimiento, país de residencia, nacionalidad, verificación de
@@ -29,6 +37,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSession } from "@/hooks/use-session";
 import { EducationTab, type EducationTabHandle } from "@/features/perfil/components/education-tab";
 import { PersonalInfoTab } from "@/features/perfil/components/personal-info-tab";
@@ -49,6 +58,9 @@ export function StudentProfileView() {
   const educationRef = useRef<EducationTabHandle>(null);
   const workExperienceRef = useRef<WorkExperienceTabHandle>(null);
 
+  // `lg` de Tailwind = 1024px. Se monta un solo layout (ver el aviso de arriba).
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+
   return (
     <div className="flex flex-col gap-6">
       {isLoading && <ProfileSkeleton />}
@@ -65,7 +77,7 @@ export function StudentProfileView() {
           <StudentProfileHeader profile={data.profile} user={user} />
 
           {/* Desktop: tabs (solo en pantallas anchas, para que no se achiquen) */}
-          <div className="hidden lg:block">
+          {isDesktop && (
             <Tabs defaultValue="personal">
               <TabsList variant="line" className="h-8 flex-wrap justify-start gap-x-6 gap-y-3 pb-0.5">
                 <TabsTrigger value="personal" className="after:bg-secondary-blue">
@@ -108,62 +120,64 @@ export function StudentProfileView() {
                 <SkillsTab profile={data.profile} />
               </TabsContent>
             </Tabs>
-          </div>
+          )}
 
           {/* Mobile / tablet: secciones apiladas, sin tabs */}
-          <div className="flex flex-col gap-6 lg:hidden">
-            <ProfileSection icon={UserIcon} title="Información personal">
-              <PersonalInfoTab profile={data.profile} />
-            </ProfileSection>
+          {!isDesktop && (
+            <div className="flex flex-col gap-6">
+              <ProfileSection icon={UserIcon} title="Información personal">
+                <PersonalInfoTab profile={data.profile} />
+              </ProfileSection>
 
-            <ProfileSection
-              icon={BriefcaseIcon}
-              title="Experiencia laboral"
-              action={
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => workExperienceRef.current?.openCreateDialog()}
-                >
-                  <PlusIcon />
-                  Agregar experiencia
-                </Button>
-              }
-            >
-              <WorkExperienceTab
-                ref={workExperienceRef}
-                studentProfileId={data.profile.studentProfileId}
-                workExperience={data.workExperience}
-                hideAddButton
-              />
-            </ProfileSection>
+              <ProfileSection
+                icon={BriefcaseIcon}
+                title="Experiencia laboral"
+                action={
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => workExperienceRef.current?.openCreateDialog()}
+                  >
+                    <PlusIcon />
+                    Agregar experiencia
+                  </Button>
+                }
+              >
+                <WorkExperienceTab
+                  ref={workExperienceRef}
+                  studentProfileId={data.profile.studentProfileId}
+                  workExperience={data.workExperience}
+                  hideAddButton
+                />
+              </ProfileSection>
 
-            <ProfileSection
-              icon={GraduationCapIcon}
-              title="Formación académica"
-              action={
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => educationRef.current?.openCreateDialog()}
-                >
-                  <PlusIcon />
-                  Agregar formación
-                </Button>
-              }
-            >
-              <EducationTab
-                ref={educationRef}
-                studentProfileId={data.profile.studentProfileId}
-                education={data.education}
-                hideAddButton
-              />
-            </ProfileSection>
+              <ProfileSection
+                icon={GraduationCapIcon}
+                title="Formación académica"
+                action={
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => educationRef.current?.openCreateDialog()}
+                  >
+                    <PlusIcon />
+                    Agregar formación
+                  </Button>
+                }
+              >
+                <EducationTab
+                  ref={educationRef}
+                  studentProfileId={data.profile.studentProfileId}
+                  education={data.education}
+                  hideAddButton
+                />
+              </ProfileSection>
 
-            <ProfileSection icon={SparklesIcon} title="Habilidades">
-              <SkillsTab profile={data.profile} />
-            </ProfileSection>
-          </div>
+              <ProfileSection icon={SparklesIcon} title="Habilidades">
+                <SkillsTab profile={data.profile} />
+              </ProfileSection>
+            </div>
+          )}
         </div>
       )}
     </div>
