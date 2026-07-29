@@ -12,6 +12,14 @@
 > Si algo de acá contradice una asunción anterior de `AGENTS.md` o de
 > `types/index.ts`, gana este documento — así lo establece la tabla de
 > precedencia de `AGENTS.md`.
+>
+> ⚠️ **Actualizado 2026-07-28 contra el código fuente real del backend**
+> (`ucupderetos/ucu-talent-backend`, rama `dev` — DTOs, entidades y
+> `*ServiceImpl`, no el `docs/ENDPOINTS.md` que tiene ESE repo, que en varios
+> puntos no coincide ni con su propio código). Ver "Fuente #4" en `AGENTS.md`
+> para el detalle de qué cambió y por qué. Las secciones 5 y 6 de acá abajo
+> tienen las correcciones; el resto del documento (secciones 1–4, 7–10) no se
+> re-verificó esta pasada.
 
 ## 1. Convenciones del contrato
 
@@ -34,11 +42,21 @@ DocumentType = CEDULA_IDENTIDAD | PASAPORTE | DNI
 DegreeLevel = TECNICATURA | LICENCIATURA | GRADO | POSGRADO | DOCTORADO
 Modality = PRESENCIAL | HIBRIDO | REMOTO
 VacancyStatus = PUBLICADO | PENDIENTE | FINALIZADO
-VacancyApplicationStatus = PENDIENTE | VISTO | FINALIZADA
+ContractType = FULL_TIME | PART_TIME | FREELANCE | PASANTIA | CONTRATO_FIJO |
+               CONTRATO_INDEFINIDO | SUPLENCIA | BECA
+VacancyApplicationStatus = PENDIENTE | VISTO | FINALIZADO
 ```
 
-⚠️ `VacancyApplicationStatus` termina en **`FINALIZADA`** (femenino, por
-"postulación") — no confundir con `VacancyStatus.FINALIZADO`.
+⚠️ **`VacancyApplicationStatus` termina en `FINALIZADO` (masculino), NO
+`FINALIZADA`.** Corrige una versión anterior de este documento, que decía
+femenino "por postulación, para no confundir con `VacancyStatus.FINALIZADO`"
+— esa distinción no existe en el wire real. Verificado contra el enum fuente
+del backend (`vacancyapplication/VacancyApplicationStatus.java`), no contra
+prosa.
+
+⚠️ **`ContractType` es un enum real, no `string` libre** — verificado contra
+`vacancy/ContractType.java`. Ninguna versión anterior de este documento lo
+tenía como enum.
 
 ### Regla de Front
 
@@ -183,103 +201,196 @@ UpdateWorkExperienceRequest { company?, position?, startDate?, endDate?, descrip
 
 ## 5. Vacancies
 
+⚠️ Toda esta sección fue reescrita 2026-07-28 contra el código fuente real
+del backend (`vacancy/VacancyController.java`, `dto/*.java`,
+`VacancyServiceImpl.java`) — la versión anterior (basada en el
+`docs/ENDPOINTS.md` del propio repo de backend) tenía varios campos mal.
+
 | Method | Path | Access | Request | Response |
 |---|---|---|---|---|
 | POST | `/vacancy` | EMPRESA + dueño + APROBADA | `CreateVacancyRequest` | `VacancyResponse` |
-| GET | `/vacancy` | Autenticado | - | `VacancyResponse[]` |
+| GET | `/vacancy` | Autenticado | - | `VacancyResponse[]` (sin paginar) |
 | GET | `/vacancy/{id}` | Autenticado | - | `VacancyResponse` |
+| GET | `/vacancy/search` | Autenticado | query, todos opcionales (ver abajo) | `Page<VacancyResponse>` |
+| GET | `/vacancy/student/search` | Autenticado | igual que `/search`, sin `status`/`deleted` (fuerza `PUBLICADO`) | `Page<VacancyStudentResponse>` |
+| GET | `/vacancy/status/{status}` | Autenticado | - | `VacancyResponse[]` |
+| GET | `/vacancy/company/{companyId}` | Autenticado | - | `VacancyResponse[]` |
+| GET | `/vacancy/area/{areaId}` | Autenticado | - | `VacancyResponse[]` |
+| GET | `/vacancy/modality/{modality}` | Autenticado | - | `VacancyResponse[]` |
+| GET | `/vacancy/location/{location}` | Autenticado | - | `VacancyResponse[]` |
 | PUT | `/vacancy/{id}` | EMPRESA + dueño | `UpdateVacancyRequest` | `VacancyResponse` |
 | PATCH | `/vacancy/status/{id}` | EMPRESA + dueño | `UpdateVacancyStatusRequest` | `VacancyResponse` |
 | PUT | `/vacancy/status/{id}` | **ADMIN** | `UpdateVacancyStatusAdminRequest` | `VacancyResponse` |
+| DELETE | `/vacancy/{id}` | EMPRESA + dueño | - | 204 (soft-delete, ver abajo) |
 | GET | `/vacancy/status-summary` | ADMIN | - | `VacancyStatusSummaryResponse` |
 
 ```
 CreateVacancyRequest
-{ companyId, areaId, location, modality, name, description,
-  requirements, contractType, salaryRange }
+{ companyId, areaId, publicationDate, closingDate, location, modality,
+  name, description, requirements, contractType: ContractType, salary }
+  // publicationDate/closingDate son @NotNull — el back NO las autogenera.
 
 UpdateVacancyRequest
-{ location, modality, name, description, requirements, contractType, salaryRange }
+{ publicationDate, closingDate, location, modality, name, description,
+  requirements, contractType: ContractType, salaryRange }
+  // ⚠️ acá el campo de sueldo se llama `salaryRange`, no `salary` —
+  // inconsistencia real del backend entre este DTO y CreateVacancyRequest,
+  // no un typo de este documento. Confirmar el shape exacto que espera cada
+  // endpoint, no asumir que son iguales.
+
+UpdateVacancyStatusRequest        { status: VacancyStatus }
+UpdateVacancyStatusAdminRequest   { adminComment?, status: VacancyStatus }
 
 VacancyResponse
-{ vacancyId, companyId, areaId, location, modality, status,
-  name, description, requirements, contractType, salaryRange,
-  publishedAt, reviewedAt, updatedAt, finalizedAt, adminComment? }
+{ vacancyId, companyId, areaId, publicationDate, closingDate, createdAt,
+  reviewedAt, updatedAt, deletedAt, deleted, adminComment, location,
+  modality, status, name, description, requirements,
+  contractType: ContractType, reviewedBy, salary }
+  // NO tiene publishedAt ni finalizedAt (no existen en el wire real).
+
+VacancyStudentResponse   // salida de /vacancy/student/search — subset sin campos administrativos (adminComment, reviewedBy, deleted*)
+
+Query de /vacancy/search y /vacancy/student/search (todos opcionales, combinables con AND):
+status?, areaId? (incluye subáreas), degreeId? (se resuelve vía área),
+contractType?, modality?, location?, keyword? (busca en name+description),
+sortBy? (default PUBLICATION_DATE), sortDirection? (default DESC),
+page? (default 0), size? (default 20), deleted? (solo /search, no /student/search)
 ```
 
 ### Estados y transiciones
 
 | Actor | Transición | Efecto |
 |---|---|---|
-| EMPRESA | Crear → `PUBLICADO` | Se genera `publishedAt`. La vacancy entra al feed. |
-| ADMIN | `PUBLICADO → PENDIENTE` | Se genera `reviewedAt` y puede guardarse `adminComment`. Sale del feed. No se envía mail. |
+| EMPRESA | Crear → `PUBLICADO` | Default al crear (`@PrePersist`). Entra al feed. |
+| ADMIN | `PUBLICADO → PENDIENTE` | Se genera `reviewedAt`/`reviewedBy` y puede guardarse `adminComment`. Sale del feed. No se envía mail. |
 | ADMIN | `PENDIENTE → PUBLICADO` | Vuelve al feed. Solo Admin puede hacer esta transición. |
-| EMPRESA | `PUBLICADO → FINALIZADO` | Se genera `finalizedAt`. Sale del feed. |
-| EMPRESA | `PENDIENTE → FINALIZADO` | Se genera `finalizedAt`. No se envía mail. |
+| EMPRESA | `PUBLICADO → FINALIZADO` | Terminal. Sale del feed. |
+| Sistema (cron diario) | `PUBLICADO → FINALIZADO` | Automático cuando `closingDate <= hoy` (00:00 America/Montevideo) — dispara el mail de cierre a cada postulante. |
 
-⚠️ **El Admin nunca mueve una vacante a `FINALIZADO`.** Sus dos únicas
-transiciones son `PUBLICADO ↔ PENDIENTE` (vía `PUT /vacancy/status/{id}`).
-"Dar de baja" para el Admin significa `PUBLICADO → PENDIENTE`, no un cierre
-terminal — cerrar la vacante es una acción exclusiva de la empresa dueña
-(`PATCH /vacancy/status/{id}`), desde `PUBLICADO` o desde `PENDIENTE`.
+⚠️ **La empresa dueña SOLO puede cerrar desde `PUBLICADO`.** `PENDIENTE →
+FINALIZADO` por la empresa está explícitamente **prohibido** —
+`VacancyServiceImpl.updateVacancyStatus` devuelve `403 "El Puesto está en
+revisión."` si se intenta. Una versión anterior de este documento decía que
+sí se podía; era un error transcribiendo la doc del backend, no del código.
+
+⚠️ **El Admin nunca mueve una vacante a `FINALIZADO` — por convención, no por
+restricción de código.** `updateVacancyStatusAdmin` no tiene un chequeo que
+lo impida explícitamente (solo bloquea si la vacante YA está `FINALIZADO`);
+simplemente el front nunca ofrece esa opción en la UI de Admin. "Dar de
+baja" para el Admin significa `PUBLICADO → PENDIENTE`.
 
 **Estado terminal**: `FINALIZADO` es terminal. La empresa no puede reabrir
-una vacancy finalizada.
+una vacancy finalizada, ni editarla (`PUT /vacancy/{id}` da `403`).
+
+⚠️ **`DELETE /vacancy/{id}` es borrado lógico, no físico.** Pone
+`deleted: true`, sella `deletedAt` y fuerza `status: FINALIZADO`. No se puede
+borrar una vacante ya `FINALIZADO` (`403`).
+
+⚠️ **`PUT /vacancy/{id}` (editar) se bloquea entero si la vacante ya tiene
+alguna postulación** — `403 "El Puesto ya tiene postulaciones."`
+(`vacancyApplicationRepository.existsByVacancyId`). No es "algunos campos
+editables, otros no": es todo o nada. Resuelve A-06 en `AGENTS.md`.
 
 ### Reglas de listado y feed
 
-- `GET /vacancy` devuelve la colección sin paginación de Backend.
-- Front realiza paginación visual y la mayoría de los filtros.
-- Feed muestra solo `status PUBLICADO`.
-- Filtros de Front: área, carrera vía área, tipo de contrato, modalidad,
-  localidad y keyword.
-- Al filtrar por área se consideran sus subáreas.
+- `GET /vacancy` (el listado plano) devuelve la colección sin paginación de
+  Backend — y así se queda, no es un estado transitorio.
+- `GET /vacancy/search` y `GET /vacancy/student/search` SÍ paginan y filtran
+  del lado del servidor (ver arriba) — el frontend no los usa todavía, sigue
+  trayendo `GET /vacancy` completo y filtrando/paginando en memoria.
+- Feed de alumno (si se sigue usando `GET /vacancy` sin más): filtrar por
+  `status === "PUBLICADO"` en el cliente.
+- Al filtrar por área se consideran sus subáreas (tanto en memoria como en
+  `/search`).
 - Keyword se aplica sobre `name` y `description`.
-- `salaryRange` permanece como `string` (no se renombra a `salary`).
+- `salary`/`salaryRange`: ver el aviso arriba, son nombres DISTINTOS según el
+  endpoint (create vs. update) — no se unifican en este documento porque el
+  backend tampoco los unificó.
 
 ## 6. Postulaciones
+
+⚠️ Toda esta sección fue reescrita 2026-07-28 contra el código fuente real
+del backend (`vacancyapplication/VacancyApplicationController.java`,
+`dto/*.java`, `VacancyApplicationServiceImpl.java`).
 
 | Method | Path | Access | Request | Response |
 |---|---|---|---|---|
 | POST | `/vacancy-application` | ALUMNO + APROBADO | `CreateVacancyApplicationRequest` | `VacancyApplicationResponse` |
-| GET | `/vacancy-application/me` | ALUMNO | - | `MyVacancyApplicationResponse[]` |
+| GET | `/vacancy-application/me` | ALUMNO | - | `VacancyApplicationStudentResponse[]` |
 | GET | `/vacancy-application/{id}` | Empresa dueña | - | `VacancyApplicationResponse` |
-| GET | `/vacancy-application?vacancyId={id}` | Empresa dueña | - | `VacancyApplicantResponse[]` |
+| GET | `/vacancy-application` | ADMIN | - | `VacancyApplicationResponse[]` |
+| GET | `/vacancy-application?vacancyId={id}` | Empresa dueña | - | `VacancyApplicationResponse[]` |
 | GET | `/vacancy-application?studentProfileId={id}` | ADMIN | - | `VacancyApplicationResponse[]` |
+| GET | `/vacancy-application?status={status}` | ADMIN | - | `VacancyApplicationResponse[]` |
 | PUT | `/vacancy-application/{id}` | Empresa dueña | `UpdateVacancyApplicationRequest` | `VacancyApplicationResponse` |
+| PATCH | `/vacancy-application/{id}/accept` | Empresa dueña | - | `VacancyApplicationResponse` |
+| DELETE | `/vacancy-application/{id}` | Alumno postulante (dueño) | - | 204 |
 | GET | `/vacancy-application/status-summary` | ADMIN | - | `VacancyApplicationStatusSummaryResponse` |
 
 ```
-CreateVacancyApplicationRequest    { vacancyId }
-UpdateVacancyApplicationRequest    { status: VISTO | FINALIZADA }
+CreateVacancyApplicationRequest
+{ vacancyId, studentProfileId, status?, appliedAt? }
+// ⚠️ studentProfileId es @NotBlank en el DTO — el controller lo pisa con el
+// del token (jwt.getSubject()) antes de usarlo, así que el VALOR es
+// decorativo, pero mandar el body SIN el campo hace fallar la validación
+// con 400 igual. No se puede mandar solo { vacancyId }.
+
+UpdateVacancyApplicationRequest    { status: VISTO | FINALIZADO }
 
 VacancyApplicationResponse
+{ vacancyApplicationId, vacancyId, studentProfileId, status, appliedAt,
+  accepted: boolean }
+// accepted: default false, solo lo pone en true PATCH .../accept.
+// Visible para empresa dueña y ADMIN.
+
+VacancyApplicationStudentResponse   // salida de GET /vacancy-application/me
 { vacancyApplicationId, vacancyId, studentProfileId, status, appliedAt }
-
-MyVacancyApplicationResponse
-{ vacancyApplicationId, vacancyId, vacancyName, companyId, companyName,
-  appliedAt, status, vacancyStatus }
-
-VacancyApplicantResponse
-{ vacancyApplicationId, vacancyId, studentProfileId, studentName,
-  status, appliedAt }
+// SIN vacancyName/companyId/companyName/vacancyStatus/accepted — el alumno
+// no ve nada resuelto, ni el flag de resultado. Front tiene que cruzar
+// contra GET /vacancy + GET /company + GET /area para armar la fila
+// completa (ver use-my-applications.ts).
 ```
 
-⚠️ **No hay campo `selected` en ningún lado de este contrato.** Ver el aviso
-en `VacancyApplication`, `types/index.ts` — se trata como una reversión de
-la confirmación previa de A-17 en `AGENTS.md`, no como un olvido del
-documento.
+⚠️ **`accepted` SÍ existe — reversión de una reversión.** Una versión
+anterior de este documento (alineada con `docs/ENDPOINTS.md` del repo de
+backend, que tampoco lo tenía) decía que no había campo de selección.
+Verificado contra el código fuente: existe, se llama `accepted` (no
+`selected` como en el MER), y define el contenido del mail de cierre
+(`VacancyFinalizationNotifier`: `accepted === true` → mail de "seleccionado",
+si no → mail de cierre genérico). No viaja en la respuesta de `/me` — el
+alumno nunca lo ve, a propósito.
+
+⚠️ **NO existe `VacancyApplicantResponse` con `studentName` resuelto.** Una
+versión anterior de este documento (y del código de `features/postulaciones/`)
+asumía que `GET /vacancy-application?vacancyId={id}` devolvía el nombre del
+alumno ya resuelto. El controller real (`getByVacancyId`) devuelve
+`List<VacancyApplicationResponse>` — el mismo shape de siempre, sin
+`studentName`. Para armar la tabla de "Postulantes" con nombre hace falta
+resolver `StudentProfile` por `studentProfileId` aparte.
 
 ### Flujo de estado
 
-`PENDIENTE → VISTO → FINALIZADA`
+`PENDIENTE → VISTO → FINALIZADO`
 
-- Una transición inválida devuelve 409 y no modifica la postulación.
+- Una transición inválida (retroceder) devuelve 409 y no modifica la
+  postulación.
+- `PENDIENTE → VISTO` y `VISTO → FINALIZADO` son las DOS acciones explícitas
+  de la empresa dueña vía `PUT /vacancy-application/{id}` — ⚠️ **ninguna es
+  automática**. En particular, cerrar la vacante (por la empresa o por el
+  cron de `closingDate`, ver sección 5) NO cambia el status de sus
+  postulaciones — solo dispara el mail de cierre. Una versión anterior de
+  este documento decía que `VISTO → FINALIZADO` era "automático, en cascada
+  al finalizar el puesto" — no es así en el código real.
 - La empresa puede acceder al perfil completo de los postulantes de sus
-  propias vacancies.
-- `GET /vacancy-application/me` ya devuelve puesto, empresa y estado actual
-  de la vacancy — Front no necesita reconstruir cada item con requests
-  adicionales.
+  propias vacancies (fetch aparte a `StudentProfile`/`Education`/`WorkExperience`,
+  no viene resuelto en `VacancyApplicationResponse`).
+- Postularse exige, además del rol/estado de cuenta: que la vacante esté
+  `PUBLICADO` (`409` si no) y que el alumno tenga **al menos un registro de
+  `Education`** (`409` si no tiene ninguno) — este último no estaba
+  confirmado en ninguna versión anterior de este documento.
+- El alumno puede **retirar su propia postulación**: `DELETE
+  /vacancy-application/{id}`, dueño = el alumno postulante. No documentado
+  en ninguna versión anterior.
 - Los correos automáticos de postulaciones y cambios de estado forman parte
   del flujo, pero su implementación sigue en desarrollo.
 
