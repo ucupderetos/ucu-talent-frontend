@@ -6,7 +6,7 @@
 // es una lista propia del alumno sobre datos mock, no una acción irreversible
 // contra el backend real todavía.
 
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -75,113 +75,127 @@ function toInput(values: FormValues): WorkExperienceInput {
   };
 }
 
-export function WorkExperienceTab({
-  studentProfileId,
-  workExperience,
-}: {
+export interface WorkExperienceTabHandle {
+  openCreateDialog: () => void;
+}
+
+interface WorkExperienceTabProps {
   studentProfileId: string;
   workExperience: WorkExperience[];
-}) {
-  const [items, setItems] = useState(workExperience);
-  const [editingItem, setEditingItem] = useState<WorkExperience | "new" | null>(null);
+  hideAddButton?: boolean;
+}
 
-  const { createWorkExperience } = useCreateWorkExperience();
-  const { updateWorkExperience } = useUpdateWorkExperience();
-  const { deleteWorkExperience } = useDeleteWorkExperience();
+export const WorkExperienceTab = forwardRef<WorkExperienceTabHandle, WorkExperienceTabProps>(
+  function WorkExperienceTab({ studentProfileId, workExperience, hideAddButton }, ref) {
+    const [items, setItems] = useState(workExperience);
+    const [editingItem, setEditingItem] = useState<WorkExperience | "new" | null>(null);
 
-  async function handleSubmit(values: FormValues) {
-    const input = toInput(values);
+    const { createWorkExperience } = useCreateWorkExperience();
+    const { updateWorkExperience } = useUpdateWorkExperience();
+    const { deleteWorkExperience } = useDeleteWorkExperience();
 
-    if (editingItem === "new") {
-      const created = await createWorkExperience({ ...input, studentProfileId });
-      setItems((current) => [created, ...current]);
-      toast.success("Experiencia laboral agregada.");
-    } else if (editingItem) {
-      const updated = await updateWorkExperience({
-        ...input,
-        workExperienceId: editingItem.workExperienceId,
-        studentProfileId,
-      });
-      setItems((current) =>
-        current.map((item) => (item.workExperienceId === updated.workExperienceId ? updated : item)),
-      );
-      toast.success("Experiencia laboral actualizada.");
+    useImperativeHandle(ref, () => ({
+      openCreateDialog: () => setEditingItem("new"),
+    }));
+
+    async function handleSubmit(values: FormValues) {
+      const input = toInput(values);
+
+      if (editingItem === "new") {
+        const created = await createWorkExperience({ ...input, studentProfileId });
+        setItems((current) => [created, ...current]);
+        toast.success("Experiencia laboral agregada.");
+      } else if (editingItem) {
+        const updated = await updateWorkExperience({
+          ...input,
+          workExperienceId: editingItem.workExperienceId,
+          studentProfileId,
+        });
+        setItems((current) =>
+          current.map((item) =>
+            item.workExperienceId === updated.workExperienceId ? updated : item,
+          ),
+        );
+        toast.success("Experiencia laboral actualizada.");
+      }
+
+      setEditingItem(null);
     }
 
-    setEditingItem(null);
-  }
+    async function handleDelete(item: WorkExperience) {
+      await deleteWorkExperience({ workExperienceId: item.workExperienceId, studentProfileId });
+      setItems((current) => current.filter((i) => i.workExperienceId !== item.workExperienceId));
+      toast.success("Experiencia laboral eliminada.");
+    }
 
-  async function handleDelete(item: WorkExperience) {
-    await deleteWorkExperience({ workExperienceId: item.workExperienceId, studentProfileId });
-    setItems((current) => current.filter((i) => i.workExperienceId !== item.workExperienceId));
-    toast.success("Experiencia laboral eliminada.");
-  }
+    return (
+      <div className="flex flex-col gap-4">
+        {!hideAddButton && (
+          <div className="flex justify-end">
+            <Button type="button" onClick={() => setEditingItem("new")}>
+              <PlusIcon />
+              Agregar experiencia
+            </Button>
+          </div>
+        )}
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <Button type="button" onClick={() => setEditingItem("new")}>
-          <PlusIcon />
-          Agregar experiencia
-        </Button>
-      </div>
-
-      {items.length === 0 ? (
-        <EmptyState
-          title="Todavía no cargaste experiencia laboral"
-          description="Agregá tus trabajos anteriores para que las empresas conozcan tu trayectoria."
-        />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {items.map((item) => (
-            <Card key={item.workExperienceId}>
-              <CardContent className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-medium">{item.position || "Sin cargo"}</p>
-                  <p className="text-sm text-muted-foreground">{item.company || "Sin empresa"}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatRange(item.startDate, item.endDate)}
-                  </p>
-                  {item.description && (
-                    <p className="mt-2 whitespace-pre-line text-sm text-foreground/90">
-                      {item.description}
+        {items.length === 0 ? (
+          <EmptyState
+            title="Todavía no cargaste experiencia laboral"
+            description="Agregá tus trabajos anteriores para que las empresas conozcan tu trayectoria."
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {items.map((item) => (
+              <Card key={item.workExperienceId}>
+                <CardContent className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium">{item.position || "Sin cargo"}</p>
+                    <p className="text-sm text-muted-foreground">{item.company || "Sin empresa"}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatRange(item.startDate, item.endDate)}
                     </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Editar experiencia"
-                    onClick={() => setEditingItem(item)}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Eliminar experiencia"
-                    onClick={() => handleDelete(item)}
-                  >
-                    <TrashIcon />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                    {item.description && (
+                      <p className="mt-2 whitespace-pre-line text-sm text-foreground/90">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Editar experiencia"
+                      onClick={() => setEditingItem(item)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Eliminar experiencia"
+                      onClick={() => handleDelete(item)}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-      <WorkExperienceDialog
-        item={editingItem}
-        onOpenChange={(open) => !open && setEditingItem(null)}
-        onSubmit={handleSubmit}
-      />
-    </div>
-  );
-}
+        <WorkExperienceDialog
+          item={editingItem}
+          onOpenChange={(open) => !open && setEditingItem(null)}
+          onSubmit={handleSubmit}
+        />
+      </div>
+    );
+  },
+);
 
 function WorkExperienceDialog({
   item,

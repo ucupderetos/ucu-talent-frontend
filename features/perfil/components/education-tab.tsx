@@ -4,7 +4,7 @@
 // alta/edición en un Dialog. No hay campo plano "carrera" (AGENTS.md): cada
 // entrada apunta a un `Degree` (MOCK_DEGREES) y tiene su propio `degreeLevel`.
 
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -96,117 +96,129 @@ function toInput(values: FormValues): EducationInput {
   };
 }
 
-export function EducationTab({
-  studentProfileId,
-  education,
-}: {
+export interface EducationTabHandle {
+  openCreateDialog: () => void;
+}
+
+interface EducationTabProps {
   studentProfileId: string;
   education: Education[];
-}) {
-  const [items, setItems] = useState(education);
-  const [editingItem, setEditingItem] = useState<Education | "new" | null>(null);
-  const degrees = useDegrees();
+  hideAddButton?: boolean;
+}
 
-  const { createEducation } = useCreateEducation();
-  const { updateEducation } = useUpdateEducation();
-  const { deleteEducation } = useDeleteEducation();
+export const EducationTab = forwardRef<EducationTabHandle, EducationTabProps>(
+  function EducationTab({ studentProfileId, education, hideAddButton }, ref) {
+    const [items, setItems] = useState(education);
+    const [editingItem, setEditingItem] = useState<Education | "new" | null>(null);
+    const degrees = useDegrees();
 
-  async function handleSubmit(values: FormValues) {
-    const input = toInput(values);
+    const { createEducation } = useCreateEducation();
+    const { updateEducation } = useUpdateEducation();
+    const { deleteEducation } = useDeleteEducation();
 
-    if (editingItem === "new") {
-      const created = await createEducation({ ...input, studentProfileId });
-      setItems((current) => [created, ...current]);
-      toast.success("Formación académica agregada.");
-    } else if (editingItem) {
-      const updated = await updateEducation({
-        ...input,
-        educationId: editingItem.educationId,
-        studentProfileId,
-      });
-      setItems((current) =>
-        current.map((item) => (item.educationId === updated.educationId ? updated : item)),
-      );
-      toast.success("Formación académica actualizada.");
+    useImperativeHandle(ref, () => ({
+      openCreateDialog: () => setEditingItem("new"),
+    }));
+
+    async function handleSubmit(values: FormValues) {
+      const input = toInput(values);
+
+      if (editingItem === "new") {
+        const created = await createEducation({ ...input, studentProfileId });
+        setItems((current) => [created, ...current]);
+        toast.success("Formación académica agregada.");
+      } else if (editingItem) {
+        const updated = await updateEducation({
+          ...input,
+          educationId: editingItem.educationId,
+          studentProfileId,
+        });
+        setItems((current) =>
+          current.map((item) => (item.educationId === updated.educationId ? updated : item)),
+        );
+        toast.success("Formación académica actualizada.");
+      }
+
+      setEditingItem(null);
     }
 
-    setEditingItem(null);
-  }
+    async function handleDelete(item: Education) {
+      await deleteEducation({ educationId: item.educationId, studentProfileId });
+      setItems((current) => current.filter((i) => i.educationId !== item.educationId));
+      toast.success("Formación académica eliminada.");
+    }
 
-  async function handleDelete(item: Education) {
-    await deleteEducation({ educationId: item.educationId, studentProfileId });
-    setItems((current) => current.filter((i) => i.educationId !== item.educationId));
-    toast.success("Formación académica eliminada.");
-  }
+    return (
+      <div className="flex flex-col gap-4">
+        {!hideAddButton && (
+          <div className="flex justify-end">
+            <Button type="button" onClick={() => setEditingItem("new")}>
+              <PlusIcon />
+              Agregar formación
+            </Button>
+          </div>
+        )}
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <Button type="button" onClick={() => setEditingItem("new")}>
-          <PlusIcon />
-          Agregar formación
-        </Button>
-      </div>
-
-      {items.length === 0 ? (
-        <EmptyState
-          title="Todavía no cargaste formación académica"
-          description="Agregá tus carreras para que las empresas conozcan tu perfil académico."
-        />
-      ) : (
-        <div className="flex flex-col gap-3">
-          {items.map((item) => (
-            <Card key={item.educationId}>
-              <CardContent className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-medium">{degreeName(degrees, item.degreeId)}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {DEGREE_LEVEL_LABEL[item.degreeLevel]}
-                    {item.institution ? ` · ${item.institution}` : ""}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatRange(item.startDate, item.endDate)}
-                  </p>
-                  {item.description && (
-                    <p className="mt-2 whitespace-pre-line text-sm text-foreground/90">
-                      {item.description}
+        {items.length === 0 ? (
+          <EmptyState
+            title="Todavía no cargaste formación académica"
+            description="Agregá tus carreras para que las empresas conozcan tu perfil académico."
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {items.map((item) => (
+              <Card key={item.educationId}>
+                <CardContent className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium">{degreeName(degrees, item.degreeId)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {DEGREE_LEVEL_LABEL[item.degreeLevel]}
+                      {item.institution ? ` · ${item.institution}` : ""}
                     </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Editar formación"
-                    onClick={() => setEditingItem(item)}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Eliminar formación"
-                    onClick={() => handleDelete(item)}
-                  >
-                    <TrashIcon />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatRange(item.startDate, item.endDate)}
+                    </p>
+                    {item.description && (
+                      <p className="mt-2 whitespace-pre-line text-sm text-foreground/90">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Editar formación"
+                      onClick={() => setEditingItem(item)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Eliminar formación"
+                      onClick={() => handleDelete(item)}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-      <EducationDialog
-        item={editingItem}
-        onOpenChange={(open) => !open && setEditingItem(null)}
-        onSubmit={handleSubmit}
-      />
-    </div>
-  );
-}
+        <EducationDialog
+          item={editingItem}
+          onOpenChange={(open) => !open && setEditingItem(null)}
+          onSubmit={handleSubmit}
+        />
+      </div>
+    );
+  },
+);
 
 function EducationDialog({
   item,

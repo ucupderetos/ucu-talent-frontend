@@ -158,7 +158,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="descripcion">
+            <TabsContent value="descripcion" className="mt-4">
               <Card>
                 <CardContent className="whitespace-pre-line text-sm text-foreground/90">
                   {vacancy.description}
@@ -166,7 +166,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               </Card>
             </TabsContent>
 
-            <TabsContent value="requisitos">
+            <TabsContent value="requisitos" className="mt-4">
               <Card>
                 <CardContent className="whitespace-pre-line text-sm text-foreground/90">
                   {vacancy.requirements}
