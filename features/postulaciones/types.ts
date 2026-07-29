@@ -45,8 +45,8 @@ interface MyApplication {
 export type ApplicantOrder = "recent" | "oldest";
 
 /** Filtros de la tabla de "Postulantes". Igual que en `puestos`, se resuelven
- *  hoy en el cliente sobre fixtures (ver `hooks/use-company-applicants.ts`).
- *  `vacancyIds`/`statuses`: multi-selección. */
+ *  en el cliente sobre los datos ya juntados desde la API (ver
+ *  `hooks/use-company-applicants.ts`). `vacancyIds`/`statuses`: multi-selección. */
 export interface ApplicantFilters {
   search?: string;
   vacancyIds?: string[];
@@ -68,14 +68,12 @@ export interface ApplicantFilters {
  * endpoints de postulaciones: `{ vacancyApplicationId, vacancyId,
  * studentProfileId, status, appliedAt, accepted }`, **sin `studentName`**.
  * Para mostrar el nombre hace falta resolver `StudentProfile` por
- * `studentProfileId` — 1+N requests (o `GET /student-profile` completo +
- * `Map`, mismo patrón que `use-my-applications.ts` con `Company`/`Area`), no
- * el único `GET` que asumía el diseño anterior. Como este hook todavía está
- * sobre fixtures (`use-company-applicants.ts`, sin conectar), no es un bug en
- * producción hoy — pero conectar esto tiene que resolver `studentName` así,
- * no asumiendo que ya viene resuelto. El nombre de la oferta (`vacancyName`)
+ * `studentProfileId` — 1+N requests vía `GET /student-profile/{id}`, mismo
+ * patrón que `use-my-applications.ts` con `Company`/`Area`. Así lo resuelve
+ * `use-company-applicants.ts`. El nombre de la oferta (`vacancyName`)
  * tampoco viene en la response — esta vista es cruzada a todas las ofertas de
- * la empresa, así que también hay que resolverlo por `vacancyId`.
+ * la empresa, así que también se resuelve por `vacancyId` (contra las
+ * vacantes propias, ya traídas para armar la lista).
  *
  * ⚠️ Antes de esto, esta fila extendía `ApplicantListItem` (`StudentProfile` +
  * `User` completos) — sin `email` en este nivel: no se puede mostrar ni
