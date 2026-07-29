@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { FeedVacancyRow } from "@/features/puestos/types";
 import type { Department } from "@/types";
 
@@ -97,14 +98,12 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
             </span>
             <span className="flex items-center gap-1.5">
               <BriefcaseIcon className="size-4 shrink-0" aria-hidden />
-              {vacancy.contractType}
+              {CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType}
             </span>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            {vacancy.publishedAt
-              ? `Publicado el ${dateFormatter.format(new Date(vacancy.publishedAt))}`
-              : "Sin fecha de publicación"}
+            Publicado el {dateFormatter.format(new Date(vacancy.publicationDate))}
           </p>
         </CardContent>
       </Card>

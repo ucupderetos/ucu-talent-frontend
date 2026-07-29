@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
 import type { FeedFilters, FeedVacancyRow } from "@/features/puestos/types";
-import type { Area, Company, Vacancy } from "@/types";
+import type { Area, Company, ContractType, Vacancy } from "@/types";
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function feedVacanciesQueryKey() {
@@ -122,11 +122,10 @@ function sortByRecent(rows: FeedVacancyRow[]): FeedVacancyRow[] {
   return [...rows].sort((a, b) => publishedTimestamp(b) - publishedTimestamp(a));
 }
 
-/** 0 para vacantes sin `publishedAt` — el wire real no tiene un
- *  `createdAt` alternativo para ordenarlas (mismo criterio que la tabla de
- *  "Mis ofertas" del lado empresa). */
+/** `publicationDate` siempre está seteada — mismo criterio que la tabla de
+ *  "Mis ofertas" del lado empresa, ver `use-company-vacancies.ts`. */
 function publishedTimestamp(row: FeedVacancyRow): number {
-  return row.publishedAt ? new Date(row.publishedAt).getTime() : 0;
+  return new Date(row.publicationDate).getTime();
 }
 
 /**
@@ -135,7 +134,7 @@ function publishedTimestamp(row: FeedVacancyRow): number {
  * no vaya perdiendo opciones a medida que se filtra — mismo criterio que
  * useCompanyVacancyFilterOptions en use-company-vacancies.ts.
  */
-export function useFeedFilterOptions(): { areas: Area[]; contractTypes: string[] } {
+export function useFeedFilterOptions(): { areas: Area[]; contractTypes: ContractType[] } {
   const { data } = useFeedVacanciesQuery();
 
   return useMemo(() => {

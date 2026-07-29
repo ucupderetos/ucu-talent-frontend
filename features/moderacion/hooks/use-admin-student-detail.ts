@@ -1,26 +1,18 @@
 "use client";
 
-// Detalle de un alumno para el Admin UCU.
+// detalle de un alumno para el admin.
 //
-// 🔴 Todavía no hay un endpoint administrativo confirmado que entregue en una
-// sola lectura User + StudentProfile + Education + WorkExperience. La tabla de
-// alumnos ya trabaja sobre fixtures por la misma razón. Este hook conserva la
-// frontera de TanStack Query para que, cuando exista el contrato, solo cambie
-// `fetchAdminStudentDetail` y el componente siga consumiendo la misma forma.
+// como studentProfileId y userId son la misma pk, pegamos GET /user/{id} y
+// GET /student-profile/{id} con el mismo id. education y work-experience
+// salen por su propio endpoint filtrando por studentProfileId, y para
+// resolver carrera/area de la educacion usamos el catalogo completo de
+// degree/area (son listas chicas, no vale la pena pedirlas una por area).
 
 import { useQuery } from "@tanstack/react-query";
 
-import type { AdminStudentDetail } from "@/features/moderacion/types";
-import {
-  MOCK_AREAS,
-  MOCK_APPLICANT_USERS,
-  MOCK_DEGREES,
-  MOCK_EDUCATION,
-  MOCK_PENDING_STUDENT_USERS,
-  MOCK_STUDENT_PROFILES,
-  MOCK_STUDENT_USERS,
-  MOCK_WORK_EXPERIENCE,
-} from "@/lib/fixtures";
+import { ApiError, apiClient } from "@/lib/api-client";
+import type { AdminStudentDetail, AdminStudentEducation } from "@/features/moderacion/types";
+import type { Area, Degree, Education, StudentProfile, User, WorkExperience } from "@/types";
 
 export function adminStudentDetailQueryKey(studentProfileId: string) {
   return ["moderacion", "alumnos", "detalle", studentProfileId] as const;
@@ -37,38 +29,59 @@ export function useAdminStudentDetail(studentProfileId: string) {
 async function fetchAdminStudentDetail(
   studentProfileId: string,
 ): Promise<AdminStudentDetail | null> {
-  const user =
-    MOCK_STUDENT_USERS.find(({ userId }) => userId === studentProfileId) ??
-    MOCK_PENDING_STUDENT_USERS.find(({ userId }) => userId === studentProfileId) ??
-    MOCK_APPLICANT_USERS.find(({ userId }) => userId === studentProfileId);
-  const profile = MOCK_STUDENT_PROFILES.find(
-    ({ studentProfileId: id }) => id === studentProfileId,
-  );
+  let user: User;
+  let profile: StudentProfile;
+  try {
+    [user, profile] = await Promise.all([
+      apiClient.get<User>(`/user/${studentProfileId}`),
+      apiClient.get<StudentProfile>(`/student-profile/${studentProfileId}`),
+    ]);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 
-  if (!user || !profile) return null;
+  const [educationRecords, workExperience, degrees, areas] = await Promise.all([
+    fetchEducation(studentProfileId),
+    fetchWorkExperience(studentProfileId),
+    apiClient.get<Degree[]>("/degree"),
+    apiClient.get<Area[]>("/area"),
+  ]);
 
-  const education = MOCK_EDUCATION.filter(
-    ({ studentProfileId: id }) => id === studentProfileId,
-  ).map((item) => {
-    const degree = MOCK_DEGREES.find(({ degreeId }) => degreeId === item.degreeId) ?? null;
-    const area = degree
-      ? (MOCK_AREAS.find(({ areaId }) => areaId === degree.areaId) ?? null)
-      : null;
+  const degreesById = new Map(degrees.map((d) => [d.degreeId, d]));
+  const areasById = new Map(areas.map((a) => [a.areaId, a]));
 
+  const education: AdminStudentEducation[] = educationRecords.map((item) => {
+    const degree = degreesById.get(item.degreeId) ?? null;
+    const area = degree ? (areasById.get(degree.areaId) ?? null) : null;
     return { ...item, degree, area };
   });
 
-  const workExperience = MOCK_WORK_EXPERIENCE.filter(
-    ({ studentProfileId: id }) => id === studentProfileId,
-  ).map((item) => ({ ...item }));
+  return { user, profile, education, workExperience };
+}
 
-  // Las mutaciones temporales escriben sobre los fixtures. El detalle devuelve
-  // copias para que el cache no comparta esas referencias mutables y Query
-  // pueda detectar el cambio de estado después de invalidar.
-  return {
-    user: { ...user },
-    profile: { ...profile, skills: [...profile.skills] },
-    education,
-    workExperience,
-  };
+/** 404 (o lista vacia) = el alumno todavia no cargo educacion: la seccion
+ *  queda vacia sin romper el detalle. Otros errores SI se propagan — el detalle
+ *  es de un solo alumno, no conviene ocultarlos (a diferencia de la tabla,
+ *  `use-students.ts`, que degrada cualquier error para no caerse por una fila). */
+async function fetchEducation(studentProfileId: string): Promise<Education[]> {
+  try {
+    return await apiClient.get<Education[]>("/education", { params: { studentProfileId } });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return [];
+    throw error;
+  }
+}
+
+/** Mismo criterio que `fetchEducation`: 404 (o lista vacia) = el alumno no
+ *  cargo experiencia — la seccion queda vacia sin romper el detalle. Antes esta
+ *  llamada no tenia manejo de 404 y un alumno sin experiencia podia tumbar todo
+ *  el detalle. */
+async function fetchWorkExperience(studentProfileId: string): Promise<WorkExperience[]> {
+  try {
+    return await apiClient.get<WorkExperience[]>("/work-experience", { params: { studentProfileId } });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return [];
+    throw error;
+  }
 }

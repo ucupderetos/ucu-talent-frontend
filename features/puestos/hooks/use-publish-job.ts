@@ -1,24 +1,37 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
+import type { Vacancy } from "@/types";
 
-// POST /vacancy real. El backend fuerza el status inicial, no lo mandamos.
-// ⚠️ TODO(areaId): hoy `areaId` sale de AREAS_PLACEHOLDER en
-// job-basic-info-form.tsx — hasta conectar GET /area (A-20) el back va a
-// rechazar el valor. Se pega al endpoint real igual, para no simular un éxito
-// falso: si falla, el error se surfacea en la pantalla de revisión (toast).
-function publishJobRequest(payload: VacancyInput): Promise<void> {
-  return apiClient.post<void>("/vacancy", payload);
+// ⚠️ `POST /vacancy` espera `salary`, NO `salaryRange` — a diferencia del
+// `PUT` (`use-edit-job.ts`). No es un rename simétrico entre los dos DTOs de
+// escritura: verificado 2026-07-29 contra el código fuente del backend
+// (`vacancy/dto/CreateVacancyRequest.java`, rama `dev`), `salary` es el campo
+// real y además es `@NotBlank` — mandar `salaryRange` deja `salary=null` y el
+// backend responde `400 "El salario es obligatorio"`, rompiendo la creación.
+// Por eso acá se postea `payload` tal cual (con `salary`); el mapeo a
+// `salaryRange` es exclusivo del `PUT`, donde el DTO sí usa ese nombre.
+function publishJobRequest(payload: VacancyInput): Promise<Vacancy> {
+  return apiClient.post<Vacancy>("/vacancy", payload);
 }
 
 export function usePublishJob() {
   const { company } = useCurrentCompany();
-  const mutation = useMutation({ mutationFn: publishJobRequest });
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: publishJobRequest,
+    onSuccess: () => {
+      // Prefijo del queryKey de companyVacanciesQueryKey() — invalida todas
+      // las variantes de filtros/paginación de "Mis ofertas" para esta
+      // empresa a la vez (TanStack matchea por prefijo).
+      queryClient.invalidateQueries({ queryKey: ["puestos", "empresa", company?.companyId] });
+    },
+  });
 
   /** Arma el VacancyInput real (con companyId de la empresa logueada) a
    *  partir de los valores del form, y dispara la mutación.
@@ -46,8 +59,10 @@ export function usePublishJob() {
       areaId: values.areaId,
       contractType: values.contractType,
       modality: values.modality,
-      salaryRange: values.salaryRange,
+      salary: values.salary,
       location: values.location,
+      publicationDate: values.publicationDate,
+      closingDate: values.closingDate,
     };
 
     return mutation.mutateAsync(payload);

@@ -54,7 +54,7 @@ export function ApplicantFiltersBar({
         <Input
           value={filters.search ?? ""}
           onChange={(e) => onChange({ ...filters, search: e.target.value, page: 1 })}
-          placeholder="Buscar por nombre o email…"
+          placeholder="Buscar por nombre…"
           className="pl-8"
           aria-label="Buscar postulantes"
         />

@@ -3,12 +3,14 @@
 // La entidad `Vacancy` vive en @/types (la comparten moderacion y postulaciones).
 // Acá va solo lo específico: filtros, orden e inputs de formulario.
 
-import type { Company, Department, Modality, Vacancy, VacancyStatus } from "@/types";
+import type { Company, ContractType, Department, Modality, Vacancy, VacancyStatus } from "@/types";
 
 /**
- * Payload para crear o editar una vacante. Wire: `CreateVacancyRequest` — lo
- * usan tanto `POST /vacancy` como `PUT /vacancy/{id}` (el PUT reemplaza el
- * objeto entero, no es un patch parcial).
+ * Payload para crear una vacante. Wire: `CreateVacancyRequest`
+ * (`vacancy/dto/CreateVacancyRequest.java`, verificado contra el código
+ * fuente del backend — ninguna versión de `docs/ENDPOINTS.md` documentaba
+ * `publicationDate`/`closingDate` como input obligatorio, ni que el campo de
+ * sueldo acá se llama `salary`, no `salaryRange`).
  *
  * ⚠️ A diferencia de `StudentProfile`/`Company`/`Admin`, acá `companyId` NO se
  * ignora ni se deriva del token — el backend lo pide `@NotBlank` en el
@@ -16,8 +18,20 @@ import type { Company, Department, Modality, Vacancy, VacancyStatus } from "@/ty
  * (sale de `useSession()`, ya que `User.role === "EMPRESA"` implica que
  * `userId` = `companyId`).
  *
+ * ⚠️ **`publicationDate`/`closingDate` son obligatorias, no autogeneradas.**
+ * La empresa las elige en el form; el backend valida que `publicationDate`
+ * no sea anterior a hoy, que `closingDate` no sea anterior a `publicationDate`,
+ * y que no pase más de un año entre las dos. `closingDate` además dispara el
+ * auto-cierre por cron el día que se cumple — ver el aviso en `Vacancy`,
+ * `@/types`.
+ *
  * La empresa no elige el estado inicial: la vacante nace `PUBLICADO`
  * (post-moderación, DEC-01) sin importar lo que se mande.
+ *
+ * `UpdateVacancyRequest` (el `PUT /vacancy/{id}`) es un shape DISTINTO — sin
+ * `companyId`/`areaId` (no se reasignan) y con `salaryRange` en vez de
+ * `salary` (inconsistencia real del backend entre los dos DTOs, no un typo
+ * de este archivo — confirmado contra el código fuente de los dos).
  */
 export interface VacancyInput {
   companyId: string;
@@ -25,10 +39,61 @@ export interface VacancyInput {
   description: string;
   requirements: string;
   areaId: string;
-  contractType: string;
+  contractType: ContractType;
   modality: Modality;
-  salaryRange: string;
+  salary: string;
   location: Department;
+  /** `YYYY-MM-DD`, del `<input type="date">` del form. */
+  publicationDate: string;
+  /** `YYYY-MM-DD`, del `<input type="date">` del form. */
+  closingDate: string;
+}
+
+/**
+ * Payload para editar una vacante ya existente. Wire: `UpdateVacancyRequest`
+ * (`PUT /vacancy/{id}`, docs/ENDPOINTS.md) — a diferencia de `VacancyInput`
+ * (`POST /vacancy` / `CreateVacancyRequest`), NO lleva `companyId` ni
+ * `areaId`: el backend ya sabe de qué vacante se trata por el `{id}` de la
+ * URL, y el área queda fija desde la creación (el contrato no la deja
+ * editar).
+ *
+ * ⚠️ **NO se deriva de `VacancyInput` con `Omit`** — no es solo cuestión de
+ * quitarle `companyId`/`areaId`: el `PUT` real solo aplica el cambio de
+ * sueldo si el campo del BODY se llama `salaryRange`, aunque este tipo
+ * (como el resto de la UI) lo exponga como `salary` — esa traducción de red
+ * vive en `use-edit-job.ts`, no acá (AGENTS.md, A-15). Por eso es una
+ * interface explícita, no un `Omit`.
+ *
+ * A-06 (qué se puede editar) — resuelto por el BACKEND, no es decisión de
+ * front: `PUT /vacancy/{id}` (`VacancyServiceImpl.updateVacancy`, rama `dev`)
+ * rechaza la edición entera con `403` si la vacante tiene aunque sea una
+ * postulación (`"El Puesto ya tiene postulaciones."`) o ya está `FINALIZADO`
+ * (`"El Puesto ya finalizó."`). El front espeja ese gate como UX:
+ * - `FINALIZADO`: no editable en absoluto (`EditVacancyView` bloquea antes
+ *   de montar el form).
+ * - Con >=1 postulaciones: el form entero pasa a solo lectura, con la
+ *   explicación en pantalla (`EditJobForm.isLocked`) — mismo bloqueo que el
+ *   backend, para no dejar completar un form que se comería el 403.
+ * - Sin postulaciones y no `FINALIZADO`: todo lo que este tipo permite queda
+ *   editable.
+ */
+export interface VacancyUpdateInput {
+  name: string;
+  description: string;
+  requirements: string;
+  contractType: ContractType;
+  modality: Modality;
+  /** Wire real de LECTURA (`Vacancy.salary`); el `PUT /vacancy/{id}` real solo
+   *  aplica el cambio si el campo se llama `salaryRange` — la traducción se
+   *  hace en el borde de red (`use-edit-job.ts`), no acá (AGENTS.md, A-15). */
+  salary: string;
+  location: Department;
+  /** `YYYY-MM-DD`. Read-only en el form de edición: se reenvía el valor previo
+   *  de la vacante (no se mueve la fecha de publicación de algo ya publicado). */
+  publicationDate: string;
+  /** `YYYY-MM-DD`. Editable: extender/acortar la búsqueda (dispara el auto-cierre
+   *  por cron cuando se cumple — ver `Vacancy`, `@/types`). */
+  closingDate: string;
 }
 
 /**
@@ -42,7 +107,7 @@ export interface VacancyInput {
 export interface FeedFilters {
   search?: string;
   areaIds?: string[];
-  contractTypes?: string[];
+  contractTypes?: ContractType[];
 }
 
 /**
@@ -73,21 +138,30 @@ export interface VacancyDetail extends Vacancy {
 }
 
 /**
- * Cambio de estado hecho por la EMPRESA dueña de la vacante.
+ * Cambio de estado hecho por la EMPRESA dueña de la vacante — cierre de la
+ * búsqueda.
  *
- * La empresa dueña tiene UNA sola transición: cerrar la búsqueda,
- * `PUBLICADO → FINALIZADO` (RF-PUE-03). Retirar una vacante a `PENDIENTE` es
- * potestad exclusiva del Admin — ver la tabla de `VacancyStatus` en
- * `types/index.ts`. Tampoco hay "pausar": ese estado no existe en el enum.
+ * La empresa dueña SOLO cierra desde `PUBLICADO` → `FINALIZADO` (terminal,
+ * RF-PUE-03). ⚠️ NO puede cerrar desde `PENDIENTE`: mientras el Admin la
+ * tiene en revisión, `VacancyServiceImpl.updateVacancyStatus` (fuente del
+ * backend) lo prohíbe con `403 "El Puesto está en revisión."`. Retirar una
+ * vacante a `PENDIENTE` es potestad exclusiva del Admin — ver la tabla de
+ * `VacancyStatus` en `types/index.ts`. Tampoco hay "pausar": ese estado no
+ * existe en el enum.
  *
- * Se manda el objeto completo porque no hay endpoint chico de "solo cambiar
- * status": `PUT /vacancy/{id}` espera `CreateVacancyRequest` entero.
+ * ✅ Resuelto (A-14, `docs/ENDPOINTS.md`) — corrige lo que decía antes este
+ * párrafo (que no había endpoint chico de status y había que mandar el
+ * objeto completo). Hay dos endpoints dedicados a status, separados de
+ * `PUT /vacancy/{id}` (que edita el resto de los campos):
+ * `PATCH /vacancy/status/{id}` (EMPRESA + dueña) y `PUT /vacancy/status/{id}`
+ * (ADMIN, `PUBLICADO ↔ PENDIENTE`). El contrato no detalla el shape exacto de
+ * `UpdateVacancyStatusRequest` más allá del endpoint — se asume `{ status }`
+ * por ser el mínimo que el nombre sugiere; confirmar al conectar.
  *
- * 🔄 `api-dev` todavía expone solo `PENDIENTE | FINALIZADO` (A-14) y su
- * `PUT /vacancy/{id}` es rol `EMPRESA`; el endpoint de ADMIN para mover
- * estados no existe aún. Verificar al integrar.
+ * ⚠️ Sin consumidores hoy — quedó del diseño previo (que sí se usaba con el
+ * objeto completo). El shape de acá abajo ya es el corregido.
  */
-export interface CompanyVacancyStatusChange extends VacancyInput {
+export interface CompanyVacancyStatusChange {
   status: Extract<VacancyStatus, "FINALIZADO">;
 }
 
@@ -98,20 +172,21 @@ export interface CompanyVacancyStatusChange extends VacancyInput {
 /**
  * Orden de la tabla de ofertas de la empresa.
  *
- * `recent`/`oldest` se basan en `publishedAt`. El MER no tiene un
- * `Vacancy.createdAt`, así que una vacante en `pending` (nunca publicada) no
- * tiene fecha propia para ordenar — queda al final en `recent`.
+ * `recent`/`oldest` se basan en `publicationDate` — obligatoria y siempre
+ * seteada (la define la empresa al crear, no el backend al aprobar; `Vacancy`
+ * sí tiene `createdAt` en el wire real, pero `publicationDate` es la fecha de
+ * negocio: "cuándo entra al feed", que puede diferir de cuándo se creó el
+ * registro).
  */
 export type CompanyVacancyOrder = "recent" | "oldest" | "applicants";
 
 /** Filtros de la tabla de "Mis ofertas". Hoy se resuelven en el cliente sobre
- *  fixtures — cuando exista el contrato de la API, probablemente viajen como
- *  query params de un GET paginado.
+ *  los datos ya traídos de `GET /vacancy` (A-05) — cuando exista un contrato
+ *  de filtros del backend, probablemente viajen como query params de un GET
+ *  paginado.
  *  `statuses`/`areaIds`/`locations`: multi-selección, ver `vacancy-filters.tsx`.
  *  `publishedFrom`/`publishedTo`: rango sobre `Vacancy.publicationDate`
- *  (fechas `yyyy-MM-dd`, del `<input type="date">` de la barra de filtros).
- *  Una vacante sin `publicationDate` (todavía `PENDIENTE`) queda fuera de
- *  cualquier rango que se aplique. */
+ *  (fechas `yyyy-MM-dd`, del `<input type="date">` de la barra de filtros). */
 export interface CompanyVacancyFilters {
   search?: string;
   statuses?: VacancyStatus[];
@@ -132,6 +207,13 @@ export interface CompanyVacancyFilters {
 export interface CompanyVacancyRow extends Vacancy {
   areaName: string;
   applicantsCount: number;
+  /** `false` si no se pudo confirmar el conteo (falló `GET
+   *  /vacancy-application?vacancyId={id}`) — en ese caso `applicantsCount`
+   *  vale `0` pero NO es confiable. El gate de edición de A-06
+   *  (`vacancy-table.tsx`) trata "desconocido" como "hay postulantes": más
+   *  seguro ocultar el lápiz de más que dejar editar una oferta que en
+   *  realidad ya tiene postulantes. */
+  applicantsCountKnown: boolean;
   /** Postulaciones de los últimos 7 días. Alimenta el "+N esta semana". */
   newApplicantsThisWeek: number;
 }

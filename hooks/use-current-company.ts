@@ -7,19 +7,10 @@
 // "Postulantes" (postulaciones), y la regla del equipo es no importar
 // features/ de otro dominio — por eso este accesor, como toda la capa de
 // sesión, sube al bucket `hooks/` de nivel raíz, junto a use-session.ts.
-//
-// ⚠️ ANDAMIO TEMPORAL: el MER separa `User` de `Company` (`Company.userId` es
-// la FK), pero todavía no existe un endpoint tipo `GET /companies/me` — el
-// contrato de la API no está definido (ver AGENTS.md). Mientras tanto, esto
-// resuelve la empresa buscando en fixtures por `userId`.
-//
-// Se apoya en `useSession()`, que ya dedupe el `GET /me` por queryKey, así que
-// llamar a este hook desde varios componentes no dispara requests de más.
-//
-// TODO(api): cuando exista el endpoint real, esto pasa a un `useQuery` propio
-// (o directamente viene incluido en la sesión) y se borra la búsqueda en
-// fixtures.
 
+import { useQuery } from "@tanstack/react-query";
+
+import { apiClient } from "@/lib/api-client";
 import { MOCK_COMPANIES } from "@/lib/fixtures";
 import { useSession } from "@/hooks/use-session";
 import type { Company } from "@/types";
@@ -29,12 +20,29 @@ interface CurrentCompany {
   isLoading: boolean;
 }
 
-export function useCurrentCompany(): CurrentCompany {
-  const { user, isLoading } = useSession();
+const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
-  if (isLoading || !user) return { company: null, isLoading };
+function fetchCurrentCompany(userId: string, signal?: AbortSignal): Promise<Company | null> {
+  if (MOCK_ROLE) {
+    return Promise.resolve(MOCK_COMPANIES.find((c) => c.companyId === userId) ?? null);
+  }
 
   // PK compartida: `companyId` de `Company` ES el `userId` de la sesión.
-  const company = MOCK_COMPANIES.find((c) => c.companyId === user.userId) ?? null;
-  return { company, isLoading: false };
+  return apiClient.get<Company>(`/company/${userId}`, { signal });
+}
+
+export function useCurrentCompany(): CurrentCompany {
+  const { user, isLoading: isSessionLoading } = useSession();
+  const shouldFetchCompany = user?.role === "EMPRESA";
+
+  const query = useQuery({
+    queryKey: ["empresa", "actual", user?.userId] as const,
+    queryFn: ({ signal }) => fetchCurrentCompany(user?.userId ?? "", signal),
+    enabled: shouldFetchCompany,
+  });
+
+  return {
+    company: query.data ?? null,
+    isLoading: isSessionLoading || (shouldFetchCompany && query.isPending),
+  };
 }

@@ -3,12 +3,13 @@
 // Estado del formulario de perfil de empresa (MER: `Company`).
 //
 // ⚠️ Alineado al modelo de vista `CompanyProfile` (features/perfil/types.ts),
-// que ya refleja el MER con `legalName` en inglés (AGENTS.md). Arranca
-// sembrado con useCompanyProfile() en vez de vacío, para que ReadOnly y
-// Preview se puedan revisar con contenido real (ver review del PR).
+// que refleja el MER con `legalName` en inglés (AGENTS.md). Se siembra con
+// `useCompanyProfile()` — que trae la `Company` REAL del backend
+// (`GET /company?userId=`), asíncrono: mientras carga, `profile` es undefined
+// y el form arranca vacío (la vista muestra un skeleton, no el form vacío).
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import type { Department } from "@/types";
@@ -19,8 +20,6 @@ import { DEPARTMENTS } from "@/lib/departments";
 
 const companyProfileSchema = z.object({
   legalName: z.string().trim().min(1, "Ingresá la razón social."),
-  rut: z.string().trim().min(1, "Ingresá el RUT."),
-  phoneNumber: z.string().trim().min(1, "Ingresá un teléfono."),
   industry: z.string().trim().min(1, "Ingresá la industria."),
   description: z
     .string()
@@ -34,36 +33,50 @@ const companyProfileSchema = z.object({
     .pipe(z.url("Ingresá una URL válida.")),
   linkedinUrl: z.string().trim(),
   location: z.enum(DEPARTMENTS as [Department, ...Department[]], "Seleccioná un departamento."),
-  // A-11: sin endpoint de upload todavía — string libre por ahora.
-  logoUrl: z.string(),
 });
 
 export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
 
+const EMPTY_VALUES: CompanyProfileFormValues = {
+  legalName: "",
+  industry: "",
+  description: "",
+  webUrl: "",
+  linkedinUrl: "",
+  location: undefined as unknown as Department,
+};
+
 export function useCompanyProfileForm() {
-  const seedValues = useCompanyProfile();
+  const { profile, isLoading, isError } = useCompanyProfile();
   const [mode, setMode] = useState<"view" | "edit">("view");
-  const [savedValues, setSavedValues] = useState<CompanyProfileFormValues>(seedValues);
 
   const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
-    defaultValues: seedValues,
+    defaultValues: EMPTY_VALUES,
   });
+
+  // Siembra el form (RHF, sistema externo a React) con la empresa cuando llega
+  // del backend o se refresca tras un guardado. Todos los campos se persisten,
+  // así que el refetch confirma lo guardado sin pisar nada editado a mano.
+  useEffect(() => {
+    if (profile) form.reset(profile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- form es estable (RHF), no va en deps
+  }, [profile]);
 
   function startEditing() {
     setMode("edit");
   }
 
-  function commitSave(values: CompanyProfileFormValues) {
-    setSavedValues(values);
-    form.reset(values);
+  function commitSave() {
+    // El PUT ya persistió y se invalidó la query; el form conserva lo que se
+    // envió y el refetch lo reconfirma. Solo hay que volver a "view".
     setMode("view");
   }
 
   function cancelEditing() {
-    form.reset(savedValues);
+    if (profile) form.reset(profile);
     setMode("view");
   }
 
-  return { form, mode, startEditing, commitSave, cancelEditing };
+  return { form, mode, startEditing, commitSave, cancelEditing, isLoading, isError };
 }

@@ -15,6 +15,7 @@ import {
 import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
 import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
 import { VacancyStatusBadge } from "@/components/vacancies/vacancy-status-badge";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { AdminVacancyRow } from "@/features/moderacion/types";
 
 export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) {
@@ -35,7 +36,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
 
         <TableBody>
           {vacancies.map((vacancy) => {
-            const isNew = wasPublishedWithinLastDay(vacancy.publishedAt);
+            const isNew = wasPublishedWithinLastDay(vacancy.publicationDate);
 
             return (
               <TableRow
@@ -59,7 +60,8 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                       )}
                     </div>
                     <p className="truncate text-xs text-muted-foreground">
-                      {vacancy.contractType} · {formatDepartment(vacancy.location)}
+                      {CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType} ·{" "}
+                      {formatDepartment(vacancy.location)}
                     </p>
                   </Link>
                 </TableCell>
@@ -80,7 +82,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                 </TableCell>
 
                 <TableCell>{VACANCY_MODALITY_LABEL[vacancy.modality]}</TableCell>
-                <TableCell>{formatPublicationDate(vacancy.publishedAt)}</TableCell>
+                <TableCell>{formatPublicationDate(vacancy.publicationDate)}</TableCell>
                 <TableCell>{vacancy.applicationCount.toLocaleString("es-UY")}</TableCell>
                 <TableCell>
                   <VacancyStatusBadge status={vacancy.status} />

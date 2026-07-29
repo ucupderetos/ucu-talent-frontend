@@ -12,7 +12,7 @@ import {
   type AdminCompanyDirectoryEntry,
 } from "@/features/moderacion/hooks/use-admin-companies";
 import type { PendingCompaniesFilters, PendingCompanyRow } from "@/features/moderacion/types";
-import type { Paginated } from "@/types";
+import type {  Paginated } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -58,7 +58,6 @@ function paginateAndFilterPendingCompanies(
   const rows = directory.filter(isPendingCompany).map(toPendingCompanyRow);
   const filtered = filterRows(rows, filters);
   const start = (page - 1) * perPage;
-
   return {
     items: filtered.slice(start, start + perPage),
     total: filtered.length,

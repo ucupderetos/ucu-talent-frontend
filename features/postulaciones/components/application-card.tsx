@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ApplicationProgress } from "@/features/postulaciones/components/application-progress";
 import { ApplicationStatusBadge } from "@/features/postulaciones/components/application-status-badge";
+import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { MyApplicationRow } from "@/features/postulaciones/types";
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
@@ -55,7 +56,7 @@ export function ApplicationCard({ row }: { row: MyApplicationRow }) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <BriefcaseIcon className="size-4 shrink-0" aria-hidden />
-              {vacancy.contractType}
+              {CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType}
             </span>
             <span className="flex items-center gap-1.5">
               <CalendarIcon className="size-4 shrink-0" aria-hidden />

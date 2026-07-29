@@ -17,17 +17,27 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
+import { CONTRACT_TYPES } from "@/lib/contract-types";
 import { DEPARTMENTS } from "@/lib/departments";
 import type { Modality, Department } from "@/types";
 
 const TITLE_MAX = 100;
 
-// satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto
-// rompe la build en vez de quedar desincronizado en silencio.
+// satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto rompe
+// la build en vez de quedar desincronizado en silencio. `CONTRACT_TYPES` sigue
+// el mismo criterio pero vive centralizado en `lib/contract-types.ts`.
 const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readonly Modality[];
 
 // Reglas de validación. Reflejan `VacancyInput` (features/puestos/types.ts),
 // sin `companyId` (se agrega al armar el payload, no lo carga el usuario).
+//
+// `publicationDate`/`closingDate`: el backend las exige como input, no las
+// autogenera (`CreateVacancyRequest`, verificado contra el código fuente —
+// ninguna versión de docs/ENDPOINTS.md las documentaba). El back valida
+// además que `publicationDate` no sea anterior a hoy, que `closingDate` no
+// sea anterior a `publicationDate`, y que no pase más de un año entre las
+// dos — se replica la parte relevante acá para no depender solo del 400 del
+// backend.
 const jobFormSchema = z.object({
   name: z
     .string()
@@ -35,15 +45,20 @@ const jobFormSchema = z.object({
     .min(1, "Ingresá el título del puesto.")
     .max(TITLE_MAX, `Máximo ${TITLE_MAX} caracteres.`),
   areaId: z.string().trim().min(1, "Seleccioná un área."),
-  contractType: z.string().trim().min(1, "Ingresá el tipo de contrato."),
+  contractType: z.enum(CONTRACT_TYPES, "Seleccioná un tipo de contrato."),
   modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
   location: z.enum(DEPARTMENTS as [Department, ...Department[]]).optional(),
   description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
   requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
-  salaryRange: z.string().trim().min(1, "Ingresá el rango salarial."),
+  salary: z.string().trim().min(1, "Ingresá el rango salarial."),
+  publicationDate: z.string().min(1, "Ingresá la fecha de publicación."),
+  closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
 }).refine(
   (data) => data.modality === "REMOTO" || Boolean(data.location),
   { message: "La ubicación es obligatoria salvo que la modalidad sea remota.", path: ["location"] },
+).refine(
+  (data) => !data.publicationDate || !data.closingDate || data.closingDate >= data.publicationDate,
+  { message: "La fecha de cierre no puede ser anterior a la de publicación.", path: ["closingDate"] },
 );
 
 export type JobFormValues = z.infer<typeof jobFormSchema>;
@@ -62,12 +77,14 @@ export function CreateJobFormProvider({ children }: { children: ReactNode }) {
     defaultValues: {
       name: "",
       areaId: "",
-      contractType: "",
+      contractType: undefined,
       modality: undefined,
       location: undefined,
       description: "",
       requirements: "",
-      salaryRange: "",
+      salary: "",
+      publicationDate: "",
+      closingDate: "",
     },
   });
 

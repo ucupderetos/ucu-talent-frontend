@@ -1,11 +1,13 @@
 // Barra de progreso de una postulación en "Mis postulaciones" (vista
-// alumno): Pendiente → Visto → Finalizada.
+// alumno): Pendiente → Visto → Finalizado.
 //
-// ⚠️ El tercer paso YA NO distingue seleccionado/no seleccionado: ese estado
-// se derivaba de `FINALIZADO` + `selected`, pero `selected` se eliminó del
-// contrato cerrado (ver el aviso en `VacancyApplication`, `types/index.ts`).
-// Con la respuesta actual no hay forma de saber si el alumno fue elegido o
-// no — el paso solo puede mostrar que la postulación llegó a su fin.
+// ⚠️ El tercer paso NO distingue seleccionado/no seleccionado. `accepted`
+// (ex-`selected`) volvió al contrato — ver el aviso en `VacancyApplication`,
+// `types/index.ts` — pero solo viaja en `VacancyApplicationResponse`, la que
+// usan empresa/ADMIN. `GET /vacancy-application/me` (esta pantalla) devuelve
+// `VacancyApplicationStudentResponse`, que NO lo incluye a propósito: el
+// alumno sigue sin poder ver si quedó seleccionado. El paso solo puede
+// mostrar que la postulación llegó a su fin.
 
 import { CheckIcon } from "lucide-react";
 
@@ -20,8 +22,8 @@ interface Step {
 }
 
 function buildSteps(status: VacancyApplicationStatus): Step[] {
-  const seen = status === "VISTO" || status === "FINALIZADA";
-  const closed = status === "FINALIZADA";
+  const seen = status === "VISTO" || status === "FINALIZADO";
+  const closed = status === "FINALIZADO";
 
   return [
     { label: "Pendiente", state: "done" },

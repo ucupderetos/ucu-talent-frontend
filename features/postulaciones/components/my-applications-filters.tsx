@@ -20,7 +20,7 @@ import type { Area, VacancyApplicationStatus } from "@/types";
 
 type AreaOption = Pick<Area, "areaId" | "name">;
 
-const STATUS_OPTIONS: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADA"];
+const STATUS_OPTIONS: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADO"];
 
 export function MyApplicationsFilters({
   filters,

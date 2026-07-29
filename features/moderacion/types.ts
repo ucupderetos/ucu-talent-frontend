@@ -139,10 +139,14 @@ export interface PendingStudentsFilters {
  * oferta, empresa). No es una entidad del MER, por eso vive acá y no en
  * `@/types`.
  *
- * A diferencia de `ApplicantListItem` (`features/postulaciones/types.ts`,
- * vista empresa — ya sabe de qué empresa/puesto es porque está adentro de
- * ese contexto), esta fila necesita el nombre de la oferta y de la empresa
+ * A diferencia de `ApplicantRow` (`features/postulaciones/types.ts`, vista
+ * empresa — ya sabe de qué empresa/puesto es porque está adentro de ese
+ * contexto), esta fila necesita el nombre de la oferta y de la empresa
  * explícitos porque cruza TODAS las empresas en una sola tabla.
+ *
+ * 🔴 Sin endpoint real: `docs/ENDPOINTS.md` no tiene un listado global de
+ * postulaciones para ADMIN (solo `?studentProfileId=` por alumno puntual, y
+ * `/status-summary` para totales) — ver el aviso en `use-applications.ts`.
  */
 export interface AdminApplicationRow extends VacancyApplication {
   studentName: string;
@@ -174,9 +178,16 @@ export interface AdminApplicationFilters {
 // Son view models de una sola pantalla, no entidades del MER — por eso viven
 // acá y no en `@/types`.
 //
-// 🔴 Ninguno tiene endpoint todavía: no hay API de métricas agregadas. Los
-// datos salen de `features/moderacion/data/dashboard-mock.ts` a través de
-// `hooks/use-dashboard.ts`.
+// 🔴 Cobertura parcial: `docs/ENDPOINTS.md` sí tiene endpoints de conteo por
+// dominio (`GET /student-profile/status-summary`, `/company/status-summary`,
+// `/vacancy/status-summary`, `/vacancy-application/status-summary` — útiles
+// para `ApplicationStatusSummary` y los totales de `DashboardStat`), pero no
+// hay nada para `weeklyChange` (delta semanal) ni para `RecentActivityItem`
+// (un feed de actividad reciente cruzando dominios) — esos dos siguen sin
+// endpoint. Hoy los datos salen enteros de
+// `features/moderacion/data/dashboard-mock.ts` a través de
+// `hooks/use-dashboard.ts`; conectar los status-summary es la parte que ya
+// se puede hacer.
 //
 // Los estados salen de los enums core (`VacancyStatus`,
 // `VacancyApplicationStatus`), no de enums propios del dashboard: un segundo
@@ -247,8 +258,9 @@ export interface ApplicationStatusSummary {
  * View model del listado administrativo de empresas.
  *
  * Combina Company con los datos de User necesarios para la vista.
- * El estado de aprobación pertenece a User.status y CompanyResponse lo
- * repite; el listado compone ambos recursos por su PK compartida.
+ * El estado de aprobación pertenece a `User.status`, pero `CompanyResponse`
+ * (`GET /company`) también lo duplica directo (A-18) — no hace falta un
+ * segundo fetch a `/user` solo para el status.
  */
 export interface AdminCompanyRow {
   id: string;

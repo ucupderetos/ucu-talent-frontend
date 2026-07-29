@@ -1,9 +1,9 @@
 // Cliente HTTP centralizado hacia la API de Spring Boot.
 // Todo el fetching de la app pasa por acá — nunca `fetch()` suelto en un componente.
 //
-// ⚠️ El contrato de la API todavía no está definido. Este archivo define la FORMA
-// del cliente (verbos, errores, base URL), no los endpoints. Los hooks de cada
-// dominio viven en features/<x>/hooks/ y usan estos helpers.
+// Este archivo define la FORMA del cliente (verbos, errores, base URL), no los
+// endpoints — esos están en docs/ENDPOINTS.md (contrato funcional cerrado). Los
+// hooks de cada dominio viven en features/<x>/hooks/ y usan estos helpers.
 //
 // Es agnóstico de la capa de cache: sirve tal cual con TanStack Query o con
 // useEffect + useState (decisión pendiente del equipo).
@@ -12,7 +12,7 @@
  * Base URL de la API. Se lee en build time — tiene que existir en .env.local.
  * Ver .env.example.
  */
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 /**
  * Error normalizado de la API. Todo lo que falle sale como ApiError, así los
@@ -39,6 +39,19 @@ export class ApiError extends Error {
   get isForbidden(): boolean {
     return this.status === 403;
   }
+
+  /**
+   * Mapa de errores por campo (`{ errores: { campo: mensaje } }`, A-19 en
+   * AGENTS.md — `application/problem+json`). `undefined` si el backend no
+   * mandó ese shape (errores no ligados a un form, red caída, etc.). Pensado
+   * para mapear directo a `setError` de RHF en los formularios.
+   */
+  get fieldErrors(): Record<string, string> | undefined {
+    if (!this.body || typeof this.body !== "object") return undefined;
+    const { errores } = this.body as { errores?: unknown };
+    if (!errores || typeof errores !== "object") return undefined;
+    return errores as Record<string, string>;
+  }
 }
 
 interface RequestOptions {
@@ -51,7 +64,7 @@ function buildUrl(path: string, params?: RequestOptions["params"]): string {
   if (!BASE_URL) {
     throw new ApiError(
       0,
-      "Falta NEXT_PUBLIC_API_URL. Copiá .env.example a .env.local y completalo.",
+      "Falta NEXT_PUBLIC_API_BASE_URL. Copiá .env.example a .env.local y completalo.",
     );
   }
 
@@ -116,10 +129,29 @@ function safeJsonParse(text: string): unknown {
 }
 
 function errorMessage(payload: unknown, response: Response): string {
-  // ⚠️ Spring Boot suele mandar { message } o { error }, pero la forma real del
-  // error todavía no está confirmada. Ajustar cuando exista el contrato.
+  // Wire confirmado (AGENTS.md, A-19): `application/problem+json` con
+  // { detail, title, status, instance, errores: { campo: mensaje } }. Se
+  // priorizan los mensajes de campo (más específicos) sobre `detail`/`title`
+  // genéricos, y se dejan `message`/`error` como fallback por si algún
+  // endpoint todavía no migró a problem+json.
   if (payload && typeof payload === "object") {
-    const candidate = payload as { message?: unknown; error?: unknown };
+    const candidate = payload as {
+      detail?: unknown;
+      title?: unknown;
+      message?: unknown;
+      error?: unknown;
+      errores?: unknown;
+    };
+
+    if (candidate.errores && typeof candidate.errores === "object") {
+      const fieldMessages = Object.values(candidate.errores as Record<string, unknown>).filter(
+        (msg): msg is string => typeof msg === "string",
+      );
+      if (fieldMessages.length > 0) return fieldMessages.join(" · ");
+    }
+
+    if (typeof candidate.detail === "string") return candidate.detail;
+    if (typeof candidate.title === "string") return candidate.title;
     if (typeof candidate.message === "string") return candidate.message;
     if (typeof candidate.error === "string") return candidate.error;
   }

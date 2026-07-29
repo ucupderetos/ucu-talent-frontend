@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
@@ -40,29 +40,9 @@ export function CompanyProfileReadOnly({
   form: UseFormReturn<CompanyProfileFormValues>;
   onEdit: () => void;
 }) {
-  const [
-    logoUrl,
-    legalName,
-    rut,
-    phoneNumber,
-    webUrl,
-    description,
-    industry,
-    location,
-    linkedinUrl,
-  ] = useWatch({
+  const [legalName, webUrl, description, industry, location, linkedinUrl] = useWatch({
     control: form.control,
-    name: [
-      "logoUrl",
-      "legalName",
-      "rut",
-      "phoneNumber",
-      "webUrl",
-      "description",
-      "industry",
-      "location",
-      "linkedinUrl",
-    ],
+    name: ["legalName", "webUrl", "description", "industry", "location", "linkedinUrl"],
   });
 
   return (
@@ -77,14 +57,12 @@ export function CompanyProfileReadOnly({
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* A-11: sin endpoint de upload todavía. Mismo tratamiento que el
-         *  avatar de empresa en "Mis postulaciones" (application-card.tsx) —
-         *  círculo con la inicial de fallback, no el cuadrado rounded-md que
-         *  había acá antes. */}
+        {/* TODO(api): la imagen vendrá de `User.imageUrl` (compartida por
+         *  empresa/alumno/admin) cuando el backend la exponga. Por ahora,
+         *  círculo con la inicial de fallback. */}
         <div className="space-y-1">
           <p className="text-sm font-medium">Logo</p>
           <Avatar className="size-24">
-            <AvatarImage src={logoUrl || undefined} alt="Logo de la empresa" />
             <AvatarFallback className="text-lg">
               {(legalName || "Empresa").charAt(0)}
             </AvatarFallback>
@@ -92,11 +70,6 @@ export function CompanyProfileReadOnly({
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           <ReadOnlyField label="Razón social" value={legalName} />
-          <ReadOnlyField label="RUT" value={rut} />
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2">
-          <ReadOnlyField label="Teléfono" value={phoneNumber} />
           <ReadOnlyField label="Sitio web" value={webUrl} />
         </div>
 
