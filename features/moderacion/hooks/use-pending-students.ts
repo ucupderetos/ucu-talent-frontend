@@ -15,7 +15,7 @@ import type { Paginated, StudentProfile, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function pendingStudentsQueryKey(filters: PendingStudentsFilters) {
   return ["moderacion", "alumnos-pendientes", filters] as const;
 }

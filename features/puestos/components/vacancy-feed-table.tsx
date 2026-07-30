@@ -25,7 +25,7 @@ export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
   return (
     <div className="overflow-hidden rounded-xl border">
       <Table>
-        {/* Header en azul secundario (AGENTS.md, "Colores") — mismas clases
+        {/* Header en azul secundario (`docs/agents/design-system.md`, "Colores") — mismas clases
             escritas literal, mismo criterio que el resto de los usos de
             bg-secondary-blue. */}
         <TableHeader className="bg-secondary-blue [&_th]:text-secondary-blue-foreground">

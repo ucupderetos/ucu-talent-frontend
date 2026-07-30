@@ -79,7 +79,7 @@ export interface WorkExperienceInput {
 /**
  * Perfil de empresa tal como lo edita ella misma. Coincide con lo que la API
  * acepta/devuelve en `Company` (docs/ENDPOINTS.md, sección 3), con `name`
- * renombrado a `legalName` (inglés — AGENTS.md).
+ * renombrado a `legalName` (inglés — ver `docs/agents/language-conventions.md`).
  *
  * La imagen de la empresa NO vive acá: va a `User.imageUrl` (compartida por
  * empresa/alumno/admin), todavía sin exponer en el contrato.

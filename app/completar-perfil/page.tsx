@@ -1,8 +1,8 @@
 "use client";
 
 // Ruta: /completar-perfil — paso 3 del registro (POST /student-profile o
-// /company), reintentado con sesión ya activa. Ver AGENTS.md, "Registro en
-// dos pasos y ProfileGuard".
+// /company), reintentado con sesión ya activa. Ver
+// `docs/agents/roles-and-access-control.md`, "Registro en dos pasos y ProfileGuard".
 //
 // FUERA de los route groups a propósito: si viviera dentro de (alumno) o
 // (empresa), su propio `ProfileGuard` la redirigiría a sí misma en loop. Por

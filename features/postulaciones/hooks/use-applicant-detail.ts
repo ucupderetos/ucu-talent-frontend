@@ -28,7 +28,7 @@ import type {
   WorkExperience,
 } from "@/types";
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function applicantDetailQueryKey(
   companyId: string | undefined,
   vacancyApplicationId: string | null,

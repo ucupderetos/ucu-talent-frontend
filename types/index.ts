@@ -193,8 +193,9 @@ export interface StudentProfile {
   /**
    * **Key del objeto en el storage, NO una URL** (`{carpeta}/{UUID}.pdf`) —
    * mismo patrón que `User.profileImage`. Se canjea por una URL firmada con
-   * `GET /student-profile/cv?cvFile={key}` (ver A-24 en AGENTS.md y
-   * `features/perfil/hooks/use-cv.ts`). null si el alumno no subió CV.
+   * `GET /student-profile/cv?cvFile={key}` (ver A-24 en
+   * `docs/agents/open-questions.md` y `features/perfil/hooks/use-cv.ts`).
+   * null si el alumno no subió CV.
    */
   cvFile: string | null;
   status: AccountStatus;
@@ -276,8 +277,8 @@ export type Modality = "PRESENCIAL" | "HIBRIDO" | "REMOTO";
  * llegan mezclando inglés (`PART_TIME`, `FREELANCE`, `FULL_TIME`) y español
  * (`PASANTIA`, `CONTRATO_FIJO`, `CONTRATO_INDEFINIDO`, `SUPLENCIA`, `BECA`)
  * — así los manda el backend, no se homogeneízan (mismo criterio que el
- * resto de los enums: los valores no se traducen, ver *Idioma del código*
- * en AGENTS.md). El catálogo y las labels de presentación viven en
+ * resto de los enums: los valores no se traducen — ver
+ * `docs/agents/language-conventions.md`). El catálogo y las labels de presentación viven en
  * `lib/contract-types.ts`.
  */
 export type ContractType =
@@ -373,7 +374,8 @@ export interface Vacancy {
  * La transición NO retrocede (lo valida el backend, `409` si se intenta).
  *
  * ⚠️ **El valor terminal es `FINALIZADO` (masculino), NO `FINALIZADA`.**
- * Una versión anterior de este archivo (y de AGENTS.md) insistía en que era
+ * Una versión anterior de este archivo (y de `docs/agents/applications-state-machine.md`)
+ * insistía en que era
  * femenino "por postulación", para no confundirlo con `VacancyStatus.FINALIZADO`
  * — esa distinción NO existe en el wire real: los dos enums usan la misma
  * palabra. Verificado contra el enum fuente del backend, no contra prosa.
@@ -418,8 +420,8 @@ export interface VacancyApplication {
 // los usan DOS dominios: `auth` (camino feliz, `use-register.ts`) y `perfil`
 // (reintento desde `/completar-perfil`, `use-complete-profile.ts`). Por eso
 // suben acá — un tipo que cruza dominios no puede vivir en `features/auth/types`
-// sin romper la regla "no importar features/ de otro dominio". Ver AGENTS.md,
-// "Registro en dos pasos y ProfileGuard".
+// sin romper la regla "no importar features/ de otro dominio". Ver
+// `docs/agents/roles-and-access-control.md` ("Registro en dos pasos y ProfileGuard").
 
 /**
  * `POST /student-profile` — paso 3 del registro si el rol es `ALUMNO`.

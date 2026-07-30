@@ -85,7 +85,7 @@ export interface VacancyUpdateInput {
   /** Mismo campo `salary` que `VacancyInput` y que `Vacancy.salary` de
    *  lectura — verificado 2026-07-30 contra `UpdateVacancyRequest.java`
    *  (rama `dev`): no hay `salaryRange`, esa traducción vieja era un bug
-   *  (corregido en `use-edit-job.ts`, ver AGENTS.md A-15). */
+   *  (corregido en `use-edit-job.ts`, ver `docs/agents/open-questions.md` A-15). */
   salary: string;
   location: Department;
   /** `YYYY-MM-DD`. Read-only en el form de edición: se reenvía el valor previo

@@ -12,7 +12,7 @@
 // del popover de "Filtros", al pie de las secciones.
 //
 // El orden usa `onOrderChange` en vez de `onChange` porque no es un filtro
-// (AGENTS.md) — aunque los dos se apliquen igual de inmediato.
+// (`docs/agents/design-system.md`) — aunque los dos se apliquen igual de inmediato.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 

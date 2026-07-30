@@ -15,7 +15,7 @@ import type { Company, Paginated, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function pendingCompaniesQueryKey(filters: PendingCompaniesFilters) {
   return ["moderacion", "empresas-pendientes", filters] as const;
 }

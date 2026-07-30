@@ -28,7 +28,7 @@ interface MyVacancyApplicationResponse {
 }
 
 /**
- * @public para invalidación puntual futura (AGENTS.md). Misma queryKey que
+ * @public para invalidación puntual futura (`docs/agents/data-fetching.md`). Misma queryKey que
  * usa `useHasApplied` (features/puestos/hooks/use-vacancy.ts) — deliberado,
  * ver el comentario ahí sobre por qué no es un import cruzado entre
  * `features/`.

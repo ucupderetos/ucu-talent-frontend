@@ -11,7 +11,7 @@
 // Es la ÚNICA capa de redirect del front: hubo un `proxy.ts` que hacía el mismo
 // chequeo del lado del server, pero se borró (no puede leer la cookie de sesión,
 // que vive en el dominio de la API, y causaba un loop de redirección que rompía
-// el login). Ver AGENTS.md, "El acceso se valida en tres capas".
+// el login). Ver `docs/agents/roles-and-access-control.md`, "El acceso se valida en tres capas".
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

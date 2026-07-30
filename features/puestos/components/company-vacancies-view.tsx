@@ -40,7 +40,7 @@ export function CompanyVacanciesView() {
   const { company, isLoading: isLoadingCompany } = useCurrentCompany();
 
   // RN-02 / RF-MOD-04: el estado no restringe el acceso, restringe la acción
-  // de publicar puestos. `User.status` es la fuente canónica (AGENTS.md), no
+  // de publicar puestos. `User.status` es la fuente canónica (`docs/agents/roles-and-access-control.md`), no
   // `Company.status` (mismo valor duplicado, pero éste ya está en la sesión
   // sin fetch extra).
   const canCreateOffer = user?.status === "APROBADO";
@@ -64,7 +64,7 @@ export function CompanyVacanciesView() {
     setFilters({ ...next, page: 1 });
   }
 
-  // Ordenar no es lo mismo que filtrar (AGENTS.md), pero también se aplica de
+  // Ordenar no es lo mismo que filtrar (`docs/agents/design-system.md`), pero también se aplica de
   // inmediato y también vuelve a la página 1: con otro orden, la página en la
   // que estabas muestra filas distintas.
   function changeOrder(order: CompanyVacancyOrder) {

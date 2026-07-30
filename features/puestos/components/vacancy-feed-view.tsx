@@ -42,7 +42,7 @@ export function VacancyFeedView() {
 
         {/* Selector de vista: grilla (default) o lista. El seleccionado va en
             azul principal explícito (`bg-ucu-blue`) — mismo criterio que el
-            botón de acción principal, ver "Colores" en AGENTS.md. */}
+            botón de acción principal, ver "Colores" en `docs/agents/design-system.md`. */}
         <ToggleGroup
           type="single"
           variant="outline"

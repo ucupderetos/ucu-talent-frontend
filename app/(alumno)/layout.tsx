@@ -3,7 +3,7 @@
 //
 // `ProfileGuard` adentro de `RoleGuard`: atrapa al alumno que se registró
 // (POST /user + POST /auth/login) pero nunca llegó a POST /student-profile —
-// ver AGENTS.md, "Registro en dos pasos y ProfileGuard". Manda a
+// ver `docs/agents/roles-and-access-control.md`, "Registro en dos pasos y ProfileGuard". Manda a
 // /completar-perfil, que vive FUERA de este route group a propósito (si
 // estuviera adentro, este mismo guard la redirigiría a sí misma en loop).
 //

@@ -56,8 +56,9 @@ async function runStep<T>(step: RegistrationStep, call: () => Promise<T>): Promi
 }
 
 /**
- * Registro real en 3 requests encadenados (`docs/ENDPOINTS.md` + AGENTS.md,
- * "Registro en dos pasos y ProfileGuard") — el orden no es negociable:
+ * Registro real en 3 requests encadenados (`docs/ENDPOINTS.md` +
+ * `docs/agents/roles-and-access-control.md`, "Registro en dos pasos y
+ * ProfileGuard") — el orden no es negociable:
  *   1. `POST /user`            — crea la cuenta (email/password/role), pública.
  *      Devuelve `201` pero NO loguea (no setea cookie).
  *   2. `POST /auth/login`      — login explícito, obligatorio: sin esto el

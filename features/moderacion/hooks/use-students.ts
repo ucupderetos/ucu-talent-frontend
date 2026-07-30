@@ -23,7 +23,7 @@ import type { Area, Degree, Education, Paginated, StudentProfile, User } from "@
 
 const DEFAULT_PER_PAGE = 10;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function studentsQueryKey(filters: StudentFilters) {
   return ["moderacion", "alumnos", filters] as const;
 }

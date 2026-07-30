@@ -2,22 +2,24 @@
 
 > Transcripción de `UCU Talent - API Contract - Frontend / Backend` (revisión
 > basada en backlog funcional actualizado, recibida 2026-07-27). Este es el
-> documento que `AGENTS.md` referencia como fuente #3 ("`ENDPOINTS.md` dice
+> documento que `docs/agents/sources-and-precedence.md` referencia como
+> fuente #3 ("`ENDPOINTS.md` dice
 > contra qué podemos programar ahora mismo") — el contrato real, de mayor
 > precedencia que el MER y el SRS. Marcado como **"Contrato funcional
 > cerrado"** por el equipo de backend: las reglas de estados, transiciones,
 > fechas, feed, salario y responses de postulaciones de acá son las
 > acordadas para Front y Backend.
 >
-> Si algo de acá contradice una asunción anterior de `AGENTS.md` o de
+> Si algo de acá contradice una asunción anterior de `docs/agents/*.md` o de
 > `types/index.ts`, gana este documento — así lo establece la tabla de
-> precedencia de `AGENTS.md`.
+> precedencia de `docs/agents/sources-and-precedence.md`.
 >
 > ⚠️ **Actualizado 2026-07-28 contra el código fuente real del backend**
 > (`ucupderetos/ucu-talent-backend`, rama `dev` — DTOs, entidades y
 > `*ServiceImpl`, no el `docs/ENDPOINTS.md` que tiene ESE repo, que en varios
-> puntos no coincide ni con su propio código). Ver "Fuente #4" en `AGENTS.md`
-> para el detalle de qué cambió y por qué. Las secciones 5 y 6 de acá abajo
+> puntos no coincide ni con su propio código). Ver "Fuente #4" en
+> `docs/agents/sources-and-precedence.md` para el detalle de qué cambió y por
+> qué. Las secciones 5 y 6 de acá abajo
 > tienen las correcciones; el resto del documento (secciones 1–4, 7–10) no se
 > re-verificó esta pasada.
 
@@ -306,7 +308,7 @@ borrar una vacante ya `FINALIZADO` (`403`).
 ⚠️ **`PUT /vacancy/{id}` (editar) se bloquea entero si la vacante ya tiene
 alguna postulación** — `403 "El Puesto ya tiene postulaciones."`
 (`vacancyApplicationRepository.existsByVacancyId`). No es "algunos campos
-editables, otros no": es todo o nada. Resuelve A-06 en `AGENTS.md`.
+editables, otros no": es todo o nada. Resuelve A-06 en `docs/agents/open-questions.md`.
 
 ### Reglas de listado y feed
 

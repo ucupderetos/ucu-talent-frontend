@@ -12,7 +12,7 @@ import { apiClient, ApiError } from "@/lib/api-client";
 import type { VacancyDetail } from "@/features/puestos/types";
 import type { Area, Company, Vacancy, VacancyApplication } from "@/types";
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function vacancyQueryKey(vacancyId: string) {
   return ["puestos", vacancyId] as const;
 }
@@ -51,7 +51,7 @@ async function fetchVacancy(vacancyId: string): Promise<VacancyDetail | null> {
  * `GET /vacancy-application/me` es el mismo endpoint que arma "Mis
  * postulaciones" (`features/postulaciones/hooks/use-my-applications.ts`) —
  * se pega directo acá en vez de importar el hook de ese dominio (regla de
- * AGENTS.md: no importar entre `features/`).
+ * `docs/agents/agent-rules.md`: no importar entre `features/`).
  *
  * ⚠️ Antes esto usaba la MISMA queryKey que `useMyApplications`
  * (`["postulaciones", "mias", studentProfileId]`) a propósito, para que
@@ -78,7 +78,7 @@ export function useHasApplied(vacancyId: string, studentProfileId: string | unde
   return query.data?.some((application) => application.vacancyId === vacancyId) ?? false;
 }
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function vacancyApplicantsQueryKey(vacancyId: string) {
   return ["puestos", vacancyId, "postulantes"] as const;
 }

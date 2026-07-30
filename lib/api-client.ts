@@ -4,7 +4,7 @@
 // Este archivo define la FORMA del cliente (verbos, errores, base URL), no los
 // endpoints — esos están en docs/ENDPOINTS.md (contrato funcional cerrado). Los
 // hooks de cada dominio viven en features/<x>/hooks/ y usan estos helpers con
-// TanStack Query (ver AGENTS.md, "Fetching de datos") — no useEffect + useState.
+// TanStack Query (ver `docs/agents/data-fetching.md`) — no useEffect + useState.
 
 /**
  * Base URL de la API. Se lee en build time — tiene que existir en .env.local.
@@ -40,7 +40,7 @@ export class ApiError extends Error {
 
   /**
    * Mapa de errores por campo (`{ errores: { campo: mensaje } }`, A-19 en
-   * AGENTS.md — `application/problem+json`). `undefined` si el backend no
+   * `docs/agents/open-questions.md` — `application/problem+json`). `undefined` si el backend no
    * mandó ese shape (errores no ligados a un form, red caída, etc.). Pensado
    * para mapear directo a `setError` de RHF en los formularios.
    */
@@ -137,7 +137,7 @@ function safeJsonParse(text: string): unknown {
 }
 
 function errorMessage(payload: unknown, response: Response): string {
-  // Wire confirmado (AGENTS.md, A-19): `application/problem+json` con
+  // Wire confirmado (`docs/agents/open-questions.md`, A-19): `application/problem+json` con
   // { detail, title, status, instance, errores: { campo: mensaje } }. Se
   // priorizan los mensajes de campo (más específicos) sobre `detail`/`title`
   // genéricos, y se dejan `message`/`error` como fallback por si algún

@@ -1,7 +1,8 @@
 // Estado de aprobación de la empresa (`User.status`, `AccountStatus`) en su
 // propia vista de perfil — hasta ahora "Perfil Empresa" no lo mostraba en
 // ningún lado (feedback de QA en #15.2). No es un `CompanyStatusBadge` más
-// (ese vive en moderacion y no se puede importar entre dominios, AGENTS.md):
+// (ese vive en moderacion y no se puede importar entre dominios, ver
+// `docs/agents/agent-rules.md`):
 // acá se optó por un tratamiento tipo alerta — ícono en círculo de color +
 // título + bajada — porque un badge chico con un punto pasaba desapercibido
 // para algo tan importante como si la empresa puede publicar vacantes o no.

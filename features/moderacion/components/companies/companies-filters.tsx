@@ -3,7 +3,7 @@
 // Barra de filtros de "Empresas": búsqueda (siempre visible, ancho fijo) + un
 // botón único "Filtros" que abre un panel con tres MultiSelect (estado,
 // rubro, ubicación) — mismo patrón que `students-filters.tsx` y
-// `applications-filters.tsx` (AGENTS.md, "Barras de filtros"). Controlado
+// `applications-filters.tsx` (`docs/agents/design-system.md`, "Barras de filtros"). Controlado
 // desde afuera.
 //
 // Filtrado inmediato: cada cambio se aplica al toque, sin "Aplicar filtros".
