@@ -19,19 +19,27 @@ export function GuestOnly({
   children: React.ReactNode;
   fallback: React.ReactNode;
 }) {
-  const { user, isLoading } = useSession();
+  const { user, isLoading, error } = useSession();
   const router = useRouter();
+  const destination = user && !error ? homeRouteFor(user.role) : undefined;
 
   useEffect(() => {
-    if (!isLoading && user) router.replace(homeRouteFor(user.role));
-  }, [isLoading, user, router]);
+    if (!isLoading && destination) router.replace(destination);
+  }, [isLoading, destination, router]);
 
-  if (isLoading) {
+  // Mientras carga, o mientras se redirige a su sección si ya hay sesión:
+  // mismo fallback que el de loading — así una sesión vieja no deja la
+  // pantalla en blanco, se ve como que está cargando (que es, en los hechos,
+  // lo que está pasando).
+  //
+  // Con `error` NO se entra acá aunque `user` sea truthy: `useSession` arma el
+  // usuario con `{...identity, ...displayProfile}`, así que si `GET /me` anduvo
+  // pero la consulta del perfil falló, `user` queda truthy con `error` al mismo
+  // tiempo. Bloquear ahí dejaba el login en blanco sin salida — justo lo
+  // contrario de lo que dice el comentario de arriba.
+  if (isLoading || destination) {
     return <>{fallback}</>;
   }
-
-  // Redirigiendo a su sección: no parpadeamos el formulario de login.
-  if (user) return null;
 
   return <>{children}</>;
 }

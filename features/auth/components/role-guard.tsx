@@ -6,7 +6,12 @@
 // ⚠️ ESTO NO ES SEGURIDAD. Es UX: evita que alguien vea una pantalla que no le
 // corresponde. Un usuario puede saltearlo con las devtools. La autorización real
 // la hace Spring Boot, que tiene que rechazar toda request que no corresponda
-// sin importar lo que haga el frontend. Ver también proxy.ts (chequeo optimista).
+// sin importar lo que haga el frontend.
+//
+// Es la ÚNICA capa de redirect del front: hubo un `proxy.ts` que hacía el mismo
+// chequeo del lado del server, pero se borró (no puede leer la cookie de sesión,
+// que vive en el dominio de la API, y causaba un loop de redirección que rompía
+// el login). Ver AGENTS.md, "El acceso se valida en tres capas".
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -55,8 +60,9 @@ export function RoleGuard({
     );
   }
 
-  // Redirigiendo: no parpadeamos contenido que no corresponde.
-  if (!user || !authorized) return null;
+  // Redirigiendo: mismo skeleton que loading, no dejamos la pantalla en
+  // blanco mientras el useEffect dispara el redirect.
+  if (!user || !authorized) return <LoadingSkeleton />;
 
   return <AppShell user={user}>{children}</AppShell>;
 }

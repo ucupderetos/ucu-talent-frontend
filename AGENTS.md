@@ -521,8 +521,10 @@ los errores de RHF.
   Server Components, salvo que se justifique explícitamente un caso puntual y se discuta
   con el equipo antes. Ese fetching se maneja con **TanStack Query** — ver *Fetching de
   datos*.
-- El valor real de Next.js acá es: route groups por rol, layouts anidados y `proxy.ts`
-  para control de acceso — no el renderizado del lado del servidor.
+- El valor real de Next.js acá es: route groups por rol y layouts anidados para control de
+  acceso — no el renderizado del lado del servidor. ⚠️ Antes esta línea incluía `proxy.ts`;
+  ese guard se borró (no puede leer la cookie cross-domain, ver *El acceso se valida en
+  tres capas*), así que el control de acceso de UX es 100% client-side (`RoleGuard`).
 - (RNF-08 pide feed <2s con hasta 200 puestos, sin exigir SSR para lograrlo — no cambia
   esta decisión, las otras razones siguen aplicando igual.)
 
@@ -680,10 +682,11 @@ Dos detalles que **no se pueden resolver de otra forma**:
 - **`/completar-perfil` va FUERA de los route groups.** Si estuviera dentro de `(alumno)`,
   el guard la redirigiría a sí misma en loop infinito. Lleva su propio chequeo de rol y
   renderiza el mismo paso 2 del wizard.
-- **`proxy.ts` no sirve para esto.** Solo puede leer la cookie; no sabe si hay perfil.
-  `ProfileGuard` es client-side, sí o sí.
+- **Un guard de servidor no sirve para esto.** Solo podría leer la cookie; no sabe si hay
+  perfil. `ProfileGuard` es client-side, sí o sí. (Y encima ese guard ya no existe — ver
+  abajo.)
 
-#### ⚠️ En Next 16 `middleware.ts` ya no existe: ahora es `proxy.ts`
+#### ⚠️ En Next 16 `middleware.ts` ya no existe: ahora es `proxy.ts` — pero acá no usamos ninguno
 
 Next 16 renombró Middleware a **Proxy**. La funcionalidad es la misma, pero **el archivo
 tiene que llamarse `proxy.ts`** (en la raíz, al mismo nivel que `app/`) y exportar una
@@ -691,16 +694,53 @@ función `proxy`. Un `middleware.ts` **no se ejecuta nunca** — o sea que un gu
 ahí no protege nada y falla en silencio. Ver `node_modules/next/dist/docs/01-app/
 01-getting-started/16-proxy.md`.
 
+⛔ **Dicho eso: este proyecto NO tiene `proxy.ts`, y no debe volver a tenerlo.** Se borró
+el 2026-07-30 porque rompía el login con un loop de redirección — el server del frontend
+no puede leer la cookie de sesión, que vive en el dominio de la API. El detalle completo
+está en *El acceso se valida en tres capas*. Esta sección queda porque el dato de Next 16
+sigue siendo cierto y útil (si alguien crea un `middleware.ts`, falla en silencio), no
+porque haya que crear el archivo.
+
 #### El acceso se valida en tres capas, y solo una es seguridad
 
 | Capa | Qué hace | ¿Es seguridad? |
 |---|---|---|
-| `proxy.ts` | Redirect **optimista** si no hay cookie de sesión | ❌ No |
+| ~~`proxy.ts`~~ | ⛔ **NO EXISTE** — se borró: no puede funcionar cross-domain, ver abajo | ❌ No |
 | `layout.tsx` del route group (`RoleGuard`) | Guard de rol para UX: evita ver pantallas ajenas | ❌ No |
 | **Spring Boot** | **Autorización real** | ✅ **Sí** |
 
 Las dos primeras son UX: cualquiera las saltea con las devtools. **El backend tiene que
 rechazar toda request que no corresponda, sin importar lo que haga el frontend.**
+
+⛔ **`proxy.ts` se borró el 2026-07-30 — no volver a crearlo** (ni como `proxy.ts` ni
+como `middleware.ts`). El guard optimista es **imposible** en esta arquitectura, y no es
+un bug que se pueda arreglar: la cookie `access_token` la setea el backend desde
+`api-dev.ucutalent.tech`, así que el browser solo la manda a ESE dominio. El frontend
+corre en `dev.ucutalent.tech` (y `localhost:3000` en local), y `proxy.ts` se ejecuta en el
+server del frontend, donde `request.cookies` **nunca** va a tener `access_token`, esté
+logueado el usuario o no.
+
+Con el guard activo había un **loop de redirección infinito** que rompía el login para
+todo usuario ya logueado: `/login` → `GuestOnly` ve sesión válida (pregunta `GET /me`
+cross-origin, ahí la cookie SÍ viaja) → redirige a la home del rol → `proxy.ts` no ve
+cookie → vuelve a `/login` → repetir. Síntoma: `/login` con el panel de marca y el lado
+derecho vacío, aparentando que "nunca redirige". Solo se salvaba quien no tenía sesión
+(incógnito). Verificado contra `https://dev.ucutalent.tech` con sesión ADMIN real:
+`GET /me` → `200` y `GET /admin/{id}` → `200`, pero `/moderacion/dashboard` rebotaba a
+`/login` igual.
+
+No se pierde seguridad (nunca fue seguridad) ni el redirect: `RoleGuard` (client-side) ya
+lo hace, y sí puede preguntar `GET /me` cross-origin. Lo único que se pierde son unos ms.
+Si alguien quiere recuperar la optimización, la única vía viable es que el **frontend**
+setee su propia cookie NO httpOnly de "hay sesión" en su propio dominio al loguearse (y la
+limpie al salir) — un flag de UX, nunca el token. Es decisión de equipo.
+
+⚠️ **Efecto colateral relacionado, distinto del loop**: desde `localhost:3000` el
+`GET /me` da `401` aunque haya sesión, porque contra `api-dev.ucutalent.tech` la cookie es
+**third-party** y Chrome la bloquea. Desde `dev.ucutalent.tech` no pasa: los dos comparten
+el dominio registrable `ucutalent.tech`, así que es same-site. O sea que **probar el login
+en local no representa lo que ve el usuario deployado** — otra razón para verificar
+siempre también contra `https://dev.ucutalent.tech`.
 
 El doc de Next es explícito: Proxy *"no está pensado como solución completa de manejo de
 sesión ni de autorización"*. Corre en cada request, incluidas las prefetcheadas, así que
@@ -849,7 +889,9 @@ Los dos correos automáticos del sistema, ambos desde Spring Boot:
 **No hay `src/`: la raíz del repo es el src.** El alias `@/*` apunta a la raíz (`./*`).
 
 ```
-proxy.ts                    # ✅ Existe. Guard optimista (era middleware.ts) — ver A-16
+                            # ⛔ NO hay proxy.ts (ni middleware.ts). Se borró: no puede
+                            #    leer la cookie (vive en el dominio de la API) y causaba
+                            #    un loop de redirección — ver "tres capas"
 .env.example                # Plantilla de variables — copiar a .env.local
 app/                        # Rutas (App Router) — casi sin lógica de negocio
 ├── (auth)/                 # ⚠️ layout.tsx: GuestOnly (si ya hay sesión, redirige)
@@ -998,10 +1040,12 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
 - **No crear un Context por dominio para cachear datos** — TanStack Query ya deduplica
   por `queryKey`.
 - **No copiar snippets de Zod v3** — acá es v4 y la API cambió.
-- **No crear `middleware.ts`** — en Next 16 es `proxy.ts`. Un `middleware.ts` no se
-  ejecuta y el guard falla en silencio.
-- **No confiar en `proxy.ts` ni en los layouts como seguridad** — son UX. La autorización
-  real la hace Spring Boot.
+- **No crear `middleware.ts` NI `proxy.ts`** — el primero no se ejecuta en Next 16 (falla
+  en silencio); el segundo se borró a propósito porque no puede leer la cookie de sesión
+  cross-domain y causaba un loop de redirección que rompía el login. Ver *El acceso se
+  valida en tres capas*.
+- **No confiar en los layouts como seguridad** — son UX. La autorización real la hace
+  Spring Boot.
 - No introducir carpetas tipo `atoms/molecules/organisms`.
 - **No armar `mailto:` ni nada de correo desde el frontend** — los dos correos del sistema
   los manda Spring Boot. Ver *Mails*.
@@ -1052,7 +1096,9 @@ había tres tipos incompatibles.
 - `app/layout.tsx`, `app/providers.tsx` y los 5 `layout.tsx` de route group (incluido el
   de `(perfil)`, compartido entre alumno y empresa) — son del equipo, no del grupo del rol
   correspondiente. Tocar los defaults del `QueryClient` afecta a los tres grupos a la vez.
-- `proxy.ts` (cuando exista) — Next solo admite **uno** por proyecto.
+- ~~`proxy.ts`~~ — ya no aplica: el archivo se borró y no se vuelve a crear (ver *El acceso
+  se valida en tres capas*). Si alguien lo reintroduce, es zona de conflicto: Next admite
+  **uno** por proyecto.
 
 ## Nomenclatura de ramas y commits
 
@@ -1134,10 +1180,12 @@ existen y están conectadas. Se corrige acá para no volver a confiar en esa ver
 
 **Ya NO falta (correcciones de esta pasada):**
 
-- ✅ **`proxy.ts`** — existe, en la raíz del repo. Guard optimista: si la ruta protegida no
-  tiene la cookie `access_token`, redirige a `/login` antes de renderizar. Nombre de la
-  cookie confirmado contra el código fuente del backend (`auth/AuthController.java`,
-  `auth/CookieBearerTokenResolver.java`) — resuelve **A-16**.
+- ⛔ **`proxy.ts` — BORRADO 2026-07-30.** Existía como guard optimista (sin cookie
+  `access_token` en una ruta protegida → `/login` antes de renderizar), pero **rompía el
+  login de todo usuario logueado con un loop de redirección**: el server del frontend nunca
+  puede leer esa cookie, porque vive en el dominio de la API. Ver *El acceso se valida en
+  tres capas* para el detalle y por qué no se puede arreglar. El nombre de la cookie sigue
+  confirmado (**A-16**), solo que ya no lo usa nadie del front.
 - ✅ **`app/(empresa)/puestos/page.tsx`** ("Mis ofertas") pinta los tres estados de
   `VacancyStatus` (`PENDIENTE, PUBLICADO, FINALIZADO`, default `PUBLICADO`, A-14) vía
   `VacancyStatusBadge` + `VACANCY_STATUS_DESCRIPTION`, con "Cerrar" habilitado solo para
@@ -1262,7 +1310,7 @@ actual — el backend puede haber cambiado desde la última vez que se probó a 
 | **A-07** | ✅ | **Resuelto: SÍ, el backend lo exige.** Corrige lo que decía esta fila antes ("el backend no lo valida, decisión de front"). `VacancyApplicationServiceImpl.create` devuelve `409` ("El alumno debe tener al menos un registro de educacion para postularse") si `EducationService.getByStudentProfileId` viene vacío. El front no lo pre-valida — se apoya en que `use-vacancy.ts` ahora muestra el `detail` real del backend en vez de un mensaje genérico (ver *Postulaciones*). |
 | **A-13** | ✅ | **CORS.** Confirmado OK para `http://localhost:3000` desde el principio. `https://dev.ucutalent.tech` (el frontend deployado) estuvo unas horas fuera de la whitelist el 2026-07-28 (`403 Invalid CORS request` hasta en `GET` simples) — infra lo arregló ese mismo día, reconfirmado con `curl` ~20:26 ART: preflight da `200` + `Allow-Origin` correcto, y `GET /area` pasa el CORS y llega a auth. Lo que queda de esta fila **no es CORS**: confirmar los atributos del `Set-Cookie` (`SameSite=None; Secure`) con un login real — no probado todavía. |
 | **A-21** | 🔄 | **Observado 2026-07-29, sin coordinar con backend todavía**: la respuesta real de `GET /vacancy` trae `publicationDate`/`closingDate`/`createdAt`/`deletedAt`/`deleted`/`reviewedBy`, y no trae `finalizedAt` (ver `docs/ENDPOINTS.md`, sección 5). `publicationDate`/`closingDate` ya son campos **requeridos** en `Vacancy` (`types/index.ts`) — se sacaron `publishedAt`/`finalizedAt`, y todos los consumidores (feed, moderación, "Mis ofertas") leen `publicationDate`/`closingDate` directo, sin fallback. |
-| **A-16** | ✅ | **Nombre de la cookie de sesión: `access_token`.** Verificado 2026-07-30 directo contra el código fuente del backend (`auth/AuthController.java`, `auth/CookieBearerTokenResolver.java`, rama `dev`) — no hizo falta el login real desde `https://dev.ucutalent.tech` que estaba pendiente. También confirma de nuevo los atributos: `httpOnly`, `secure`, `sameSite=None`, `path=/`. `proxy.ts` ya la usa. |
+| **A-16** | ✅ | **Nombre de la cookie de sesión: `access_token`.** Verificado 2026-07-30 directo contra el código fuente del backend (`auth/AuthController.java`, `auth/CookieBearerTokenResolver.java`, rama `dev`) — no hizo falta el login real desde `https://dev.ucutalent.tech` que estaba pendiente. También confirma de nuevo los atributos: `httpOnly`, `secure`, `sameSite=None`, `path=/`. ⚠️ **Ningún código del front la lee ni puede leerla**: antes la usaba `proxy.ts`, que se borró el 2026-07-30 justamente porque el server del frontend no puede verla (vive en el dominio de la API) y su guard causaba un loop de redirección. El dato del nombre queda registrado para debugging, no porque se use. |
 | **A-22** | 🔄 | **`GET /vacancy/company/{companyId}/management`** (`VacancyManagementResponse`: `vacancy` + `companyName` + `areaName` + `applicationCount` + `newApplicationsCount`) — endpoint agregado real, no documentado en ninguna versión de `ENDPOINTS.md` (verificado 2026-07-30 contra `vacancy/VacancyController.java`/`VacancyServiceImpl.java`/`VacancyRepository.java` del backend). Ya filtra `deleted = false` del lado del servidor. `use-company-vacancies.ts` migró a este endpoint, eliminando el N+1 anterior (`GET /vacancy` + un `GET /vacancy-application` por vacante). `newApplicationsCount` cuenta postulaciones en `PENDIENTE` ("sin revisar"), no "postulado en los últimos 7 días" — el badge de `vacancy-table.tsx` se actualizó a ese criterio. |
 | **A-23** | 🔄 | **El backend SÍ tiene `MailTemplateController`/`Service`/`Repository` completos y funcionando** (`GET`/`PUT /mail-template`, verificado 2026-07-30 contra el código fuente) — contradice la sección *Mails* de este archivo, que da a `MailTemplate` por eliminada porque el MER (fuente #2) no la tiene. Decisión del equipo 2026-07-30: **mantener la ABM fuera de alcance** (no implementar RF-PUE-05) hasta confirmar si es código legacy que el backend no terminó de retirar, o un cambio de rumbo real. No tratar como pedido de producto sin volver a confirmarlo. |
 | **A-24** | 🔄 | **El backend SÍ tiene subida de foto de perfil** (`PATCH`/`DELETE`/`GET /user/profile/image`, multipart) **y de CV** (`PATCH`/`DELETE`/`GET /student-profile/cv`, solo PDF, con URL firmada para que la empresa lo vea) — verificado 2026-07-30 contra el código fuente (`UserController.java`, `StudentProfileController.java`). Resuelve el mecanismo de A-11 (era multipart, no URL prefirmada). Decisión del equipo 2026-07-30: implementarlo como tarea aparte, no en esta pasada. |
