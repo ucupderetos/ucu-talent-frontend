@@ -1,44 +1,39 @@
 "use client";
 
-// Listado y detalle administrativo de empresas.
-//
-// ✅ Resuelto (A-18, `docs/ENDPOINTS.md`): `CompanyResponse` YA expone
-// `status`/`reviewedAt`/`adminComment` directo, así que en el wire real ni
-// hace falta cruzar con `User` para esto. El cruce de acá es solo para
-// obtener `email`/`registeredAt` (que sí viven únicamente en `User`), sobre
-// `MOCK_COMPANIES`/`MOCK_COMPANY_USERS` mientras no está conectado el fetch
-// real, igual que `use-pending-companies.ts`. Cuando se conecte,
-// `fetchAdminCompanies` pasa a llamar a apiClient y el resto no cambia.
-//
-// Se usan los fixtures compartidos y NO un mock propio del dominio a propósito:
-// la moderación (`use-review-account.ts`) muta el `status` en
-// `MOCK_COMPANY_USERS`, así que un dataset paralelo nunca reflejaría el cambio.
+// Directorio administrativo de empresas. Company aporta los datos del perfil
+// y User aporta email/fecha de registro; comparten PK (`companyId === userId`).
 
 import { useQuery } from "@tanstack/react-query";
 
-import { MOCK_COMPANIES, MOCK_COMPANY_USERS, MOCK_USERS } from "@/lib/fixtures";
 import type {
   AdminCompanyDetail,
   AdminCompanyFilters,
   AdminCompanyRow,
 } from "@/features/moderacion/types";
-import type { Paginated, User } from "@/types";
+import { ApiError, apiClient } from "@/lib/api-client";
+import type { Company, Paginated, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
+const USER_PAGE_SIZE = 100;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
-export function adminCompaniesQueryKey(filters: AdminCompanyFilters) {
-  return ["moderacion", "empresas", filters] as const;
+interface AdminCompanyDirectoryEntry {
+  company: Company;
+  user: User | null;
+}
+
+/** Listado y catálogos derivados comparten la misma lectura/cache. */
+export function adminCompaniesQueryKey() {
+  return ["moderacion", "empresas", "listado"] as const;
 }
 
 export function useAdminCompanies(filters: AdminCompanyFilters) {
   return useQuery({
-    queryKey: adminCompaniesQueryKey(filters),
-    queryFn: () => fetchAdminCompanies(filters),
+    queryKey: adminCompaniesQueryKey(),
+    queryFn: ({ signal }) => fetchAdminCompanyDirectory(signal),
+    select: (directory) => paginateAndFilter(directory, filters),
   });
 }
 
-/** @public para invalidación puntual futura (AGENTS.md). */
 export function adminCompanyDetailQueryKey(companyId: string) {
   return ["moderacion", "empresas", "detalle", companyId] as const;
 }
@@ -46,104 +41,153 @@ export function adminCompanyDetailQueryKey(companyId: string) {
 export function useAdminCompanyDetail(companyId: string) {
   return useQuery({
     queryKey: adminCompanyDetailQueryKey(companyId),
-    queryFn: async (): Promise<AdminCompanyDetail | null> =>
-      allCompanyDetails().find((company) => company.id === companyId) ?? null,
+    queryFn: ({ signal }) => fetchAdminCompanyDetail(companyId, signal),
+    enabled: Boolean(companyId),
   });
-}
-
-/** @public para invalidación puntual futura (AGENTS.md).
- *  Rubros presentes en los datos, para poblar el filtro. Va por `useQuery` y
- *  no por un `useMemo` sobre el mock para que el día que haya endpoint sea el
- *  mismo cambio que el resto. */
-export function adminCompanyIndustriesQueryKey() {
-  return ["moderacion", "empresas", "industrias"] as const;
 }
 
 export function useAdminCompanyIndustries() {
   return useQuery({
-    queryKey: adminCompanyIndustriesQueryKey(),
-    queryFn: async () =>
-      Array.from(new Set(allCompanyDetails().map((company) => company.industry))).sort(),
+    queryKey: adminCompaniesQueryKey(),
+    queryFn: ({ signal }) => fetchAdminCompanyDirectory(signal),
+    select: (directory) =>
+      Array.from(
+        new Set(directory.map(({ company }) => company.industry)),
+      ).sort((a, b) => a.localeCompare(b, "es")),
   });
-}
-
-/** Ubicaciones presentes en los datos, para poblar el filtro. Mismo criterio
- *  que `useAdminCompanyIndustries`: por `useQuery` para que el día que haya
- *  endpoint sea el mismo cambio que el resto. */
-export function adminCompanyLocationsQueryKey() {
-  return ["moderacion", "empresas", "ubicaciones"] as const;
 }
 
 export function useAdminCompanyLocations() {
   return useQuery({
-    queryKey: adminCompanyLocationsQueryKey(),
-    queryFn: async () =>
-      Array.from(new Set(allCompanyDetails().map((company) => company.location))).sort((a, b) =>
-        a.localeCompare(b, "es"),
-      ),
+    queryKey: adminCompaniesQueryKey(),
+    queryFn: ({ signal }) => fetchAdminCompanyDirectory(signal),
+    select: (directory) =>
+      Array.from(
+        new Set(
+          directory.map(({ company }) => formatDepartment(company.location)),
+        ),
+      ).sort((a, b) => a.localeCompare(b, "es")),
   });
 }
 
-async function fetchAdminCompanies(
+async function fetchAdminCompanyDirectory(
+  signal: AbortSignal,
+): Promise<AdminCompanyDirectoryEntry[]> {
+  const [companies, users] = await Promise.all([
+    apiClient.get<Company[]>("/company", { signal }),
+    fetchAllCompanyUsers(signal),
+  ]);
+  const usersById = new Map(users.map((user) => [user.userId, user]));
+
+  return companies.map((company) => ({
+    company,
+    user: usersById.get(company.companyId) ?? null,
+  }));
+}
+
+async function fetchAllCompanyUsers(signal: AbortSignal): Promise<User[]> {
+  const users: User[] = [];
+
+  // GET /user pagina internamente pero devuelve solo el array, sin metadata.
+  // Se agotan páginas hasta recibir una de menos elementos que el page size.
+  for (let page = 0; ; page += 1) {
+    const batch = await apiClient.get<User[]>("/user", {
+      params: { role: "EMPRESA", page, size: USER_PAGE_SIZE },
+      signal,
+    });
+
+    users.push(...batch);
+    if (batch.length < USER_PAGE_SIZE) return users;
+  }
+}
+
+async function fetchAdminCompanyDetail(
+  companyId: string,
+  signal: AbortSignal,
+): Promise<AdminCompanyDetail | null> {
+  const encodedId = encodeURIComponent(companyId);
+
+  try {
+    const [company, user] = await Promise.all([
+      apiClient.get<Company>(`/company/${encodedId}`, { signal }),
+      getOptionalUser(encodedId, signal),
+    ]);
+
+    return toAdminCompanyDetail({ company, user });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+async function getOptionalUser(
+  encodedCompanyId: string,
+  signal: AbortSignal,
+): Promise<User | null> {
+  try {
+    return await apiClient.get<User>(`/user/${encodedCompanyId}`, { signal });
+  } catch (error) {
+    // El perfil sigue siendo mostrable si falta temporalmente su User.
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+function paginateAndFilter(
+  directory: AdminCompanyDirectoryEntry[],
   filters: AdminCompanyFilters,
-): Promise<Paginated<AdminCompanyRow>> {
+): Paginated<AdminCompanyRow> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
+  const rows = directory.map(toAdminCompanyDetail).sort(compareCompanies);
+  const filtered = filterRows(rows, filters);
+  const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
+  const safePage = Math.min(Math.max(page, 1), lastPage);
+  const start = (safePage - 1) * perPage;
 
-  const filtered = filterRows(allCompanyDetails(), filters);
-
-  const start = (page - 1) * perPage;
-  const items = filtered.slice(start, start + perPage);
-
-  return { items, total: filtered.length, page, perPage };
+  return {
+    items: filtered.slice(start, start + perPage),
+    total: filtered.length,
+    page: safePage,
+    perPage,
+  };
 }
 
-/** Todos los `User` de rol EMPRESA: el de la sesión mock más los que solo
- *  existen como empresa registrada. */
-function allCompanyUsers(): User[] {
-  return [MOCK_USERS.EMPRESA, ...MOCK_COMPANY_USERS];
+function toAdminCompanyDetail({
+  company,
+  user,
+}: AdminCompanyDirectoryEntry): AdminCompanyDetail {
+  return {
+    id: company.companyId,
+    name: company.name,
+    email: user?.email ?? "—",
+    industry: company.industry,
+    location: formatDepartment(company.location),
+    registeredAt: user?.registeredAt ?? null,
+    // CompanyResponse resuelve este valor desde el User al construir la
+    // respuesta, por lo que no depende de que el join de email haya salido.
+    status: company.status,
+    initials: initialsOf(company.name),
+    description: company.description,
+    webUrl: company.webUrl,
+    linkedinUrl: company.linkedinUrl,
+    reviewedAt: company.reviewedAt,
+    adminComment: company.adminComment,
+  };
 }
 
-/** El detalle es el superset de la fila, así que se arma una sola vez y el
- *  listado usa el mismo objeto — no hay dos fuentes que se puedan desfasar. */
-function allCompanyDetails(): AdminCompanyDetail[] {
-  const users = allCompanyUsers();
-
-  return MOCK_COMPANIES.map((company) => {
-    const user = users.find((u) => u.userId === company.companyId);
-
-    return {
-      id: company.companyId,
-      name: company.name,
-      email: user?.email ?? "—",
-      industry: company.industry,
-      location: formatDepartment(company.location),
-      registeredAt: user?.registeredAt ?? "",
-      // El estado vive en `User`, no en `Company` (AGENTS.md, "Roles y control
-      // de acceso"). Sin user asumimos PENDIENTE: es el estado con el que nace
-      // toda cuenta, y es el conservador para moderar.
-      status: user?.status ?? "PENDIENTE",
-      initials: initialsOf(company.name),
-      description: company.description,
-      webUrl: company.webUrl,
-      linkedinUrl: company.linkedinUrl,
-      // A-18: el wire real (`CompanyResponse`) los trae directo; en fixtures
-      // salen del propio `Company`. Pueden ser `null` — la card los oculta.
-      reviewedAt: company.reviewedAt,
-      adminComment: company.adminComment,
-    };
-  });
+function compareCompanies(a: AdminCompanyRow, b: AdminCompanyRow): number {
+  return (
+    (b.registeredAt ?? "").localeCompare(a.registeredAt ?? "") ||
+    a.name.localeCompare(b.name, "es")
+  );
 }
 
-/** `Department` llega en MAYÚSCULA con guiones bajos ("CERRO_LARGO"). Se
- *  formatea acá y no con un diccionario de 19 entradas porque el mapeo es
- *  mecánico; el diccionario de `register-form.tsx` es de otro dominio y no se
- *  puede importar. */
 function formatDepartment(department: string): string {
   return department
-    .toLowerCase()
+    .toLocaleLowerCase("es")
     .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toLocaleUpperCase("es") + word.slice(1))
     .join(" ");
 }
 
@@ -162,14 +206,14 @@ function filterRows(
   rows: AdminCompanyRow[],
   filters: AdminCompanyFilters,
 ): AdminCompanyRow[] {
-  const search = filters.search?.trim().toLowerCase();
+  const search = filters.search?.trim().toLocaleLowerCase("es");
 
   return rows.filter((row) => {
     if (filters.statuses?.length && !filters.statuses.includes(row.status)) return false;
     if (filters.industries?.length && !filters.industries.includes(row.industry)) return false;
     if (filters.locations?.length && !filters.locations.includes(row.location)) return false;
     if (search) {
-      const haystack = `${row.name} ${row.email}`.toLowerCase();
+      const haystack = `${row.name} ${row.email}`.toLocaleLowerCase("es");
       if (!haystack.includes(search)) return false;
     }
     return true;

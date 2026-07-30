@@ -15,7 +15,7 @@ interface ReviewActionsProps {
 }
 
 export function ReviewActions({ userId, displayName, accountType }: ReviewActionsProps) {
-  if (accountType === "company") {
+  if (accountType === "EMPRESA") {
     return (
       <CompanyModerationActions
         company={{ id: userId, name: displayName, status: "PENDIENTE" }}

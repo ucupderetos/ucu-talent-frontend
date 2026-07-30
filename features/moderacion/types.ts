@@ -4,15 +4,12 @@
 //
 // Estado de los endpoints de moderación (docs/ENDPOINTS.md):
 //   - Cola de CUENTAS (empresas/alumnos): ✅ `PATCH /user/{id}` con
-//     { status, adminComment } EXISTE (A-02, Resuelto). `AccountResolution` se
-//     puede enchufar; la pantalla de validaciones ya lo usa (hoy como andamio
-//     sobre fixtures — ver use-review-account.ts, con el swap a apiClient
-//     marcado como TODO).
+//     { status, adminComment } conectado en `use-review-account.ts`.
 //   - Cola de VACANTES: ✅ `PUT /vacancy/status/{id}` (rol ADMIN,
 //     `UpdateVacancyStatusAdminRequest`) EXISTE — el Admin mueve
 //     `PUBLICADO ↔ PENDIENTE`, nunca a `FINALIZADO` (eso es exclusivo de la
 //     empresa dueña vía `PATCH /vacancy/status/{id}`). Ver `ReviewVacancyInput`
-//     en `use-review-vacancy.ts`, ya enchufado sobre fixtures con ese criterio
+//     en `use-review-vacancy.ts`, conectado al backend con ese criterio
 //     (no hay un `VacancyResolution` acá: `VacancyStatus` no tiene `RECHAZADO`,
 //     así que no hace falta un tipo de "decisión" aparte — el input es
 //     directamente el `VacancyStatus` destino).
@@ -179,9 +176,11 @@ export interface AdminApplicationFilters {
 // Son view models de una sola pantalla, no entidades del MER — por eso viven
 // acá y no en `@/types`.
 //
-// El hook compone los endpoints de resumen con los listados reales del
-// backend. No hay endpoint para un delta semanal ni para actividad reciente
-// cruzada entre dominios; esos valores no se inventan en el frontend.
+// El hook trae los listados reales del backend y las métricas se calculan en
+// `StatsGrid`. Así cada tarjeta usa el mismo universo que los listados de
+// administración (por ejemplo, excluye vacantes eliminadas lógicamente).
+// No hay endpoint para un delta semanal ni para actividad reciente cruzada
+// entre dominios; esos valores no se inventan en el frontend.
 //
 // Los estados salen de los enums core (`VacancyStatus`,
 // `VacancyApplicationStatus`), no de enums propios del dashboard: un segundo
@@ -195,12 +194,22 @@ export interface AdminApplicationFilters {
 // `VacancyApplication`, `types/index.ts`).
 // ---------------------------------------------------------------------------
 
-/** Una de las 4 métricas de la fila superior. El ícono no es un dato: lo elige
- *  el componente a partir del `id`. */
+export type DashboardStatId = "companies" | "vacancies" | "applications" | "users";
+
+/** Datos crudos usados por `StatsGrid` para calcular las métricas en el front. */
+export interface DashboardStatsSource {
+  companies: Company[];
+  vacancies: Vacancy[];
+  applications: VacancyApplication[];
+  users: User[];
+}
+
+/** Una de las 4 métricas calculadas de la fila superior. El ícono no es un
+ *  dato: lo elige el componente a partir del `id`. */
 export interface DashboardStat {
-  id: string;
+  id: DashboardStatId;
   title: string;
-  value: string;
+  value: number;
   description: string;
 }
 
@@ -260,7 +269,8 @@ export interface AdminCompanyRow {
   email: string;
   industry: string;
   location: string;
-  registeredAt: string;
+  /** Puede faltar solo si no se logra resolver el User con la misma PK. */
+  registeredAt: string | null;
   status: AccountStatus;
   initials: string;
 }
@@ -325,8 +335,9 @@ export interface AdminVacancyDetail extends AdminVacancyRow {
   selectedApplicationCount: number;
 }
 
-/** Filtros del listado de ofertas. Se resuelven sobre fixtures mientras se
- * integra el contrato administrativo vigente. */
+/** Filtros del listado de ofertas. El backend solo admite un estado y una
+ * modalidad por request; para conservar los multiselects se aplican en el
+ * cliente sobre `GET /vacancy`. */
 export interface AdminVacancyFilters {
   search?: string;
   companyIds?: string[];

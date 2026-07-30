@@ -7,6 +7,8 @@ import type { LucideIcon } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 
+const NUMBER_FORMAT = new Intl.NumberFormat("es-UY");
+
 export function StatCard({
   title,
   value,
@@ -14,7 +16,7 @@ export function StatCard({
   icon: Icon,
 }: {
   title: string;
-  value: string;
+  value: number;
   description: string;
   icon: LucideIcon;
 }) {
@@ -28,7 +30,9 @@ export function StatCard({
 
           <div className="min-w-0">
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="mt-1 truncate text-3xl font-semibold tracking-tight">{value}</p>
+            <p className="mt-1 truncate text-3xl font-semibold tracking-tight">
+              {NUMBER_FORMAT.format(value)}
+            </p>
           </div>
         </div>
 

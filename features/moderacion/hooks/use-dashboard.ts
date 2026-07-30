@@ -1,14 +1,14 @@
 "use client";
 
-// El backend no expone un payload único para el dashboard. Este hook compone
-// los endpoints administrativos disponibles y mantiene un solo estado de
-// carga para toda la pantalla.
+// El backend no expone un payload único para el dashboard. Este hook trae los
+// listados administrativos completos; los componentes calculan las métricas
+// sobre esas fuentes para que coincidan con los registros visibles.
 
 import { useQuery } from "@tanstack/react-query";
 
 import type {
   ApplicationStatusSummary,
-  DashboardStat,
+  DashboardStatsSource,
   PendingCompanyValidation,
   RecentActivityItem,
   RecentVacancy,
@@ -17,36 +17,11 @@ import { apiClient } from "@/lib/api-client";
 import type { Company, User, Vacancy, VacancyApplication } from "@/types";
 
 interface AdminDashboardData {
-  stats: DashboardStat[];
+  statsSource: DashboardStatsSource;
   recentVacancies: RecentVacancy[];
   pendingValidations: PendingCompanyValidation[];
   recentActivity: RecentActivityItem[];
   applicationsByStatus: ApplicationStatusSummary[];
-}
-
-interface AccountStatusSummary {
-  total: number;
-  pendiente: number;
-  aprobado: number;
-  rechazado: number;
-}
-
-interface VacancyStatusSummary {
-  total: number;
-  pendiente: number;
-  publicado: number;
-  finalizado: number;
-}
-
-interface ApplicationStatusSummaryResponse {
-  total: number;
-  pendiente: number;
-  visto: number;
-  finalizado: number;
-}
-
-interface SpringPage<T> {
-  content: T[];
 }
 
 const USER_PAGE_SIZE = 100;
@@ -54,125 +29,84 @@ const RECENT_VACANCIES_LIMIT = 5;
 
 /** @public para invalidar el dashboard después de una acción de moderación. */
 export function dashboardQueryKey() {
-  return ["moderacion", "dashboard"] as const;
+  return ["moderacion", "dashboard", "v2"] as const;
 }
 
 export function useDashboard() {
   return useQuery({
     queryKey: dashboardQueryKey(),
     queryFn: ({ signal }) => fetchDashboard(signal),
+    // Las altas pueden ocurrir desde otra sesión/rol y no invalidan esta
+    // caché local; al volver al dashboard se necesita un snapshot actual.
+    refetchOnMount: "always",
   });
 }
 
 async function fetchDashboard(signal: AbortSignal): Promise<AdminDashboardData> {
-  const [
-    companySummary,
-    studentSummary,
-    vacancySummary,
-    applicationSummary,
-    companies,
-    pendingCompanyUsers,
-    recentVacancyPage,
-    applications,
-  ] = await Promise.all([
-    apiClient.get<AccountStatusSummary>("/company/status-summary", { signal }),
-    apiClient.get<AccountStatusSummary>("/student-profile/status-summary", { signal }),
-    apiClient.get<VacancyStatusSummary>("/vacancy/status-summary", { signal }),
-    apiClient.get<ApplicationStatusSummaryResponse>(
-      "/vacancy-application/status-summary",
-      { signal },
-    ),
+  const [companies, users, vacancies, applications] = await Promise.all([
     apiClient.get<Company[]>("/company", { signal }),
-    fetchAllPendingCompanyUsers(signal),
-    apiClient.get<SpringPage<Vacancy>>("/vacancy/search", {
-      params: {
-        sortBy: "PUBLICATION_DATE",
-        sortDirection: "DESC",
-        page: 0,
-        size: RECENT_VACANCIES_LIMIT,
-        deleted: false,
-      },
-      signal,
-    }),
-    // El contrato no ofrece conteos por vacante para ADMIN. Hasta que el
-    // backend los agregue, el listado global es la única fuente real para
-    // calcular cuántas postulaciones tiene cada una de las cinco ofertas.
+    fetchAllUsers(signal),
+    apiClient.get<Vacancy[]>("/vacancy", { signal }),
     apiClient.get<VacancyApplication[]>("/vacancy-application", { signal }),
   ]);
+  const visibleVacancies = vacancies.filter((vacancy) => !vacancy.deleted);
+  const recentVacancies = [...visibleVacancies]
+    .sort(compareVacanciesByMostRecent)
+    .slice(0, RECENT_VACANCIES_LIMIT);
 
   return {
-    stats: buildStats(companySummary, studentSummary, vacancySummary, applicationSummary),
-    recentVacancies: buildRecentVacancies(
-      recentVacancyPage.content,
-      companies,
-      applications,
-    ),
-    pendingValidations: buildPendingValidations(companies, pendingCompanyUsers),
+    statsSource: { companies, vacancies, applications, users },
+    recentVacancies: buildRecentVacancies(recentVacancies, companies, applications),
+    pendingValidations: buildPendingValidations(companies, users),
     // No existe un endpoint de actividad general. /audit es de auditoría
     // interna y no representa altas/postulaciones de todos los dominios.
     recentActivity: [],
-    applicationsByStatus: [
-      { status: "PENDIENTE", label: "Pendientes", count: applicationSummary.pendiente },
-      { status: "VISTO", label: "Vistas", count: applicationSummary.visto },
-      { status: "FINALIZADO", label: "Finalizadas", count: applicationSummary.finalizado },
-    ],
+    applicationsByStatus: buildApplicationsByStatus(applications),
   };
 }
 
-async function fetchAllPendingCompanyUsers(signal: AbortSignal): Promise<User[]> {
-  const users: User[] = [];
+async function fetchAllUsers(signal: AbortSignal): Promise<User[]> {
+  const usersById = new Map<string, User>();
 
   for (let page = 0; ; page += 1) {
     const batch = await apiClient.get<User[]>("/user", {
       params: {
-        role: "EMPRESA",
-        status: "PENDIENTE",
         page,
         size: USER_PAGE_SIZE,
       },
       signal,
     });
 
-    users.push(...batch);
-    if (batch.length < USER_PAGE_SIZE) return users;
+    // El endpoint no define un orden estable. El backend debería agregarlo
+    // para garantizar el recorrido ante altas concurrentes; mientras tanto,
+    // deduplicar por PK evita sobrecontar si una fila aparece en dos páginas.
+    for (const user of batch) usersById.set(user.userId, user);
+
+    if (batch.length < USER_PAGE_SIZE) return [...usersById.values()];
   }
 }
 
-function buildStats(
-  companySummary: AccountStatusSummary,
-  studentSummary: AccountStatusSummary,
-  vacancySummary: VacancyStatusSummary,
-  applicationSummary: ApplicationStatusSummaryResponse,
-): DashboardStat[] {
-  const formatNumber = new Intl.NumberFormat("es-UY").format;
+function compareVacanciesByMostRecent(a: Vacancy, b: Vacancy): number {
+  const publicationDateOrder = b.publicationDate.localeCompare(a.publicationDate);
+  if (publicationDateOrder !== 0) return publicationDateOrder;
+  return b.createdAt.localeCompare(a.createdAt);
+}
+
+function buildApplicationsByStatus(
+  applications: VacancyApplication[],
+): ApplicationStatusSummary[] {
+  const counts: Record<VacancyApplication["status"], number> = {
+    PENDIENTE: 0,
+    VISTO: 0,
+    FINALIZADO: 0,
+  };
+
+  for (const application of applications) counts[application.status] += 1;
 
   return [
-    {
-      id: "companies",
-      title: "Empresas registradas",
-      value: formatNumber(companySummary.total),
-      description: `${formatNumber(companySummary.pendiente)} pendientes`,
-    },
-    {
-      id: "vacancies",
-      title: "Ofertas publicadas",
-      value: formatNumber(vacancySummary.publicado),
-      description: `${formatNumber(vacancySummary.total)} ofertas totales`,
-    },
-    {
-      id: "applications",
-      title: "Postulaciones",
-      value: formatNumber(applicationSummary.total),
-      description: `${formatNumber(applicationSummary.pendiente)} pendientes`,
-    },
-    {
-      id: "users",
-      title: "Usuarios registrados",
-      // Los usuarios del producto son estudiantes y empresas; las cuentas
-      // administrativas son internas y no tienen un resumen público.
-      value: formatNumber(studentSummary.total + companySummary.total),
-      description: `${formatNumber(studentSummary.total)} estudiantes · ${formatNumber(companySummary.total)} empresas`,
-    },
+    { status: "PENDIENTE", label: "Pendientes", count: counts.PENDIENTE },
+    { status: "VISTO", label: "Vistas", count: counts.VISTO },
+    { status: "FINALIZADO", label: "Finalizadas", count: counts.FINALIZADO },
   ];
 }
 
@@ -205,9 +139,12 @@ function buildRecentVacancies(
 
 function buildPendingValidations(
   companies: Company[],
-  pendingUsers: User[],
+  users: User[],
 ): PendingCompanyValidation[] {
-  const usersById = new Map(pendingUsers.map((user) => [user.userId, user]));
+  // `Company.status` también alimenta la tarjeta. User se usa solo para la
+  // fecha de registro, evitando cruzar dos snapshots distintos del estado.
+  const companyUsers = users.filter((user) => user.role === "EMPRESA");
+  const usersById = new Map(companyUsers.map((user) => [user.userId, user]));
 
   return companies
     .filter((company) => company.status === "PENDIENTE" && usersById.has(company.companyId))

@@ -35,6 +35,10 @@ import {
   VacancyStatusBadge,
 } from "@/components/vacancies/vacancy-status-badge";
 import { CompanyStatusBadge } from "@/features/moderacion/components/companies/company-status-badge";
+import {
+  parseCalendarDate,
+  parseMontevideoDateTime,
+} from "@/features/moderacion/date-utils";
 import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
 import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
 import { useAdminVacancyDetail } from "@/features/moderacion/hooks/use-admin-vacancies";
@@ -56,8 +60,27 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   year: "numeric",
 });
 
+const dateTimeFormatter = new Intl.DateTimeFormat("es-UY", {
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Montevideo",
+});
+
 function formatDate(iso: string | null, emptyLabel: string): string {
-  return iso ? dateFormatter.format(new Date(iso)) : emptyLabel;
+  if (!iso) return emptyLabel;
+
+  const date = parseCalendarDate(iso);
+  return date ? dateFormatter.format(date) : emptyLabel;
+}
+
+function formatDateTime(iso: string | null, emptyLabel: string): string {
+  if (!iso) return emptyLabel;
+
+  const date = parseMontevideoDateTime(iso);
+  return date ? dateTimeFormatter.format(date) : emptyLabel;
 }
 
 function formatDepartment(department: string): string {
@@ -305,6 +328,16 @@ function VacancyInformation({ vacancy }: { vacancy: AdminVacancyDetail }) {
           label="Cierre"
           value={formatDate(vacancy.closingDate, "Sin fecha de cierre")}
         />
+        <DetailRow
+          label="Creada"
+          value={formatDateTime(vacancy.createdAt, "Sin fecha")}
+        />
+        {vacancy.updatedAt && (
+          <DetailRow
+            label="Actualizada"
+            value={formatDateTime(vacancy.updatedAt, "Sin fecha")}
+          />
+        )}
         <Separator />
         <div className="flex flex-col gap-1.5">
           <span className="text-muted-foreground">Estado</span>
@@ -315,6 +348,25 @@ function VacancyInformation({ vacancy }: { vacancy: AdminVacancyDetail }) {
             </span>
           </div>
         </div>
+        {vacancy.reviewedAt && (
+          <DetailRow
+            label="Última revisión"
+            value={formatDateTime(vacancy.reviewedAt, "Sin fecha")}
+          />
+        )}
+        {vacancy.reviewedBy && (
+          <DetailRow label="Revisada por" value={vacancy.reviewedBy} />
+        )}
+        {vacancy.adminComment && (
+          <DetailRow label="Comentario del Admin" value={vacancy.adminComment} />
+        )}
+        <DetailRow label="Eliminada" value={vacancy.deleted ? "Sí" : "No"} />
+        {vacancy.deletedAt && (
+          <DetailRow
+            label="Fecha de eliminación"
+            value={formatDateTime(vacancy.deletedAt, "Sin fecha")}
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -357,21 +409,14 @@ function CompanyInformation({ vacancy }: { vacancy: AdminVacancyDetail }) {
             <Separator />
             <DetailRow label="Rubro" value={company.industry} />
             <DetailRow label="Ubicación" value={formatDepartment(company.location)} />
+            <DetailRow
+              label="Estado de cuenta"
+              value={<CompanyStatusBadge status={company.status} />}
+            />
 
             {companyUser && (
               <>
-                <DetailRow
-                  label="Estado de cuenta"
-                  value={<CompanyStatusBadge status={companyUser.status} />}
-                />
-                <DetailRow
-                  label="Correo"
-                  value={
-                    <ContactLink href={`mailto:${companyUser.email}`}>
-                      {companyUser.email}
-                    </ContactLink>
-                  }
-                />
+                <DetailRow label="Correo" value={companyUser.email} />
                 <DetailRow
                   label="Registrada"
                   value={formatDate(companyUser.registeredAt, "Sin fecha")}
@@ -415,17 +460,6 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
       <span className="shrink-0 text-muted-foreground">{label}</span>
       <span className="min-w-0 break-words text-right font-medium">{value}</span>
     </div>
-  );
-}
-
-function ContactLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      className="rounded-sm text-primary outline-none underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-    >
-      {children}
-    </a>
   );
 }
 

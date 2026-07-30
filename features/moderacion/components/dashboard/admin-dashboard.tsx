@@ -1,8 +1,8 @@
 "use client";
 
 // Orquestador del dashboard de Admin ("Centro de Gestión"): pide los datos y
-// reparte a los componentes de presentación, que son tontos y reciben props.
-// La page.tsx solo renderiza esto. Mismo patrón que `applications-view.tsx`.
+// reparte cada fuente al componente que la presenta o calcula. La page.tsx
+// solo renderiza esto. Mismo patrón que `applications-view.tsx`.
 
 import { EmptyState } from "@/components/layout/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,16 +20,16 @@ export function AdminDashboard() {
     <div className="flex flex-col gap-6">
       {isLoading && <DashboardSkeleton />}
 
-      {!isLoading && isError && (
+      {!isLoading && isError && !data && (
         <EmptyState
           title="No pudimos cargar el panel"
           description="Revisá tu conexión y volvé a intentar."
         />
       )}
 
-      {!isLoading && !isError && data && (
+      {!isLoading && data && (
         <>
-          <StatsGrid stats={data.stats} />
+          <StatsGrid source={data.statsSource} />
 
           <div className="grid items-start gap-6 xl:grid-cols-2">
             <RecentActivity activities={data.recentActivity} />

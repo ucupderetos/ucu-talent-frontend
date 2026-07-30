@@ -3,12 +3,8 @@
 // Acciones de moderación sobre una empresa, compartidas por la tabla y el
 // detalle, con diálogo de confirmación.
 //
-// Escribe de verdad: usa `useReviewAccount`, el mismo hook que la pantalla de
-// Validaciones. El estado de una empresa vive en `User.status`, así que
-// aprobar/rechazar una empresa es exactamente la misma operación que sobre
-// cualquier cuenta — wire: `PATCH /user/{id}` (A-02, resuelto). El hook todavía
-// es un andamio sobre fixtures, pero el swap a `apiClient` está en un solo
-// lugar y esta pantalla no se entera.
+// Escribe mediante `PATCH /user/{id}`. El estado de la empresa vive en User y
+// CompanyResponse lo replica para presentar el perfil sin otra lectura.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -43,6 +39,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useReviewAccount } from "@/features/moderacion/hooks/use-review-account";
 import type { AdminCompanyDetail } from "@/features/moderacion/types";
+import { ApiError } from "@/lib/api-client";
 import type { AccountStatus } from "@/types";
 
 type CompanyModerationAction = "approve" | "reject" | "deactivate";
@@ -111,7 +108,9 @@ const ACTION_CONFIG: Record<CompanyModerationAction, ActionConfig> = {
 const AVAILABLE_ACTIONS: Record<AccountStatus, CompanyModerationAction[]> = {
   PENDIENTE: ["approve", "reject"],
   APROBADO: ["deactivate"],
-  RECHAZADO: [],
+  // El backend permite rehabilitar una cuenta rechazada; solo prohíbe volver
+  // a PENDIENTE una vez que ya fue revisada.
+  RECHAZADO: ["approve"],
 };
 
 type CompanyModerationSubject = Pick<AdminCompanyDetail, "id" | "name" | "status">;
@@ -150,7 +149,7 @@ export function CompanyModerationActions({
     review.mutate(
       {
         userId: company.id,
-        accountType: "company",
+        accountType: "EMPRESA",
         status: config.status,
         adminComment: config.requiresReason ? reason.trim() : undefined,
       },
@@ -159,7 +158,12 @@ export function CompanyModerationActions({
           toast.success(config.successMessage);
           close();
         },
-        onError: () => toast.error("No se pudo procesar. Intentá nuevamente."),
+        onError: (error) =>
+          toast.error(
+            error instanceof ApiError
+              ? error.message
+              : "No se pudo procesar. Intentá nuevamente.",
+          ),
       },
     );
   }

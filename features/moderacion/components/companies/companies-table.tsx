@@ -20,10 +20,14 @@ import {
 } from "@/components/ui/table";
 import { CompanyStatusBadge } from "@/features/moderacion/components/companies/company-status-badge";
 import { CompanyModerationActions } from "@/features/moderacion/components/companies/company-moderation-actions";
+import { parseCalendarDate } from "@/features/moderacion/date-utils";
 import type { AdminCompanyRow } from "@/features/moderacion/types";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-UY");
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
+
+  const date = parseCalendarDate(iso);
+  return date ? date.toLocaleDateString("es-UY") : "—";
 }
 
 export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) {

@@ -31,6 +31,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompanyModerationActions } from "@/features/moderacion/components/companies/company-moderation-actions";
 import { CompanyStatusBadge } from "@/features/moderacion/components/companies/company-status-badge";
+import {
+  parseCalendarDate,
+  parseMontevideoDateTime,
+} from "@/features/moderacion/date-utils";
 import { useAdminCompanyDetail } from "@/features/moderacion/hooks/use-admin-companies";
 import type { AccountStatus } from "@/types";
 
@@ -42,11 +46,24 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   year: "numeric",
 });
 
-function formatDate(iso: string | null): string {
+const dateTimeFormatter = new Intl.DateTimeFormat("es-UY", {
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Montevideo",
+});
+
+function formatDate(iso: string | null, includeTime = false): string {
   if (!iso) return "—";
 
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
+  const date = includeTime
+    ? parseMontevideoDateTime(iso)
+    : parseCalendarDate(iso);
+  if (!date) return "—";
+
+  return includeTime ? dateTimeFormatter.format(date) : dateFormatter.format(date);
 }
 
 const moderationMessage: Record<AccountStatus, string> = {
@@ -177,7 +194,7 @@ export function CompanyDetailView({ companyId }: { companyId: string }) {
 
             <CompanyDate label="Registrada el" value={company.registeredAt} />
             {company.reviewedAt && (
-              <CompanyDate label="Revisada el" value={company.reviewedAt} />
+              <CompanyDate label="Revisada el" value={company.reviewedAt} includeTime />
             )}
 
             {company.adminComment && (
@@ -259,13 +276,23 @@ function CompanyLink({
   );
 }
 
-function CompanyDate({ label, value }: { label: string; value: string | null }) {
+function CompanyDate({
+  label,
+  value,
+  includeTime = false,
+}: {
+  label: string;
+  value: string | null;
+  includeTime?: boolean;
+}) {
   return (
     <div className="flex min-w-0 items-center gap-3 rounded-lg border bg-muted/20 p-3">
       <CalendarDaysIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="truncate text-sm font-medium">{formatDate(value)}</p>
+        <p className="truncate text-sm font-medium">
+          {formatDate(value, includeTime)}
+        </p>
       </div>
     </div>
   );

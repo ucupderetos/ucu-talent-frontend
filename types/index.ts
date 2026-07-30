@@ -43,8 +43,8 @@ export type Role = "ALUMNO" | "EMPRESA" | "ADMIN";
  *
  * ✅ Resuelto (A-02, `docs/ENDPOINTS.md`): `PATCH /user/{id}` (ADMIN) recibe
  * `UpdateUserStatusRequest { status: APROBADO | RECHAZADO, adminComment? }`
- * y aprueba/rechaza tanto alumno como empresa. Ver `use-review-account.ts`
- * (todavía sobre fixtures, con el wire pendiente de conectar).
+ * y aprueba/rechaza tanto alumno como empresa. Ver `use-review-account.ts`,
+ * conectado al endpoint real.
  */
 export type AccountStatus = "PENDIENTE" | "APROBADO" | "RECHAZADO";
 
