@@ -34,11 +34,19 @@ export function AppShell({
     // en vez de debajo — el navbar ya no lo "tapa" por arriba. La columna de
     // la derecha (navbar + main) es la que scrollea; `main` con overflow-y-auto.
     <BreadcrumbProvider>
-      <div className="flex h-dvh">
+      {/* overflow-hidden: sin esto, cualquier desborde de 1px (redondeo del
+          navegador, scrollbar, etc.) hace que el `body` mismo se vuelva
+          scrolleable — al scrollear con el mouse sobre el sidebar/navbar (que
+          no tienen su propio overflow) el navegador mueve el documento
+          entero y se ve una franja blanca del fondo debajo de este shell,
+          que es exactamente `h-dvh` (un viewport, ni un pixel más). */}
+      <div className="flex h-dvh overflow-hidden">
         <Sidebar role={user.role} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <Navbar user={user} />
-          <main className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+          <main className="min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6">
+            {children}
+          </main>
         </div>
       </div>
     </BreadcrumbProvider>
