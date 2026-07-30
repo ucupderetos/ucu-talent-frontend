@@ -19,6 +19,8 @@ import type {
   Area,
   Company,
   Degree,
+  Department,
+  DocumentType,
   Education,
   Modality,
   StudentProfile,
@@ -57,7 +59,8 @@ export interface AccountResolution {
  * `Degree` → `Area`). No es una entidad del MER, por eso vive acá y no en
  * `@/types`.
  */
-export interface StudentRow extends StudentProfile {
+export interface StudentRow
+  extends Omit<StudentProfile, "documentType" | "documentNumber"> {
   email: string;
   status: AccountStatus;
   registeredAt: string; // ISO 8601
@@ -65,6 +68,11 @@ export interface StudentRow extends StudentProfile {
   degreeName: string;
   areaId: string | null;
   areaName: string;
+  // el alumno puede tener User (rol ALUMNO) sin haber completado
+  // POST /student-profile todavia — no se puede exigir un DocumentType real.
+  documentType: DocumentType | null;
+  documentNumber: string;
+  hasProfile: boolean;
 }
 
 /** Una formación del alumno con sus catálogos ya resueltos para el detalle.
@@ -80,7 +88,7 @@ export interface AdminStudentEducation extends Education {
  *  el contrato actual no expone. */
 export interface AdminStudentDetail {
   user: User;
-  profile: StudentProfile;
+  profile: StudentProfile | null;
   education: AdminStudentEducation[];
   workExperience: WorkExperience[];
 }
@@ -103,10 +111,20 @@ export interface StudentFilters {
 // fila de la tabla de empresas pendientes. es la Company real + el email y
 // la fecha de registro, que en verdad viven en el User de la misma PK.
 // ojo: Company no tiene contacto/persona de referencia, eso no existe en el
-// modelo, no lo inventamos
-export interface PendingCompanyRow extends Company {
+// modelo, no lo inventamos.
+//
+// la empresa puede haber completado solo el paso 1 del registro (POST /user)
+// y nunca el paso 2 (POST /company) — esos campos quedan null, no se inventan.
+export interface PendingCompanyRow
+  extends Omit<Company, "industry" | "description" | "webUrl" | "linkedinUrl" | "location"> {
+  industry: string | null;
+  description: string | null;
+  webUrl: string | null;
+  linkedinUrl: string | null;
+  location: Department | null;
   email: string;
   registeredAt: string; // ISO 8601
+  hasProfile: boolean;
 }
 
 export interface PendingCompaniesFilters {
@@ -116,10 +134,15 @@ export interface PendingCompaniesFilters {
   perPage?: number;
 }
 
-// mismo criterio para alumnos: StudentProfile real + email/fecha del User
-export interface PendingStudentRow extends StudentProfile {
+// mismo criterio para alumnos: StudentProfile real + email/fecha del User.
+// mismo caso de perfil incompleto que PendingCompanyRow.
+export interface PendingStudentRow
+  extends Omit<StudentProfile, "documentType" | "documentNumber"> {
+  documentType: DocumentType | null;
+  documentNumber: string;
   email: string;
   registeredAt: string; // ISO 8601
+  hasProfile: boolean;
 }
 
 export interface PendingStudentsFilters {

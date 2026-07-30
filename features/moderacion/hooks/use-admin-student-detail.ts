@@ -30,11 +30,11 @@ async function fetchAdminStudentDetail(
   studentProfileId: string,
 ): Promise<AdminStudentDetail | null> {
   let user: User;
-  let profile: StudentProfile;
+  let profile: StudentProfile | null;
   try {
     [user, profile] = await Promise.all([
       apiClient.get<User>(`/user/${studentProfileId}`),
-      apiClient.get<StudentProfile>(`/student-profile/${studentProfileId}`),
+      fetchProfile(studentProfileId),
     ]);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
@@ -58,6 +58,18 @@ async function fetchAdminStudentDetail(
   });
 
   return { user, profile, education, workExperience };
+}
+
+/** el alumno puede haber completado solo el paso 1 del registro (POST /user)
+ *  y nunca el paso 2 (POST /student-profile) — ese 404 no es "el alumno no
+ *  existe", es perfil incompleto. Mismo criterio que use-students.ts. */
+async function fetchProfile(studentProfileId: string): Promise<StudentProfile | null> {
+  try {
+    return await apiClient.get<StudentProfile>(`/student-profile/${studentProfileId}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }
 
 /** 404 (o lista vacia) = el alumno todavia no cargo educacion: la seccion

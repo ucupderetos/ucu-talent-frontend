@@ -55,13 +55,15 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
                   <span
                     className={`flex size-9 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${avatarColorFor(company.companyId)}`}
                   >
-                    {companyInitials(company.name)}
+                    {company.hasProfile ? companyInitials(company.name) : "?"}
                   </span>
                   <div>
                     <p className="font-medium group-hover:underline group-focus-visible:underline">
-                      {company.name}
+                      {company.hasProfile ? company.name : company.email}
                     </p>
-                    <p className="text-xs text-muted-foreground">{company.industry}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {company.hasProfile ? company.industry : "Perfil incompleto"}
+                    </p>
                   </div>
                 </Link>
               </TableCell>
@@ -70,7 +72,7 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
               <TableCell className="text-right">
                 <ReviewActions
                   userId={company.companyId}
-                  displayName={company.name}
+                  displayName={company.hasProfile ? company.name : company.email}
                   accountType="EMPRESA"
                 />
               </TableCell>

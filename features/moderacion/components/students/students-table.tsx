@@ -50,15 +50,17 @@ export function StudentsTable({ rows }: { rows: StudentRow[] }) {
                 >
                   <Avatar>
                     <AvatarFallback className={avatarColorFor(student.studentProfileId)}>
-                      {initialsFrom(student.name, student.surname)}
+                      {student.hasProfile ? initialsFrom(student.name, student.surname) : "?"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium group-hover:underline group-focus-visible:underline">
-                      {student.name} {student.surname}
+                      {student.hasProfile ? `${student.name} ${student.surname}` : student.email}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {DOCUMENT_TYPE_LABELS[student.documentType]} {student.documentNumber}
+                      {student.hasProfile && student.documentType
+                        ? `${DOCUMENT_TYPE_LABELS[student.documentType]} ${student.documentNumber}`
+                        : "Perfil incompleto"}
                     </p>
                   </div>
                 </Link>

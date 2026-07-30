@@ -2,11 +2,10 @@
 
 // trae las empresas pendientes de aprobar, ya contra el back real.
 //
-// GET /company te tira todas las empresas con el status adentro, asi que no
-// hace falta ir fila por fila. lo unico que le falta son email y fecha de
-// registro, que viven en User, entonces pedimos GET /user?status=PENDIENTE&
-// role=EMPRESA aparte y cruzamos por companyId === userId (misma pk). dos
-// requests y listo, nada de loopear por usuario como habiamos armado antes.
+// base = User (PENDIENTE, rol EMPRESA), no Company: una empresa puede haber
+// completado el paso 1 del registro (POST /user) y nunca el paso 2
+// (POST /company) — antes esa cuenta desaparecia de la cola entera. Ahora
+// se muestra igual, con los campos de la empresa vacios.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -54,10 +53,8 @@ async function fetchPendingCompanies(
     apiClient.get<Company[]>("/company"),
   ]);
 
-  const pendingUsersById = new Map(pendingUsers.map((u) => [u.userId, u]));
-  const rows = companies
-    .filter((c) => c.status === "PENDIENTE" && pendingUsersById.has(c.companyId))
-    .map((c) => toRow(c, pendingUsersById.get(c.companyId)!));
+  const companiesById = new Map(companies.map((c) => [c.companyId, c]));
+  const rows = pendingUsers.map((user) => toRow(user, companiesById.get(user.userId)));
   const filtered = filterRows(rows, filters);
 
   const start = (page - 1) * perPage;
@@ -66,9 +63,19 @@ async function fetchPendingCompanies(
   return { items, total: filtered.length, page, perPage };
 }
 
-function toRow(company: Company, user: User): PendingCompanyRow {
+function toRow(user: User, company: Company | undefined): PendingCompanyRow {
   return {
-    ...company,
+    companyId: user.userId,
+    name: company?.name ?? "",
+    industry: company?.industry ?? null,
+    description: company?.description ?? null,
+    webUrl: company?.webUrl ?? null,
+    linkedinUrl: company?.linkedinUrl ?? null,
+    location: company?.location ?? null,
+    status: user.status,
+    reviewedAt: company?.reviewedAt ?? null,
+    adminComment: company?.adminComment ?? null,
+    hasProfile: company !== undefined,
     email: user.email,
     registeredAt: user.registeredAt,
   };
@@ -81,9 +88,10 @@ function filterRows(
   const search = filters.search?.trim().toLowerCase();
 
   return rows.filter((row) => {
-    if (filters.industries?.length && !filters.industries.includes(row.industry)) return false;
+    if (filters.industries?.length && (!row.industry || !filters.industries.includes(row.industry)))
+      return false;
     if (search) {
-      const haystack = `${row.name} ${row.industry} ${row.email}`.toLowerCase();
+      const haystack = `${row.name} ${row.industry ?? ""} ${row.email}`.toLowerCase();
       if (!haystack.includes(search)) return false;
     }
     return true;
