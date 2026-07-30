@@ -111,6 +111,7 @@ function toRow(
     description: profile?.description ?? null,
     reviewedAt: profile?.reviewedAt ?? null,
     adminComment: profile?.adminComment ?? null,
+    cvFile: profile?.cvFile ?? null,
     hasProfile: profile !== undefined,
     email: user.email,
     status: user.status,
