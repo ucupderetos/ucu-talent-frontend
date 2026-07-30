@@ -14,8 +14,6 @@ import {
   ArrowLeftIcon,
   BriefcaseIcon,
   CalendarIcon,
-  CircleUserRoundIcon,
-  ClipboardCheckIcon,
   ClipboardListIcon,
   ExternalLinkIcon,
   FileTextIcon,
@@ -26,7 +24,7 @@ import { toast } from "sonner";
 
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { EmptyState } from "@/components/layout/empty-state";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +34,6 @@ import { ApiError } from "@/lib/api-client";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { MODALITY_LABELS } from "@/lib/modality";
 import { useSession } from "@/hooks/use-session";
-import { getVacancyDetailPreviewExtras } from "@/features/puestos/components/vacancy-detail-preview-mock";
 import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
 import type { AccountStatus } from "@/types";
@@ -98,16 +95,12 @@ export function VacancyDetailView({ vacancyId }: { vacancyId: string }) {
 }
 
 function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
-  // 🔴 preview: ver vacancy-detail-preview-mock.ts — nada de esto es contrato real todavía.
-  const extras = getVacancyDetailPreviewExtras(vacancy);
-
   return (
     <div className="flex flex-col gap-4">
       <Card>
         <CardContent className="flex flex-col gap-4">
           <div className="flex gap-3">
             <Avatar size="lg">
-              <AvatarImage src={extras.logoUrl} alt={vacancy.company.name} />
               <AvatarFallback className="font-medium">
                 {companyInitials(vacancy.company.name)}
               </AvatarFallback>
@@ -179,7 +172,6 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
             <CardContent className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage src={extras.logoUrl} alt={vacancy.company.name} />
                   <AvatarFallback className="font-medium">
                     {companyInitials(vacancy.company.name)}
                   </AvatarFallback>
@@ -190,12 +182,6 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{vacancy.company.description}</p>
-
-              <DetailRow
-                label="Tamaño"
-                value={<span className="inline-flex items-center gap-1"><CircleUserRoundIcon className="size-3.5" />{extras.companySize}</span>}
-              />
-              <DetailRow label="Fundada en" value={extras.foundedYear} />
 
               {(vacancy.company.webUrl || vacancy.company.linkedinUrl) && (
                 <div className="flex flex-col gap-1.5 border-t pt-3">
@@ -242,28 +228,6 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               />
               {vacancy.salary && (
                 <DetailRow label="Rango salarial" value={vacancy.salary} />
-              )}
-
-              <div className="flex flex-col gap-1.5 border-t pt-3">
-                <span className="text-muted-foreground">Habilidades requeridas</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {extras.skills.map((skill) => (
-                    <Badge
-                      key={skill}
-                      variant="secondary"
-                      className="bg-secondary-blue text-secondary-blue-foreground"
-                    >
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {extras.requiresQuestionnaire && (
-                <div className="flex items-start gap-2 rounded-lg bg-muted p-3 text-muted-foreground">
-                  <ClipboardCheckIcon className="size-4 shrink-0" />
-                  Esta vacante requiere completar un cuestionario adicional al postularte.
-                </div>
               )}
             </CardContent>
           </Card>
