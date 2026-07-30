@@ -426,10 +426,22 @@ resolver `StudentProfile` por `studentProfileId` aparte.
 | Totales empresas | `GET /company/status-summary` |
 | Totales vacancies | `GET /vacancy/status-summary` |
 | Totales postulaciones | `GET /vacancy-application/status-summary` |
+| Dashboard inicial de Admin (totales + listados) | `GET /admin/dashboard` |
 
 **Moderación de vacancy**: dar de baja significa `PUBLICADO → PENDIENTE`. Se
 conservan las postulaciones y no existe baja física como parte del flujo de
 moderación.
+
+**`GET /admin/dashboard`** (🔒 rol ADMIN): reemplaza a la fila de arriba solo
+para la pantalla inicial del panel de Admin — totales (`counts.companies`,
+`counts.vacancies`, `counts.applications`, `counts.users`), el desglose de
+postulaciones por estado (`applicationStatusSummary`), las últimas vacantes
+publicadas (`recentVacancies`) y las empresas pendientes de validación
+(`pendingCompanies`) en una sola request. Los `status-summary` por dominio y
+los listados completos (`/company`, `/user`, `/vacancy`,
+`/vacancy-application`) siguen siendo necesarios para las pantallas de
+listado propias de cada dominio (Empresas, Alumnos, Ofertas, Postulaciones) —
+este endpoint es solo para el dashboard.
 
 ## 8. Mapa de integración para Front
 

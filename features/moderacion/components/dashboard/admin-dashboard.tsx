@@ -29,7 +29,7 @@ export function AdminDashboard() {
 
       {!isLoading && data && (
         <>
-          <StatsGrid source={data.statsSource} />
+          <StatsGrid stats={data.stats} />
 
           <div className="grid items-start gap-6 xl:grid-cols-2">
             <RecentActivity activities={data.recentActivity} />
