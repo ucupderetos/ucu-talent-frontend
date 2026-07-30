@@ -100,6 +100,16 @@ export function useProfileImage(userId: string | null | undefined): {
   imageUrl: string | null;
   isLoading: boolean;
   isUnavailable: boolean;
+  /** Sabemos que hay una imagen guardada, aunque no podamos mostrarla. */
+  hasImage: boolean;
+  /**
+   * No pudimos averiguar si tiene imagen: falló `GET /user/{userId}`, así que
+   * ni siquiera llegamos a la key. Es distinto de `hasImage: false` ("sabemos
+   * que no tiene") y quien ofrezca la acción de quitarla tiene que tratarlo
+   * como un "puede que sí" — esconderla dejaría sin salida a quien sí tiene
+   * una foto subida.
+   */
+  isIndeterminate: boolean;
 } {
   const userQuery = useQuery({
     queryKey: userQueryKey(userId ?? ""),
@@ -107,15 +117,19 @@ export function useProfileImage(userId: string | null | undefined): {
     enabled: Boolean(userId),
   });
 
+  const objectKey = userQuery.data?.profileImage;
+
   const {
     imageUrl,
     isLoading: isUrlLoading,
     isUnavailable,
-  } = useSignedProfileImageUrl(userQuery.data?.profileImage);
+  } = useSignedProfileImageUrl(objectKey);
 
   return {
     imageUrl,
     isLoading: (Boolean(userId) && userQuery.isPending) || isUrlLoading,
     isUnavailable,
+    hasImage: Boolean(objectKey),
+    isIndeterminate: userQuery.isError,
   };
 }

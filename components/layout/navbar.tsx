@@ -57,7 +57,14 @@ export function Navbar({ user }: { user: User | null }) {
   const breadcrumbLabel = useBreadcrumbLabel();
   // Sigue sin leer la sesión: el userId llega por props (`user`), igual que el
   // nombre. `useProfileImage` es infra app-wide de `hooks/`, como `useLogout`.
-  const { imageUrl } = useProfileImage(user?.userId);
+  //
+  // ADMIN queda afuera a propósito: no tiene pantalla de perfil (el RoleGuard de
+  // (perfil)/layout.tsx solo deja ALUMNO y EMPRESA), así que nunca puede subir
+  // una foto y `profileImage` siempre viene null. Pedirla igual serían dos
+  // requests por montaje —`GET /user/{id}` y el canje de la URL firmada— para
+  // terminar siempre en las iniciales. Es la decisión del equipo del 2026-07-30:
+  // el admin no lleva foto.
+  const { imageUrl } = useProfileImage(user?.role === "ADMIN" ? null : user?.userId);
 
   const activeItem = findActiveNavItem(items, pathname);
   const isNested = Boolean(activeItem && pathname !== activeItem.href);
