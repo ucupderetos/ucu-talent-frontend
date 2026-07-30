@@ -139,6 +139,26 @@ export interface VacancyDetail extends Vacancy {
 }
 
 /**
+ * Wire: `GET /vacancy/{id}/resolved` — DTO con las relaciones ya resueltas del
+ * lado del servidor (`vacancy` + `company` + `areaName` + `parentAreaName`).
+ * No documentado en ninguna versión de `ENDPOINTS.md`; agregado para no
+ * necesitar un `GET /vacancy/{id}` + `GET /company/{companyId}` + `GET /area`
+ * por separado (`use-vacancy.ts` armaba `VacancyDetail` así antes de este
+ * endpoint) — mismo criterio que A-22/A-26 (`.../management`,
+ * `.../me/detailed`): el servidor resuelve las relaciones, no el front.
+ *
+ * `areaName`/`parentAreaName` vienen COMO STRING PLANO, no como `Area`
+ * completa (a diferencia de cómo se armaba `VacancyDetail` a mano antes) —
+ * el mapeo a `VacancyDetail` en `use-vacancy.ts` lo respeta tal cual.
+ */
+export interface VacancyResolvedResponse {
+  vacancy: Vacancy;
+  company: Company;
+  areaName: string;
+  parentAreaName: string | null;
+}
+
+/**
  * Cambio de estado hecho por la EMPRESA dueña de la vacante — cierre de la
  * búsqueda.
  *

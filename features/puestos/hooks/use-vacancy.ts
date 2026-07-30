@@ -2,15 +2,18 @@
 
 // Detalle de una vacante (vista alumno) — RF-PUE.
 //
-// docs/ENDPOINTS.md, sección 8 ("Mapa de integración"): el detalle sale de
-// `GET /vacancy/{id}` + `GET /company/{companyId}` (no hay un único endpoint
-// que devuelva ambos ya resueltos).
+// ⚠️ docs/ENDPOINTS.md (ninguna versión, ni la local ni la del backend)
+// documenta esto: `GET /vacancy/{id}/resolved` es un endpoint agregado, mismo
+// criterio que A-22/A-26 (`.../management`, `.../me/detailed`) — resuelve
+// `vacancy` + `company` + `areaName`/`parentAreaName` en una sola llamada, en
+// vez de las tres separadas (`GET /vacancy/{id}` + `GET /company/{companyId}`
+// + `GET /area`) que armaba este hook antes.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, ApiError } from "@/lib/api-client";
-import type { VacancyDetail } from "@/features/puestos/types";
-import type { Area, Company, Vacancy, VacancyApplication } from "@/types";
+import type { VacancyDetail, VacancyResolvedResponse } from "@/features/puestos/types";
+import type { VacancyApplication } from "@/types";
 
 /** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function vacancyQueryKey(vacancyId: string) {
@@ -25,23 +28,13 @@ export function useVacancy(vacancyId: string) {
 }
 
 async function fetchVacancy(vacancyId: string): Promise<VacancyDetail | null> {
-  const vacancy = await apiClient.get<Vacancy>(`/vacancy/${vacancyId}`);
-
-  const [company, areas] = await Promise.all([
-    apiClient.get<Company>(`/company/${vacancy.companyId}`),
-    apiClient.get<Area[]>("/area"),
-  ]);
-
-  const area = areas.find((a) => a.areaId === vacancy.areaId);
-  const parentArea = area?.parentAreaId
-    ? areas.find((a) => a.areaId === area.parentAreaId)
-    : undefined;
+  const resolved = await apiClient.get<VacancyResolvedResponse>(`/vacancy/${vacancyId}/resolved`);
 
   return {
-    ...vacancy,
-    company,
-    areaName: area?.name ?? "—",
-    parentAreaName: parentArea?.name ?? null,
+    ...resolved.vacancy,
+    company: resolved.company,
+    areaName: resolved.areaName ?? "—",
+    parentAreaName: resolved.parentAreaName,
   };
 }
 
