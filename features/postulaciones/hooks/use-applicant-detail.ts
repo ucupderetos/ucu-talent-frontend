@@ -18,14 +18,6 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import {
-  MOCK_APPLICANT_USERS,
-  MOCK_APPLICATIONS,
-  MOCK_EDUCATION,
-  MOCK_STUDENT_PROFILES,
-  MOCK_VACANCIES,
-  MOCK_WORK_EXPERIENCE,
-} from "@/lib/fixtures";
 import type { ApplicantDetailRow } from "@/features/postulaciones/types";
 import type {
   Education,
@@ -35,8 +27,6 @@ import type {
   VacancyApplication,
   WorkExperience,
 } from "@/types";
-
-const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function applicantDetailQueryKey(
@@ -63,8 +53,6 @@ async function fetchApplicantDetail(
   signal?: AbortSignal,
 ): Promise<ApplicantDetailRow | null> {
   if (!companyId || !vacancyApplicationId) return null;
-
-  if (MOCK_ROLE) return fetchApplicantDetailFromFixtures(companyId, vacancyApplicationId);
 
   const application = await fetchApplication(vacancyApplicationId, signal);
   if (!application) return null;
@@ -128,35 +116,4 @@ async function fetchWorkExperience(
     // La experiencia laboral es auxiliar: no debería bloquear el detalle.
     return [];
   }
-}
-
-function fetchApplicantDetailFromFixtures(
-  companyId: string,
-  vacancyApplicationId: string,
-): ApplicantDetailRow | null {
-  const application = MOCK_APPLICATIONS.find(
-    (a) => a.vacancyApplicationId === vacancyApplicationId,
-  );
-  if (!application) return null;
-
-  const vacancy = MOCK_VACANCIES.find((v) => v.vacancyId === application.vacancyId);
-  if (!vacancy || vacancy.companyId !== companyId) return null;
-
-  const profile = MOCK_STUDENT_PROFILES.find(
-    (p) => p.studentProfileId === application.studentProfileId,
-  );
-  const user = MOCK_APPLICANT_USERS.find((u) => u.userId === application.studentProfileId);
-  if (!profile || !user) return null;
-
-  return {
-    application,
-    profile,
-    user,
-    vacancyId: vacancy.vacancyId,
-    vacancyName: vacancy.name,
-    education: MOCK_EDUCATION.filter((e) => e.studentProfileId === profile.studentProfileId),
-    workExperience: MOCK_WORK_EXPERIENCE.filter(
-      (w) => w.studentProfileId === profile.studentProfileId,
-    ),
-  };
 }
