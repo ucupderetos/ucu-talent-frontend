@@ -73,7 +73,7 @@ export function LoginForm() {
             type="email"
             autoComplete="email"
             aria-invalid={Boolean(errors.email)}
-            className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+            className="h-11 px-4 text-base"
             {...register("email")}
           />
           <FieldError errors={[errors.email]} />
@@ -87,7 +87,7 @@ export function LoginForm() {
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               aria-invalid={Boolean(errors.password)}
-              className="h-11 px-4 pr-11 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+              className="h-11 px-4 pr-11 text-base"
               {...register("password")}
             />
             <button
