@@ -209,7 +209,13 @@ export interface AdminApplicationFilters {
 // Los tipos `*Response` de acá abajo espejan el wire tal cual — no se
 // renombran campos ni se agregan los que el backend no manda (sin
 // `recentActivity`: no existe una fuente de actividad general cruzada entre
-// dominios, y no se inventa en el front).
+// dominios, y no se inventa en el front). ⚠️ Los campos de `counts` vienen en
+// ESPAÑOL (`pendientes`/`publicadas`/`alumnos`/...): es el backend rompiendo su
+// propia convención de nombres en inglés, y se espeja tal cual — ver A-28.
+//
+// De todos esos, el único exportado es `AdminDashboardResponse`: los demás solo
+// existen para componerlo y no salen de este archivo (exportarlos los deja como
+// dead code en `knip`).
 //
 // Los view models (`DashboardStat`, `RecentVacancy`, `PendingCompanyValidation`,
 // `ApplicationStatusSummary`, `RecentActivityItem`) son los que consumen los
@@ -228,25 +234,25 @@ export interface AdminApplicationFilters {
 // ---------------------------------------------------------------------------
 
 /** `counts.companies` de `GET /admin/dashboard`. */
-export interface DashboardCompanyCountsResponse {
+interface DashboardCompanyCountsResponse {
   total: number;
   pendientes: number;
 }
 
 /** `counts.vacancies` de `GET /admin/dashboard`. */
-export interface DashboardVacancyCountsResponse {
+interface DashboardVacancyCountsResponse {
   total: number;
   publicadas: number;
 }
 
 /** `counts.applications` de `GET /admin/dashboard`. */
-export interface DashboardApplicationCountsResponse {
+interface DashboardApplicationCountsResponse {
   total: number;
   pendientes: number;
 }
 
 /** `counts.users` de `GET /admin/dashboard`. */
-export interface DashboardUserCountsResponse {
+interface DashboardUserCountsResponse {
   total: number;
   alumnos: number;
   empresas: number;
@@ -254,7 +260,7 @@ export interface DashboardUserCountsResponse {
 }
 
 /** `counts` de `GET /admin/dashboard`. */
-export interface DashboardCountsResponse {
+interface DashboardCountsResponse {
   companies: DashboardCompanyCountsResponse;
   vacancies: DashboardVacancyCountsResponse;
   applications: DashboardApplicationCountsResponse;
@@ -263,13 +269,13 @@ export interface DashboardCountsResponse {
 
 /** Un elemento de `applicationStatusSummary` de `GET /admin/dashboard`. Sin
  *  `label`: el backend no lo manda, lo agrega el front (ver `use-dashboard.ts`). */
-export interface DashboardApplicationStatusSummaryResponse {
+interface DashboardApplicationStatusSummaryResponse {
   status: VacancyApplicationStatus;
   count: number;
 }
 
 /** Un elemento de `recentVacancies` de `GET /admin/dashboard`. */
-export interface DashboardRecentVacancyResponse {
+interface DashboardRecentVacancyResponse {
   vacancyId: string;
   name: string;
   companyName: string;
@@ -282,7 +288,7 @@ export interface DashboardRecentVacancyResponse {
 /** Un elemento de `pendingCompanies` de `GET /admin/dashboard`. El backend ya
  *  devuelve solo las que hacen falta para la pantalla (no el listado completo
  *  de pendientes — para eso está `/moderacion/validaciones`). */
-export interface DashboardPendingCompanyResponse {
+interface DashboardPendingCompanyResponse {
   companyId: string;
   name: string;
   industry: string;

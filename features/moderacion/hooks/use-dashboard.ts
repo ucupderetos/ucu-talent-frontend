@@ -112,9 +112,11 @@ function buildApplicationsByStatus(
     FINALIZADO: 0,
   };
 
-  // El backend puede omitir un estado sin postulaciones (ver el ejemplo del
-  // contrato, que solo trae `PENDIENTE`) — se completa con 0 para que el
-  // donut siempre muestre los 3 estados del enum.
+  // El contrato dice que `applicationStatusSummary` SIEMPRE trae los 3 estados,
+  // aunque den 0 (ver A-28 en docs/agents/open-questions.md). Se parte igual de
+  // un record en 0 en vez de mapear el array directo: si el backend algún día
+  // omite un estado vacío, el donut sigue mostrando los 3 del enum en vez de
+  // perder una cuña en silencio.
   for (const item of summary) counts[item.status] = item.count;
 
   return (Object.keys(counts) as VacancyApplicationStatus[]).map((status) => ({
