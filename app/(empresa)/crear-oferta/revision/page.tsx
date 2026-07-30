@@ -17,6 +17,12 @@ import { usePublishJob } from "@/features/puestos/hooks/use-publish-job";
 // por campo (A-19) recién al publicar (paso 3, que es solo un resumen de
 // lectura, `JobReview`: no tiene inputs propios donde mostrar el error).
 const STEP_1_FIELDS = new Set(["name", "areaId", "contractType", "modality", "location"]);
+// "salary" queda incluido aunque el form ya no tenga ese campo (está
+// partido en salaryCurrency/salaryMin/salaryMax): el backend sigue
+// devolviendo el error bajo esa key, y solo se usa acá para decidir a qué
+// paso navegar — `applyFieldErrorsAndNavigate` ya cubre el caso de un campo
+// que el form no puede pegar a un control 1 a 1 (cae en `unmapped`, mostrado
+// por el toast).
 const STEP_2_FIELDS = new Set(["description", "requirements", "salary"]);
 
 export default function RevisionPage() {

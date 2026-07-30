@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
+import { formatSalary, type SalaryCurrency } from "@/lib/salary";
 
 import { useCurrentCompany } from "@/hooks/use-current-company";
 
@@ -47,9 +48,15 @@ export function JobReview() {
   const modality = useWatch({ control: form.control, name: "modality" });
   const description = useWatch({ control: form.control, name: "description" });
   const requirements = useWatch({ control: form.control, name: "requirements" });
-  const salary = useWatch({ control: form.control, name: "salary" });
+  const salaryCurrency = useWatch({ control: form.control, name: "salaryCurrency" });
+  const salaryMin = useWatch({ control: form.control, name: "salaryMin" });
+  const salaryMax = useWatch({ control: form.control, name: "salaryMax" });
   const publicationDate = useWatch({ control: form.control, name: "publicationDate" });
   const closingDate = useWatch({ control: form.control, name: "closingDate" });
+
+  const salary = salaryMin
+    ? formatSalary(salaryCurrency as SalaryCurrency, salaryMin, salaryMax ?? "")
+    : "";
 
   return (
     <Card className="lg:col-span-2">

@@ -19,6 +19,7 @@ import { z } from "zod";
 
 import { CONTRACT_TYPES } from "@/lib/contract-types";
 import { DEPARTMENTS } from "@/lib/departments";
+import { SALARY_AMOUNT_PATTERN, SALARY_CURRENCIES } from "@/lib/salary";
 import type { Modality, Department } from "@/types";
 
 const TITLE_MAX = 100;
@@ -38,27 +39,68 @@ const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readon
 // sea anterior a `publicationDate`, y que no pase más de un año entre las
 // dos — se replica la parte relevante acá para no depender solo del 400 del
 // backend.
-const jobFormSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Ingresá el título del puesto.")
-    .max(TITLE_MAX, `Máximo ${TITLE_MAX} caracteres.`),
-  areaId: z.string().trim().min(1, "Seleccioná un área."),
-  contractType: z.enum(CONTRACT_TYPES, "Seleccioná un tipo de contrato."),
-  modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
-  location: z.enum(DEPARTMENTS as [Department, ...Department[]], {
-    message: "Seleccioná un departamento.",
-  }),
-  description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
-  requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
-  salary: z.string().trim().min(1, "Ingresá el rango salarial."),
-  publicationDate: z.string().min(1, "Ingresá la fecha de publicación."),
-  closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
-}).refine(
-  (data) => !data.publicationDate || !data.closingDate || data.closingDate >= data.publicationDate,
-  { message: "La fecha de cierre no puede ser anterior a la de publicación.", path: ["closingDate"] },
-);
+//
+// El salario se carga estructurado: moneda + monto desde + monto hasta
+// (opcional), ver `lib/salary.ts`. A diferencia de `edit-job-form.tsx`, que
+// además soporta un modo "texto libre" para rescatar valores legados no
+// numéricos ("A convenir"), al CREAR no hay valor previo que preservar, así
+// que se exige siempre el formato estructurado. El wire
+// (`CreateVacancyRequest.salary`) sigue siendo un único `string`, armado
+// recién al enviar (ver `use-publish-job.ts`). Los campos de monto son
+// opcionales a nivel de tipo y se exigen en el `superRefine` de abajo.
+const jobFormSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Ingresá el título del puesto.")
+      .max(TITLE_MAX, `Máximo ${TITLE_MAX} caracteres.`),
+    areaId: z.string().trim().min(1, "Seleccioná un área."),
+    contractType: z.enum(CONTRACT_TYPES, "Seleccioná un tipo de contrato."),
+    modality: z.enum(MODALITIES, "Seleccioná una modalidad."),
+    location: z.enum(DEPARTMENTS as [Department, ...Department[]], {
+      message: "Seleccioná un departamento.",
+    }),
+    description: z.string().trim().min(1, "Ingresá la descripción del puesto."),
+    requirements: z.string().trim().min(1, "Ingresá los requisitos del puesto."),
+    salaryCurrency: z.enum(SALARY_CURRENCIES).optional(),
+    salaryMin: z.string().trim().optional(),
+    salaryMax: z.string().trim().optional(),
+    publicationDate: z.string().min(1, "Ingresá la fecha de publicación."),
+    closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
+  })
+  .refine(
+    (data) => !data.publicationDate || !data.closingDate || data.closingDate >= data.publicationDate,
+    { message: "La fecha de cierre no puede ser anterior a la de publicación.", path: ["closingDate"] },
+  )
+  .superRefine((data, ctx) => {
+    if (!data.salaryCurrency) {
+      ctx.addIssue({ code: "custom", path: ["salaryCurrency"], message: "Seleccioná una moneda." });
+    }
+    if (!data.salaryMin || !SALARY_AMOUNT_PATTERN.test(data.salaryMin)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["salaryMin"],
+        message: "Ingresá un monto mínimo válido.",
+      });
+    }
+    if (data.salaryMax && !SALARY_AMOUNT_PATTERN.test(data.salaryMax)) {
+      ctx.addIssue({ code: "custom", path: ["salaryMax"], message: "Ingresá un monto válido." });
+    }
+    if (
+      data.salaryMin &&
+      data.salaryMax &&
+      SALARY_AMOUNT_PATTERN.test(data.salaryMin) &&
+      SALARY_AMOUNT_PATTERN.test(data.salaryMax) &&
+      parseFloat(data.salaryMax.replace(",", ".")) < parseFloat(data.salaryMin.replace(",", "."))
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["salaryMax"],
+        message: "El monto máximo debe ser mayor o igual al mínimo.",
+      });
+    }
+  });
 
 export type JobFormValues = z.infer<typeof jobFormSchema>;
 
@@ -81,7 +123,9 @@ export function CreateJobFormProvider({ children }: { children: ReactNode }) {
       location: undefined,
       description: "",
       requirements: "",
-      salary: "",
+      salaryCurrency: "UYU",
+      salaryMin: "",
+      salaryMax: "",
       publicationDate: "",
       closingDate: "",
     },

@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api-client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import type { VacancyInput } from "@/features/puestos/types";
 import type { JobFormValues } from "@/features/puestos/hooks/use-create-job-form";
+import { formatSalary, type SalaryCurrency } from "@/lib/salary";
 import type { Vacancy } from "@/types";
 
 // ⚠️ `POST /vacancy` espera `salary`, NO `salaryRange` — a diferencia del
@@ -45,6 +46,15 @@ export function usePublishJob() {
       throw new Error("No se pudo resolver la empresa logueada.");
     }
 
+    // El wire (`CreateVacancyRequest.salary`) sigue siendo un único `string`:
+    // se arma acá a partir de los campos estructurados del form (moneda +
+    // monto desde + monto hasta — ver lib/salary.ts).
+    const salary = formatSalary(
+      values.salaryCurrency as SalaryCurrency,
+      values.salaryMin ?? "",
+      values.salaryMax ?? "",
+    );
+
     const payload: VacancyInput = {
       companyId: company.companyId,
       name: values.name,
@@ -53,7 +63,7 @@ export function usePublishJob() {
       areaId: values.areaId,
       contractType: values.contractType,
       modality: values.modality,
-      salary: values.salary,
+      salary,
       location: values.location,
       publicationDate: values.publicationDate,
       closingDate: values.closingDate,
