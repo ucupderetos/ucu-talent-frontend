@@ -1,35 +1,47 @@
 "use client";
 
-// El backend no expone un payload único para el dashboard. Este hook trae los
-// listados administrativos completos; los componentes calculan las métricas
-// sobre esas fuentes para que coincidan con los registros visibles.
+// ✅ `GET /admin/dashboard` (rol ADMIN): totales y listados de la pantalla
+// inicial en una sola request. Reemplaza al enfoque anterior (traer los
+// listados administrativos completos y calcular las métricas acá) — ver el
+// aviso en `features/moderacion/types.ts`.
 
 import { useQuery } from "@tanstack/react-query";
 
 import type {
+  AdminDashboardResponse,
   ApplicationStatusSummary,
-  DashboardStatsSource,
+  DashboardStat,
+  DashboardStatId,
   PendingCompanyValidation,
   RecentActivityItem,
   RecentVacancy,
 } from "@/features/moderacion/types";
 import { apiClient } from "@/lib/api-client";
-import type { Company, User, Vacancy, VacancyApplication } from "@/types";
+import type { VacancyApplicationStatus } from "@/types";
 
 interface AdminDashboardData {
-  statsSource: DashboardStatsSource;
+  stats: DashboardStat[];
   recentVacancies: RecentVacancy[];
   pendingValidations: PendingCompanyValidation[];
   recentActivity: RecentActivityItem[];
   applicationsByStatus: ApplicationStatusSummary[];
 }
 
-const USER_PAGE_SIZE = 100;
-const RECENT_VACANCIES_LIMIT = 5;
+const NUMBER_FORMAT = new Intl.NumberFormat("es-UY");
+
+const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> = {
+  PENDIENTE: "Pendientes",
+  VISTO: "Vistas",
+  FINALIZADO: "Finalizadas",
+};
+
+// El orden de la fila superior de métricas, ya que `StatsGrid` los pinta en
+// el orden en que llegan.
+const STAT_ORDER: DashboardStatId[] = ["companies", "vacancies", "applications", "users"];
 
 /** @public para invalidar el dashboard después de una acción de moderación. */
 export function dashboardQueryKey() {
-  return ["moderacion", "dashboard", "v2"] as const;
+  return ["moderacion", "dashboard", "v3"] as const;
 }
 
 export function useDashboard() {
@@ -43,116 +55,77 @@ export function useDashboard() {
 }
 
 async function fetchDashboard(signal: AbortSignal): Promise<AdminDashboardData> {
-  const [companies, users, vacancies, applications] = await Promise.all([
-    apiClient.get<Company[]>("/company", { signal }),
-    fetchAllUsers(signal),
-    apiClient.get<Vacancy[]>("/vacancy", { signal }),
-    apiClient.get<VacancyApplication[]>("/vacancy-application", { signal }),
-  ]);
-  const visibleVacancies = vacancies.filter((vacancy) => !vacancy.deleted);
-  const recentVacancies = [...visibleVacancies]
-    .sort(compareVacanciesByMostRecent)
-    .slice(0, RECENT_VACANCIES_LIMIT);
+  const response = await apiClient.get<AdminDashboardResponse>("/admin/dashboard", { signal });
 
   return {
-    statsSource: { companies, vacancies, applications, users },
-    recentVacancies: buildRecentVacancies(recentVacancies, companies, applications),
-    pendingValidations: buildPendingValidations(companies, users),
+    stats: buildStats(response),
+    recentVacancies: response.recentVacancies,
+    pendingValidations: response.pendingCompanies,
     // No existe un endpoint de actividad general. /audit es de auditoría
     // interna y no representa altas/postulaciones de todos los dominios.
     recentActivity: [],
-    applicationsByStatus: buildApplicationsByStatus(applications),
+    applicationsByStatus: buildApplicationsByStatus(response.applicationStatusSummary),
   };
 }
 
-async function fetchAllUsers(signal: AbortSignal): Promise<User[]> {
-  const usersById = new Map<string, User>();
+function buildStats({ counts }: AdminDashboardResponse): DashboardStat[] {
+  const stats: Record<DashboardStatId, DashboardStat> = {
+    companies: {
+      id: "companies",
+      title: "Empresas registradas",
+      value: counts.companies.total,
+      description: formatCount(counts.companies.pendientes, "pendiente", "pendientes"),
+    },
+    vacancies: {
+      id: "vacancies",
+      title: "Ofertas publicadas",
+      value: counts.vacancies.publicadas,
+      description: formatCount(counts.vacancies.total, "oferta total", "ofertas totales"),
+    },
+    applications: {
+      id: "applications",
+      title: "Postulaciones",
+      value: counts.applications.total,
+      description: formatCount(counts.applications.pendientes, "pendiente", "pendientes"),
+    },
+    users: {
+      id: "users",
+      title: "Usuarios registrados",
+      value: counts.users.total,
+      description: [
+        formatCount(counts.users.alumnos, "cuenta de estudiante", "cuentas de estudiantes"),
+        formatCount(counts.users.empresas, "cuenta de empresa", "cuentas de empresas"),
+        formatCount(counts.users.admins, "cuenta de administrador", "cuentas de administradores"),
+      ].join(" · "),
+    },
+  };
 
-  for (let page = 0; ; page += 1) {
-    const batch = await apiClient.get<User[]>("/user", {
-      params: {
-        page,
-        size: USER_PAGE_SIZE,
-      },
-      signal,
-    });
-
-    // El endpoint no define un orden estable. El backend debería agregarlo
-    // para garantizar el recorrido ante altas concurrentes; mientras tanto,
-    // deduplicar por PK evita sobrecontar si una fila aparece en dos páginas.
-    for (const user of batch) usersById.set(user.userId, user);
-
-    if (batch.length < USER_PAGE_SIZE) return [...usersById.values()];
-  }
-}
-
-function compareVacanciesByMostRecent(a: Vacancy, b: Vacancy): number {
-  const publicationDateOrder = b.publicationDate.localeCompare(a.publicationDate);
-  if (publicationDateOrder !== 0) return publicationDateOrder;
-  return b.createdAt.localeCompare(a.createdAt);
+  return STAT_ORDER.map((id) => stats[id]);
 }
 
 function buildApplicationsByStatus(
-  applications: VacancyApplication[],
+  summary: AdminDashboardResponse["applicationStatusSummary"],
 ): ApplicationStatusSummary[] {
-  const counts: Record<VacancyApplication["status"], number> = {
+  const counts: Record<VacancyApplicationStatus, number> = {
     PENDIENTE: 0,
     VISTO: 0,
     FINALIZADO: 0,
   };
 
-  for (const application of applications) counts[application.status] += 1;
+  // El contrato dice que `applicationStatusSummary` SIEMPRE trae los 3 estados,
+  // aunque den 0 (ver A-28 en docs/agents/open-questions.md). Se parte igual de
+  // un record en 0 en vez de mapear el array directo: si el backend algún día
+  // omite un estado vacío, el donut sigue mostrando los 3 del enum en vez de
+  // perder una cuña en silencio.
+  for (const item of summary) counts[item.status] = item.count;
 
-  return [
-    { status: "PENDIENTE", label: "Pendientes", count: counts.PENDIENTE },
-    { status: "VISTO", label: "Vistas", count: counts.VISTO },
-    { status: "FINALIZADO", label: "Finalizadas", count: counts.FINALIZADO },
-  ];
-}
-
-function buildRecentVacancies(
-  vacancies: Vacancy[],
-  companies: Company[],
-  applications: VacancyApplication[],
-): RecentVacancy[] {
-  const companyNames = new Map(
-    companies.map((company) => [company.companyId, company.name]),
-  );
-  const applicationCounts = new Map<string, number>();
-
-  for (const application of applications) {
-    applicationCounts.set(
-      application.vacancyId,
-      (applicationCounts.get(application.vacancyId) ?? 0) + 1,
-    );
-  }
-
-  return vacancies.map((vacancy) => ({
-    vacancyId: vacancy.vacancyId,
-    name: vacancy.name,
-    companyName: companyNames.get(vacancy.companyId) ?? "Empresa no disponible",
-    publicationDate: vacancy.publicationDate,
-    applicationCount: applicationCounts.get(vacancy.vacancyId) ?? 0,
-    status: vacancy.status,
+  return (Object.keys(counts) as VacancyApplicationStatus[]).map((status) => ({
+    status,
+    label: APPLICATION_STATUS_LABEL[status],
+    count: counts[status],
   }));
 }
 
-function buildPendingValidations(
-  companies: Company[],
-  users: User[],
-): PendingCompanyValidation[] {
-  // `Company.status` también alimenta la tarjeta. User se usa solo para la
-  // fecha de registro, evitando cruzar dos snapshots distintos del estado.
-  const companyUsers = users.filter((user) => user.role === "EMPRESA");
-  const usersById = new Map(companyUsers.map((user) => [user.userId, user]));
-
-  return companies
-    .filter((company) => company.status === "PENDIENTE" && usersById.has(company.companyId))
-    .map((company) => ({
-      companyId: company.companyId,
-      name: company.name,
-      industry: company.industry,
-      registeredAt: usersById.get(company.companyId)!.registeredAt,
-    }))
-    .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
+function formatCount(count: number, singular: string, plural: string): string {
+  return `${NUMBER_FORMAT.format(count)} ${count === 1 ? singular : plural}`;
 }

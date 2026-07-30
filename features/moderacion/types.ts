@@ -199,14 +199,27 @@ export interface AdminApplicationFilters {
 // ---------------------------------------------------------------------------
 // Dashboard de Admin ("Centro de Gestión").
 //
-// Son view models de una sola pantalla, no entidades del MER — por eso viven
-// acá y no en `@/types`.
+// ✅ `GET /admin/dashboard` (rol ADMIN): totales y listados de la pantalla
+// inicial en una sola request. Reemplaza al enfoque anterior de traer los
+// listados administrativos completos (`/company`, `/user` paginado, `/vacancy`,
+// `/vacancy-application`) y calcular las métricas en el front — ese approach
+// quedaba caro (N requests, un `/user` paginado completo) solo para 4 números
+// y 2 listados chicos.
 //
-// El hook trae los listados reales del backend y las métricas se calculan en
-// `StatsGrid`. Así cada tarjeta usa el mismo universo que los listados de
-// administración (por ejemplo, excluye vacantes eliminadas lógicamente).
-// No hay endpoint para un delta semanal ni para actividad reciente cruzada
-// entre dominios; esos valores no se inventan en el frontend.
+// Los tipos `*Response` de acá abajo espejan el wire tal cual — no se
+// renombran campos ni se agregan los que el backend no manda (sin
+// `recentActivity`: no existe una fuente de actividad general cruzada entre
+// dominios, y no se inventa en el front). ⚠️ Los campos de `counts` vienen en
+// ESPAÑOL (`pendientes`/`publicadas`/`alumnos`/...): es el backend rompiendo su
+// propia convención de nombres en inglés, y se espeja tal cual — ver A-28.
+//
+// De todos esos, el único exportado es `AdminDashboardResponse`: los demás solo
+// existen para componerlo y no salen de este archivo (exportarlos los deja como
+// dead code en `knip`).
+//
+// Los view models (`DashboardStat`, `RecentVacancy`, `PendingCompanyValidation`,
+// `ApplicationStatusSummary`, `RecentActivityItem`) son los que consumen los
+// componentes; `use-dashboard.ts` los deriva de la respuesta del endpoint.
 //
 // Los estados salen de los enums core (`VacancyStatus`,
 // `VacancyApplicationStatus`), no de enums propios del dashboard: un segundo
@@ -220,15 +233,78 @@ export interface AdminApplicationFilters {
 // `VacancyApplication`, `types/index.ts`).
 // ---------------------------------------------------------------------------
 
-export type DashboardStatId = "companies" | "vacancies" | "applications" | "users";
-
-/** Datos crudos usados por `StatsGrid` para calcular las métricas en el front. */
-export interface DashboardStatsSource {
-  companies: Company[];
-  vacancies: Vacancy[];
-  applications: VacancyApplication[];
-  users: User[];
+/** `counts.companies` de `GET /admin/dashboard`. */
+interface DashboardCompanyCountsResponse {
+  total: number;
+  pendientes: number;
 }
+
+/** `counts.vacancies` de `GET /admin/dashboard`. */
+interface DashboardVacancyCountsResponse {
+  total: number;
+  publicadas: number;
+}
+
+/** `counts.applications` de `GET /admin/dashboard`. */
+interface DashboardApplicationCountsResponse {
+  total: number;
+  pendientes: number;
+}
+
+/** `counts.users` de `GET /admin/dashboard`. */
+interface DashboardUserCountsResponse {
+  total: number;
+  alumnos: number;
+  empresas: number;
+  admins: number;
+}
+
+/** `counts` de `GET /admin/dashboard`. */
+interface DashboardCountsResponse {
+  companies: DashboardCompanyCountsResponse;
+  vacancies: DashboardVacancyCountsResponse;
+  applications: DashboardApplicationCountsResponse;
+  users: DashboardUserCountsResponse;
+}
+
+/** Un elemento de `applicationStatusSummary` de `GET /admin/dashboard`. Sin
+ *  `label`: el backend no lo manda, lo agrega el front (ver `use-dashboard.ts`). */
+interface DashboardApplicationStatusSummaryResponse {
+  status: VacancyApplicationStatus;
+  count: number;
+}
+
+/** Un elemento de `recentVacancies` de `GET /admin/dashboard`. */
+interface DashboardRecentVacancyResponse {
+  vacancyId: string;
+  name: string;
+  companyName: string;
+  /** ISO 8601 (fecha). */
+  publicationDate: string;
+  status: VacancyStatus;
+  applicationCount: number;
+}
+
+/** Un elemento de `pendingCompanies` de `GET /admin/dashboard`. El backend ya
+ *  devuelve solo las que hacen falta para la pantalla (no el listado completo
+ *  de pendientes — para eso está `/moderacion/validaciones`). */
+interface DashboardPendingCompanyResponse {
+  companyId: string;
+  name: string;
+  industry: string;
+  /** ISO 8601. */
+  registeredAt: string;
+}
+
+/** Respuesta completa de `GET /admin/dashboard`. */
+export interface AdminDashboardResponse {
+  counts: DashboardCountsResponse;
+  applicationStatusSummary: DashboardApplicationStatusSummaryResponse[];
+  recentVacancies: DashboardRecentVacancyResponse[];
+  pendingCompanies: DashboardPendingCompanyResponse[];
+}
+
+export type DashboardStatId = "companies" | "vacancies" | "applications" | "users";
 
 /** Una de las 4 métricas calculadas de la fila superior. El ícono no es un
  *  dato: lo elige el componente a partir del `id`. */
