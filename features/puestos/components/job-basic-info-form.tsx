@@ -124,14 +124,10 @@ export function JobBasicInfoForm() {
 
           <Field data-invalid={Boolean(errors.modality)}>
             <FieldLabel>Modalidad *</FieldLabel>
-            <Field data-invalid={Boolean(errors.modality)}>
-              <FieldLabel>Modalidad *</FieldLabel>
-              <ModalitySelector
-                value={modality}
-                onChange={(value) => setValue("modality", value, { shouldValidate: true })}
-              />
-              <FieldError errors={[errors.modality]} />
-            </Field>
+            <ModalitySelector
+              value={modality}
+              onChange={(value) => setValue("modality", value, { shouldValidate: true })}
+            />
             <FieldError errors={[errors.modality]} />
           </Field>
 
