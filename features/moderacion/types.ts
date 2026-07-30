@@ -19,6 +19,7 @@ import type {
   Area,
   Company,
   Degree,
+  DocumentType,
   Education,
   Modality,
   StudentProfile,
@@ -57,7 +58,8 @@ export interface AccountResolution {
  * `Degree` → `Area`). No es una entidad del MER, por eso vive acá y no en
  * `@/types`.
  */
-export interface StudentRow extends StudentProfile {
+export interface StudentRow
+  extends Omit<StudentProfile, "documentType" | "documentNumber"> {
   email: string;
   status: AccountStatus;
   registeredAt: string; // ISO 8601
@@ -65,6 +67,11 @@ export interface StudentRow extends StudentProfile {
   degreeName: string;
   areaId: string | null;
   areaName: string;
+  // el alumno puede tener User (rol ALUMNO) sin haber completado
+  // POST /student-profile todavia — no se puede exigir un DocumentType real.
+  documentType: DocumentType | null;
+  documentNumber: string;
+  hasProfile: boolean;
 }
 
 /** Una formación del alumno con sus catálogos ya resueltos para el detalle.

@@ -47,22 +47,24 @@ async function fetchStudents(filters: StudentFilters): Promise<Paginated<Student
     fetchEducations(),
   ]);
 
-  const usersById = new Map(users.map((u) => [u.userId, u]));
+  const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
   const degreesById = new Map(degrees.map((d) => [d.degreeId, d]));
   const areasById = new Map(areas.map((a) => [a.areaId, a]));
   const educationByStudent = groupFirstEducationByStudent(educations);
 
-  const rows = profiles
-    .filter((p) => usersById.has(p.studentProfileId))
-    .map((p) =>
-      toRow(
-        p,
-        usersById.get(p.studentProfileId)!,
-        educationByStudent.get(p.studentProfileId),
-        degreesById,
-        areasById,
-      ),
-    );
+  // base = User (rol ALUMNO), no StudentProfile: un alumno puede haber
+  // completado el paso 1 del registro (User) y nunca el paso 2
+  // (POST /student-profile) — antes esa cuenta desaparecia de la lista
+  // entera. Ahora se muestra igual, con los campos del perfil vacios.
+  const rows = users.map((user) =>
+    toRow(
+      user,
+      profilesById.get(user.userId),
+      educationByStudent.get(user.userId),
+      degreesById,
+      areasById,
+    ),
+  );
   const filtered = filterRows(rows, filters);
 
   const start = (page - 1) * perPage;
@@ -88,8 +90,8 @@ function groupFirstEducationByStudent(educations: Education[]): Map<string, Educ
 }
 
 function toRow(
-  profile: StudentProfile,
   user: User,
+  profile: StudentProfile | undefined,
   education: Education | undefined,
   degreesById: Map<string, Degree>,
   areasById: Map<string, Area>,
@@ -98,7 +100,18 @@ function toRow(
   const area = degree ? areasById.get(degree.areaId) : undefined;
 
   return {
-    ...profile,
+    studentProfileId: user.userId,
+    name: profile?.name ?? "",
+    surname: profile?.surname ?? "",
+    documentType: profile?.documentType ?? null,
+    documentNumber: profile?.documentNumber ?? "",
+    phoneNumber: profile?.phoneNumber ?? null,
+    linkedinUrl: profile?.linkedinUrl ?? null,
+    skills: profile?.skills ?? [],
+    description: profile?.description ?? null,
+    reviewedAt: profile?.reviewedAt ?? null,
+    adminComment: profile?.adminComment ?? null,
+    hasProfile: profile !== undefined,
     email: user.email,
     status: user.status,
     registeredAt: user.registeredAt,
