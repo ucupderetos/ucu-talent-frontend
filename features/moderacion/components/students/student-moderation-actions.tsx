@@ -146,7 +146,7 @@ export function StudentModerationActions({
     review.mutate(
       {
         userId,
-        accountType: "student",
+        accountType: "ALUMNO",
         status: config.status,
         adminComment: config.requiresReason ? reason.trim() : undefined,
       },

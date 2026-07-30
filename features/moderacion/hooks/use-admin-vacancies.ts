@@ -1,12 +1,8 @@
 "use client";
 
-// Datos del listado de vacantes para el Admin.
-//
-// Andamio temporal: resuelve todo sobre `lib/fixtures.ts`. El endpoint real
-// (`GET /vacancy` + `PUT /vacancy/status/{id}` para moderar, ver
-// docs/ENDPOINTS.md) ya está confirmado con los 3 estados de `VacancyStatus`
-// — cuando se enchufe, solo cambia `fetchAdminVacancies`; la vista sigue
-// consumiendo TanStack Query.
+// Datos del listado y detalle de vacantes para el Admin. Los componentes
+// consumen view models del dominio; todos los cruces con Company, User, Area
+// y VacancyApplication se resuelven acá contra la API real.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -15,27 +11,34 @@ import type {
   AdminVacancyFilters,
   AdminVacancyRow,
 } from "@/features/moderacion/types";
-import {
-  MOCK_APPLICATIONS,
-  MOCK_AREAS,
-  MOCK_COMPANIES,
-  MOCK_COMPANY_USERS,
-  MOCK_USERS,
-  MOCK_VACANCIES,
-} from "@/lib/fixtures";
-import type { Company, Paginated, VacancyApplicationStatus } from "@/types";
+import { ApiError, apiClient } from "@/lib/api-client";
+import type {
+  Area,
+  Company,
+  Paginated,
+  User,
+  Vacancy,
+  VacancyApplication,
+  VacancyApplicationStatus,
+} from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
-export function adminVacanciesQueryKey(filters: AdminVacancyFilters) {
-  return ["moderacion", "ofertas", filters] as const;
+interface AdminVacanciesSource {
+  rows: AdminVacancyRow[];
+  companies: Company[];
+}
+
+/** El listado y las opciones de empresa comparten esta consulta. */
+export function adminVacanciesQueryKey() {
+  return ["moderacion", "ofertas", "listado"] as const;
 }
 
 export function useAdminVacancies(filters: AdminVacancyFilters) {
   return useQuery({
-    queryKey: adminVacanciesQueryKey(filters),
-    queryFn: () => fetchAdminVacancies(filters),
+    queryKey: adminVacanciesQueryKey(),
+    queryFn: ({ signal }) => fetchAdminVacanciesSource(signal),
+    select: (source) => paginateRows(source.rows, filters),
   });
 }
 
@@ -46,100 +49,162 @@ export function adminVacancyDetailQueryKey(vacancyId: string) {
 export function useAdminVacancyDetail(vacancyId: string) {
   return useQuery({
     queryKey: adminVacancyDetailQueryKey(vacancyId),
-    queryFn: async (): Promise<AdminVacancyDetail | null> =>
-      allVacancyDetails().find((vacancy) => vacancy.vacancyId === vacancyId) ?? null,
+    queryFn: ({ signal }) => fetchAdminVacancyDetail(vacancyId, signal),
     enabled: Boolean(vacancyId),
   });
 }
 
-export function adminVacancyCompaniesQueryKey() {
-  return ["moderacion", "ofertas", "empresas"] as const;
-}
-
-/** Solo ofrece empresas que tienen al menos una vacante en el listado. */
+/** Solo ofrece empresas que tienen al menos una vacante visible en el listado. */
 export function useAdminVacancyCompanies() {
   return useQuery({
-    queryKey: adminVacancyCompaniesQueryKey(),
-    queryFn: async (): Promise<Company[]> => {
-      const companyIds = new Set(MOCK_VACANCIES.map((vacancy) => vacancy.companyId));
-
-      return MOCK_COMPANIES.filter((company) => companyIds.has(company.companyId)).sort(
-        (a, b) => a.name.localeCompare(b.name, "es"),
-      );
-    },
+    queryKey: adminVacanciesQueryKey(),
+    queryFn: ({ signal }) => fetchAdminVacanciesSource(signal),
+    select: (source) => source.companies,
   });
 }
 
-async function fetchAdminVacancies(
+async function fetchAdminVacanciesSource(
+  signal: AbortSignal,
+): Promise<AdminVacanciesSource> {
+  const [vacancies, companies, applications] = await Promise.all([
+    apiClient.get<Vacancy[]>("/vacancy", { signal }),
+    apiClient.get<Company[]>("/company", { signal }),
+    // El backend no expone conteos por vacante para ADMIN. La variante con
+    // ?vacancyId= exige ser la empresa dueña, por eso se usa el listado global.
+    apiClient.get<VacancyApplication[]>("/vacancy-application", { signal }),
+  ]);
+
+  // El listado anterior estaba compuesto solo por ofertas no eliminadas. El
+  // borrado lógico queda fuera para no cambiar ese universo al conectar la API.
+  const visibleVacancies = vacancies.filter((vacancy) => !vacancy.deleted);
+  const companiesById = new Map(
+    companies.map((company) => [company.companyId, company]),
+  );
+  const applicationCounts = countApplicationsByVacancy(applications);
+  const companyIds = new Set(
+    visibleVacancies.map((vacancy) => vacancy.companyId),
+  );
+
+  return {
+    rows: visibleVacancies.map((vacancy) =>
+      toAdminVacancyRow(vacancy, companiesById.get(vacancy.companyId), applicationCounts),
+    ),
+    companies: companies
+      .filter((company) => companyIds.has(company.companyId))
+      .sort((a, b) => a.name.localeCompare(b.name, "es")),
+  };
+}
+
+async function fetchAdminVacancyDetail(
+  vacancyId: string,
+  signal: AbortSignal,
+): Promise<AdminVacancyDetail | null> {
+  let vacancy: Vacancy;
+
+  try {
+    vacancy = await apiClient.get<Vacancy>(`/vacancy/${vacancyId}`, { signal });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+
+  const [company, companyUser, area, allApplications] = await Promise.all([
+    getOptional<Company>(`/company/${vacancy.companyId}`, signal),
+    getOptional<User>(`/user/${vacancy.companyId}`, signal),
+    getOptional<Area>(`/area/${vacancy.areaId}`, signal),
+    apiClient.get<VacancyApplication[]>("/vacancy-application", { signal }),
+  ]);
+  const parentArea = area?.parentAreaId
+    ? await getOptional<Area>(`/area/${area.parentAreaId}`, signal)
+    : null;
+  const applications = allApplications.filter(
+    (application) => application.vacancyId === vacancy.vacancyId,
+  );
+  const applicationCounts = countApplicationsByVacancy(applications);
+  const row = toAdminVacancyRow(vacancy, company ?? undefined, applicationCounts);
+  const applicationStatusCounts = emptyApplicationStatusCounts();
+
+  for (const application of applications) {
+    applicationStatusCounts[application.status] += 1;
+  }
+
+  return {
+    ...row,
+    company,
+    companyUser,
+    area,
+    parentArea,
+    applicationStatusCounts,
+    selectedApplicationCount: applications.filter((application) => application.accepted)
+      .length,
+  };
+}
+
+async function getOptional<T>(path: string, signal: AbortSignal): Promise<T | null> {
+  try {
+    return await apiClient.get<T>(path, { signal });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+function paginateRows(
+  rows: AdminVacancyRow[],
   filters: AdminVacancyFilters,
-): Promise<Paginated<AdminVacancyRow>> {
+): Paginated<AdminVacancyRow> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
-  const filtered = filterRows(allVacancyDetails(), filters);
+  const filtered = filterRows(rows, filters);
   const sorted = sortByPublicationDate(filtered);
-  const start = (page - 1) * perPage;
+  const lastPage = Math.max(1, Math.ceil(sorted.length / perPage));
+  const safePage = Math.min(Math.max(page, 1), lastPage);
+  const start = (safePage - 1) * perPage;
 
   return {
     items: sorted.slice(start, start + perPage),
     total: sorted.length,
-    page,
+    page: safePage,
     perPage,
   };
 }
 
-/** El detalle es el superset de la fila, por lo que listado y pantalla de
- *  detalle se construyen desde la misma fuente y no pueden desfasarse. */
-function allVacancyDetails(): AdminVacancyDetail[] {
-  const companiesById = new Map(
-    MOCK_COMPANIES.map((company) => [company.companyId, company] as const),
-  );
-  const companyUsersById = new Map(
-    [MOCK_USERS.EMPRESA, ...MOCK_COMPANY_USERS].map((user) => [user.userId, user] as const),
-  );
-  const areasById = new Map(MOCK_AREAS.map((area) => [area.areaId, area] as const));
-  const applicationsByVacancy = new Map<
-    string,
-    (typeof MOCK_APPLICATIONS)[number][]
-  >();
+function toAdminVacancyRow(
+  vacancy: Vacancy,
+  company: Company | undefined,
+  applicationCounts: Map<string, number>,
+): AdminVacancyRow {
+  const companyName = company?.name ?? "Empresa no disponible";
 
-  for (const application of MOCK_APPLICATIONS) {
-    const applications = applicationsByVacancy.get(application.vacancyId) ?? [];
-    applications.push(application);
-    applicationsByVacancy.set(application.vacancyId, applications);
+  return {
+    ...vacancy,
+    companyName,
+    companyInitials: initialsOf(companyName),
+    applicationCount: applicationCounts.get(vacancy.vacancyId) ?? 0,
+  };
+}
+
+function countApplicationsByVacancy(
+  applications: VacancyApplication[],
+): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const application of applications) {
+    counts.set(
+      application.vacancyId,
+      (counts.get(application.vacancyId) ?? 0) + 1,
+    );
   }
 
-  return MOCK_VACANCIES.map((vacancy) => {
-    const company = companiesById.get(vacancy.companyId);
-    const companyUser = companyUsersById.get(vacancy.companyId);
-    const area = areasById.get(vacancy.areaId);
-    const parentArea = area?.parentAreaId ? areasById.get(area.parentAreaId) : undefined;
-    const applications = applicationsByVacancy.get(vacancy.vacancyId) ?? [];
-    const companyName = company?.name ?? "Empresa no disponible";
-    const applicationStatusCounts: Record<VacancyApplicationStatus, number> = {
-      PENDIENTE: 0,
-      VISTO: 0,
-      FINALIZADO: 0,
-    };
+  return counts;
+}
 
-    for (const application of applications) {
-      applicationStatusCounts[application.status] += 1;
-    }
-
-    return {
-      ...vacancy,
-      companyName,
-      companyInitials: initialsOf(companyName),
-      applicationCount: applications.length,
-      company: company ? { ...company } : null,
-      companyUser: companyUser ? { ...companyUser } : null,
-      area: area ? { ...area } : null,
-      parentArea: parentArea ? { ...parentArea } : null,
-      applicationStatusCounts,
-      // `accepted` volvió al contrato con otro nombre (ex-`selected`, ver
-      // types/index.ts) — ya se puede computar la métrica real.
-      selectedApplicationCount: applications.filter((a) => a.accepted).length,
-    };
-  });
+function emptyApplicationStatusCounts(): Record<VacancyApplicationStatus, number> {
+  return {
+    PENDIENTE: 0,
+    VISTO: 0,
+    FINALIZADO: 0,
+  };
 }
 
 function filterRows(
@@ -169,15 +234,12 @@ function filterRows(
   });
 }
 
-/** Las ofertas con fecha más reciente aparecen primero; las que todavía no
- * tienen fecha quedan al final y se ordenan por nombre. */
 function sortByPublicationDate(rows: AdminVacancyRow[]): AdminVacancyRow[] {
-  return [...rows].sort((a, b) => {
-    const aTime = a.publicationDate ? new Date(a.publicationDate).getTime() : -1;
-    const bTime = b.publicationDate ? new Date(b.publicationDate).getTime() : -1;
-
-    return bTime - aTime || a.name.localeCompare(b.name, "es");
-  });
+  return [...rows].sort(
+    (a, b) =>
+      b.publicationDate.localeCompare(a.publicationDate) ||
+      a.name.localeCompare(b.name, "es"),
+  );
 }
 
 function initialsOf(name: string): string {

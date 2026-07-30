@@ -86,7 +86,7 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
                 <ReviewActions
                   userId={company.companyId}
                   displayName={company.name}
-                  accountType="company"
+                  accountType="EMPRESA"
                 />
               </TableCell>
             </TableRow>

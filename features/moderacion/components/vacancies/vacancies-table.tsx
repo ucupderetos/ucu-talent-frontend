@@ -13,6 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
+import {
+  parseCalendarDate,
+  parseMontevideoDateTime,
+} from "@/features/moderacion/date-utils";
 import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
 import { VacancyStatusBadge } from "@/components/vacancies/vacancy-status-badge";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
@@ -36,7 +40,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
 
         <TableBody>
           {vacancies.map((vacancy) => {
-            const isNew = wasPublishedWithinLastDay(vacancy.publicationDate);
+            const isNew = wasCreatedWithinLastDay(vacancy.createdAt);
 
             return (
               <TableRow
@@ -99,15 +103,20 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
   );
 }
 
-function formatPublicationDate(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleDateString("es-UY") : "Sin publicar";
+function formatPublicationDate(iso: string): string {
+  const date = parseCalendarDate(iso);
+
+  return date ? date.toLocaleDateString("es-UY") : "Sin publicar";
 }
 
-/** RF-MOD-01: el Admin distingue las vacantes publicadas en las últimas 24 h. */
-function wasPublishedWithinLastDay(iso: string | null): boolean {
-  if (!iso) return false;
+/** RF-MOD-01: la vacante nace PUBLICADO. `createdAt` es la única fecha con
+ * hora que permite distinguir las altas iniciales de las últimas 24 h; el
+ * backend no expone un `publishedAt` para republicaciones. */
+function wasCreatedWithinLastDay(createdAt: string): boolean {
+  const createdDate = parseMontevideoDateTime(createdAt);
+  if (!createdDate) return false;
 
-  const elapsed = Date.now() - new Date(iso).getTime();
+  const elapsed = Date.now() - createdDate.getTime();
   return elapsed >= 0 && elapsed <= 24 * 60 * 60 * 1000;
 }
 

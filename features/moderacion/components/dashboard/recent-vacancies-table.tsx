@@ -1,9 +1,6 @@
 "use client";
 
 // Tabla de ofertas más recientes del dashboard.
-//
-// La fila linkea al listado de Ofertas y no a un detalle por oferta: esa
-// pantalla no existe todavía.
 
 import Link from "next/link";
 
@@ -29,7 +26,11 @@ import {
 import type { RecentVacancy } from "@/features/moderacion/types";
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-UY");
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!match) return "—";
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString("es-UY");
 }
 
 export function RecentVacanciesTable({ vacancies }: { vacancies: RecentVacancy[] }) {
@@ -64,21 +65,26 @@ export function RecentVacanciesTable({ vacancies }: { vacancies: RecentVacancy[]
 
               <TableBody>
                 {vacancies.map((vacancy) => (
-                  <TableRow key={vacancy.id}>
+                  <TableRow key={vacancy.vacancyId}>
                     <TableCell className="px-5 font-medium">
-                      <Link href="/moderacion/ofertas" className="hover:text-primary hover:underline">
-                        {vacancy.position}
+                      <Link
+                        href={`/moderacion/ofertas/${vacancy.vacancyId}`}
+                        className="hover:text-primary hover:underline"
+                      >
+                        {vacancy.name}
                       </Link>
                     </TableCell>
 
-                    <TableCell className="text-muted-foreground">{vacancy.company}</TableCell>
-
                     <TableCell className="text-muted-foreground">
-                      {formatDate(vacancy.publishedAt)}
+                      {vacancy.companyName}
                     </TableCell>
 
                     <TableCell className="text-muted-foreground">
-                      {vacancy.applications ?? "—"}
+                      {formatDate(vacancy.publicationDate)}
+                    </TableCell>
+
+                    <TableCell className="text-muted-foreground">
+                      {vacancy.applicationCount}
                     </TableCell>
 
                     <TableCell className="pr-5">

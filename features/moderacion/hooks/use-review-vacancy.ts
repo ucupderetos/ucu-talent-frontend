@@ -1,48 +1,51 @@
 "use client";
 
-// Cambia el estado de una vacante desde la bandeja del Admin.
-//
-// El Admin SOLO mueve `PUBLICADO ↔ PENDIENTE` (ver la tabla de `VacancyStatus`
-// en types/index.ts) — nunca a `FINALIZADO`. La empresa dueña es la única que
-// cierra, y eso vive en el dominio `puestos`.
-//
-// ⚠️ ANDAMIO TEMPORAL, mismo criterio que use-review-account.ts: por ahora muta
-// el `status` en fixtures. El endpoint SÍ existe en el contrato
-// (`PUT /vacancy/status/{id}`, rol ADMIN, `UpdateVacancyStatusAdminRequest` —
-// docs/ENDPOINTS.md), solo falta enchufarlo.
-// TODO(api): reemplazar el cuerpo de `mutationFn` por la llamada real.
+// El Admin mueve una vacante entre PUBLICADO y PENDIENTE. La operación real
+// usa PUT /vacancy/status/{id}; FINALIZADO sigue reservado a la empresa o al
+// cierre automático y no se ofrece desde la UI administrativa.
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { MOCK_VACANCIES } from "@/lib/fixtures";
-import type { VacancyStatus } from "@/types";
+import { dashboardQueryKey } from "@/features/moderacion/hooks/use-dashboard";
+import { ApiError, apiClient } from "@/lib/api-client";
+import type { Vacancy, VacancyStatus } from "@/types";
 
 export interface ReviewVacancyInput {
   vacancyId: string;
   status: Extract<VacancyStatus, "PUBLICADO" | "PENDIENTE">;
+  adminComment?: string;
 }
 
 export function useReviewVacancy() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ vacancyId, status }: ReviewVacancyInput) => {
-      const vacancy = MOCK_VACANCIES.find((v) => v.vacancyId === vacancyId);
-      if (!vacancy) throw new Error(`Vacante ${vacancyId} no encontrada`);
-
-      vacancy.status = status;
-      // `publicationDate` no se sella acá: la define la empresa al crear el
-      // puesto (`CreateVacancyRequest.publicationDate`, obligatoria) — no es
-      // un timestamp que el backend genere en la transición PENDIENTE → PUBLICADO.
-      if (status === "PENDIENTE") {
-        vacancy.reviewedAt = new Date().toISOString();
-      }
-    },
+    mutationFn: ({ vacancyId, status, adminComment }: ReviewVacancyInput) =>
+      apiClient.put<Vacancy>(`/vacancy/status/${vacancyId}`, {
+        status,
+        adminComment,
+      }),
     onSuccess: () => {
-      // La bandeja del Admin cuelga de "moderacion"; el feed del alumno y "Mis
-      // ofertas" de la empresa cuelgan de "puestos" y también cambian.
-      queryClient.invalidateQueries({ queryKey: ["moderacion"] });
-      queryClient.invalidateQueries({ queryKey: ["puestos"] });
+      // Cambia el listado/detalle de Admin, el dashboard, el feed del alumno
+      // y los listados de la empresa. No se espera el refetch para que una
+      // fila que sale del filtro no cancele su callback local de confirmación.
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["moderacion", "ofertas"] }),
+        queryClient.invalidateQueries({ queryKey: dashboardQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: ["puestos"] }),
+      ]);
+    },
+    onError: (error) => {
+      // Un 403/404/409 suele indicar que otro actor cambió o eliminó la
+      // oferta. Refrescamos solo este dominio para no dejar acciones obsoletas.
+      if (
+        error instanceof ApiError &&
+        (error.status === 403 || error.status === 404 || error.status === 409)
+      ) {
+        void queryClient.invalidateQueries({
+          queryKey: ["moderacion", "ofertas"],
+        });
+      }
     },
   });
 }

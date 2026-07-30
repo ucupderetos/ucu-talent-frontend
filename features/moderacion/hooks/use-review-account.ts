@@ -6,14 +6,13 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { apiClient } from "@/lib/api-client";
+import { ApiError, apiClient } from "@/lib/api-client";
 import type { AccountResolution } from "@/features/moderacion/types";
 import type { User } from "@/types";
 
 export type ReviewAccountInput = AccountResolution & {
-  /** de que perfil es la cuenta. no lo usamos para pegarle a la api (el
-   *  endpoint es el mismo para los dos), solo para saber que invalidar. */
-  accountType: "student" | "company";
+  /** Contexto del caller; el endpoint y la invalidación son compartidos. */
+  accountType: "ALUMNO" | "EMPRESA";
 };
 
 export function useReviewAccount() {
@@ -21,11 +20,26 @@ export function useReviewAccount() {
 
   return useMutation({
     mutationFn: ({ userId, status, adminComment }: ReviewAccountInput) =>
-      apiClient.patch<User>(`/user/${userId}`, { status, adminComment }),
+      apiClient.patch<User>(`/user/${encodeURIComponent(userId)}`, {
+        status,
+        adminComment,
+      }),
     onSuccess: () => {
       // invalidamos todo lo que empiece con "moderacion", asi entran tanto
-      // empresas como alumnos sin tener que acordarse de las dos keys
+      // empresas como alumnos sin tener que acordarse de las dos keys. No se
+      // espera el refetch: una fila filtrada puede desmontarse y cancelar el
+      // callback local que muestra el toast de confirmación.
       void queryClient.invalidateQueries({ queryKey: ["moderacion"] });
+    },
+    onError: (error) => {
+      // Si otro Admin cambió o eliminó la cuenta, refrescar evita conservar
+      // acciones basadas en un estado viejo. Los errores de red no refetchean.
+      if (
+        error instanceof ApiError &&
+        (error.status === 404 || error.status === 409)
+      ) {
+        void queryClient.invalidateQueries({ queryKey: ["moderacion"] });
+      }
     },
   });
 }

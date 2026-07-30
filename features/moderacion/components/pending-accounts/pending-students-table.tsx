@@ -88,7 +88,7 @@ export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
                 <ReviewActions
                   userId={student.studentProfileId}
                   displayName={`${student.name} ${student.surname}`}
-                  accountType="student"
+                  accountType="ALUMNO"
                 />
               </TableCell>
             </TableRow>

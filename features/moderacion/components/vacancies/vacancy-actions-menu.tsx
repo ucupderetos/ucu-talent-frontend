@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useReviewVacancy } from "@/features/moderacion/hooks/use-review-vacancy";
+import { ApiError } from "@/lib/api-client";
 import type { AdminVacancyRow } from "@/features/moderacion/types";
 import type { VacancyStatus } from "@/types";
 
@@ -99,13 +100,24 @@ export function VacancyActionsMenu({ vacancy }: { vacancy: AdminVacancyRow }) {
     if (!target || !config) return;
 
     review.mutate(
-      { vacancyId: vacancy.vacancyId, status: target },
+      {
+        vacancyId: vacancy.vacancyId,
+        status: target,
+        // El backend reemplaza el comentario incluso cuando no se manda. La
+        // UI actual no edita motivos, así que preservamos el valor existente.
+        adminComment: vacancy.adminComment ?? undefined,
+      },
       {
         onSuccess: () => {
           toast.success(config.successMessage);
           setTarget(null);
         },
-        onError: () => toast.error("No se pudo procesar. Intentá nuevamente."),
+        onError: (error) =>
+          toast.error(
+            error instanceof ApiError
+              ? error.message
+              : "No se pudo procesar. Intentá nuevamente.",
+          ),
       },
     );
   }
