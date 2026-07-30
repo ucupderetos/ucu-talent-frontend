@@ -1,19 +1,37 @@
 "use client";
 
 // Datos de la tabla de "Mis ofertas" (vista empresa).
+//
+// ⚠️ 2026-07-30: migrado de `GET /vacancy` + un `GET /vacancy-application`
+// por vacante a `GET /vacancy/company/{companyId}/management` (un solo
+// endpoint agregado, verificado contra el código fuente del backend —
+// ninguna versión de `ENDPOINTS.md` lo documentaba). El backend ya resuelve
+// `companyName`/`areaName`/`applicationCount`/`newApplicationsCount` y ya
+// filtra `deleted = false` (`VacancyRepository.findManagementByCompanyId`),
+// así que el N+1 anterior desaparece del todo.
 
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
+import { useAreas } from "@/features/puestos/hooks/use-areas";
 import type {
   CompanyVacancyFilters,
   CompanyVacancyOrder,
   CompanyVacancyRow,
 } from "@/features/puestos/types";
-import type { Area, Department, Paginated, Vacancy, VacancyApplication } from "@/types";
+import type { Area, Department, Paginated, Vacancy } from "@/types";
 
-const NEW_APPLICANT_WINDOW_DAYS = 7;
 const DEFAULT_PER_PAGE = 5;
+
+/** Wire real de `GET /vacancy/company/{companyId}/management`
+ *  (`vacancy/dto/VacancyManagementResponse.java`, rama `dev`). */
+interface VacancyManagementResponse {
+  vacancy: Vacancy;
+  companyName: string;
+  areaName: string;
+  applicationCount: number;
+  newApplicationsCount: number;
+}
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function companyVacanciesQueryKey(
@@ -23,107 +41,68 @@ export function companyVacanciesQueryKey(
   return ["puestos", "empresa", companyId, filters] as const;
 }
 
-export function useCompanyVacancies(
-  companyId: string | undefined,
-  filters: CompanyVacancyFilters,
-) {
+function companyManagementQueryKey(companyId: string | undefined) {
+  return ["puestos", "empresa", companyId, "management"] as const;
+}
+
+/** Base compartida: TanStack Query dedupea por `queryKey`, así que
+ *  `useCompanyVacancies` y `useCompanyVacancyFilterOptions` (montados juntos
+ *  en `company-vacancies-view.tsx`) comparten el mismo fetch en vez de
+ *  pedir la lista dos veces. */
+function useCompanyManagementRows(companyId: string | undefined) {
   return useQuery({
-    queryKey: companyVacanciesQueryKey(companyId, filters),
-    queryFn: ({ signal }) => fetchCompanyVacancies(companyId, filters, signal),
+    queryKey: companyManagementQueryKey(companyId),
+    queryFn: ({ signal }) => fetchCompanyManagementRows(companyId, signal),
     enabled: Boolean(companyId),
   });
 }
 
-async function fetchCompanyVacancies(
+async function fetchCompanyManagementRows(
+  companyId: string | undefined,
+  signal?: AbortSignal,
+): Promise<CompanyVacancyRow[]> {
+  if (!companyId) return [];
+
+  const rows = await apiClient.get<VacancyManagementResponse[]>(
+    `/vacancy/company/${companyId}/management`,
+    { signal },
+  );
+
+  return rows.map(toRow);
+}
+
+function toRow(row: VacancyManagementResponse): CompanyVacancyRow {
+  return {
+    ...row.vacancy,
+    areaName: row.areaName,
+    applicantsCount: row.applicationCount,
+    // El endpoint agregado no puede fallar "por fila": si la llamada se cae,
+    // toda la lista se cae con ella (isError de useCompanyVacancies) — no
+    // hay un escenario de "esta fila puntual no sabe su conteo".
+    applicantsCountKnown: true,
+    unreviewedApplicantsCount: row.newApplicationsCount,
+  };
+}
+
+export function useCompanyVacancies(
   companyId: string | undefined,
   filters: CompanyVacancyFilters,
-  signal?: AbortSignal,
-): Promise<Paginated<CompanyVacancyRow>> {
+) {
+  const query = useCompanyManagementRows(companyId);
+
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
-  if (!companyId) return { items: [], total: 0, page, perPage };
+  const data: Paginated<CompanyVacancyRow> | undefined = query.data
+    ? paginate(sortRows(filterRows(query.data, filters), filters.order), page, perPage)
+    : undefined;
 
-  const rows = await fetchCompanyVacancyRows(companyId, signal);
-  const filtered = filterRows(rows, filters);
-  const sorted = sortRows(filtered, filters.order);
+  return { ...query, data };
+}
 
+function paginate<T>(rows: T[], page: number, perPage: number): Paginated<T> {
   const start = (page - 1) * perPage;
-  const items = sorted.slice(start, start + perPage);
-
-  return { items, total: sorted.length, page, perPage };
-}
-
-async function fetchCompanyVacancyRows(
-  companyId: string,
-  signal?: AbortSignal,
-): Promise<CompanyVacancyRow[]> {
-  const [vacancies, areas] = await Promise.all([
-    apiClient.get<Vacancy[]>("/vacancy", { signal }),
-    fetchAreas(signal),
-  ]);
-
-  const ownVacancies = vacancies.filter((vacancy) => vacancy.companyId === companyId);
-
-  return Promise.all(
-    ownVacancies.map(async (vacancy) =>
-      toRow(vacancy, areas, await fetchVacancyApplications(vacancy.vacancyId, signal)),
-    ),
-  );
-}
-
-async function fetchAreas(signal?: AbortSignal): Promise<Area[]> {
-  try {
-    return await apiClient.get<Area[]>("/area", { signal });
-  } catch {
-    // El nombre de área es auxiliar: no debería bloquear el listado de puestos.
-    return [];
-  }
-}
-
-interface VacancyApplicationsResult {
-  applications: Pick<VacancyApplication, "appliedAt">[];
-  /** `false` si el fetch falló: el conteo de postulantes de esa fila quedó
-   *  desconocido, no en cero (ver `toRow` y el gate de A-06 en
-   *  `vacancy-table.tsx`). */
-  countKnown: boolean;
-}
-
-async function fetchVacancyApplications(
-  vacancyId: string,
-  signal?: AbortSignal,
-): Promise<VacancyApplicationsResult> {
-  try {
-    const applications = await apiClient.get<VacancyApplication[]>("/vacancy-application", {
-      params: { vacancyId },
-      signal,
-    });
-    return { applications, countKnown: true };
-  } catch {
-    // El conteo de postulantes no debe impedir ver las vacantes propias, pero
-    // tampoco puede caer silenciosamente en "0 postulantes": eso habilitaría
-    // el gate de edición (A-06) para una oferta que en realidad sí tiene
-    // postulantes. `countKnown: false` avisa que ese "0" no es confiable.
-    return { applications: [], countKnown: false };
-  }
-}
-
-function toRow(
-  vacancy: Vacancy,
-  areas: Area[],
-  applicationsResult: VacancyApplicationsResult,
-): CompanyVacancyRow {
-  const { applications, countKnown } = applicationsResult;
-  const weekAgo = Date.now() - NEW_APPLICANT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
-
-  return {
-    ...vacancy,
-    areaName: areas.find((area) => area.areaId === vacancy.areaId)?.name ?? "—",
-    applicantsCount: applications.length,
-    applicantsCountKnown: countKnown,
-    newApplicantsThisWeek: applications.filter((a) => new Date(a.appliedAt).getTime() >= weekAgo)
-      .length,
-  };
+  return { items: rows.slice(start, start + perPage), total: rows.length, page, perPage };
 }
 
 function filterRows(
@@ -178,48 +157,26 @@ function publishedTimestamp(row: CompanyVacancyRow): number {
  * vacantes de la empresa (sin aplicar los filtros activos), para que el
  * dropdown no vaya perdiendo opciones a medida que se filtra.
  *
- * TODO(api): cuando exista el contrato, esto probablemente lo devuelva el
- * propio endpoint de filtros (facets) en vez de calcularse en el cliente.
+ * El área real (con su `parentAreaId`) sale de `useAreas()` — el catálogo
+ * completo, cacheado 5 min (`use-areas.ts`) y ya usado en el resto de la
+ * app — filtrado a las que esta empresa efectivamente usa. El endpoint de
+ * management solo da `areaName` (string plano), no alcanza para reconstruir
+ * un `Area` real sin inventarle un `parentAreaId`.
  */
 export function useCompanyVacancyFilterOptions(companyId: string | undefined): {
   areas: Area[];
   locations: Department[];
 } {
-  const query = useQuery({
-    queryKey: ["puestos", "empresa", companyId, "opciones-filtro"] as const,
-    queryFn: ({ signal }) => fetchCompanyVacancyFilterOptions(companyId, signal),
-    enabled: Boolean(companyId),
-  });
+  const { data: rows } = useCompanyManagementRows(companyId);
+  const { data: allAreas } = useAreas();
 
-  return query.data ?? { areas: [], locations: [] };
-}
+  if (!rows) return { areas: [], locations: [] };
 
-async function fetchCompanyVacancyFilterOptions(
-  companyId: string | undefined,
-  signal?: AbortSignal,
-): Promise<{ areas: Area[]; locations: Department[] }> {
-  if (!companyId) return { areas: [], locations: [] };
-
-  const [vacancies, areas] = await Promise.all([
-    apiClient.get<Vacancy[]>("/vacancy", { signal }),
-    fetchAreas(signal),
-  ]);
-
-  return buildFilterOptions(
-    vacancies.filter((vacancy) => vacancy.companyId === companyId),
-    areas,
-  );
-}
-
-function buildFilterOptions(
-  vacancies: Vacancy[],
-  areas: Area[],
-): { areas: Area[]; locations: Department[] } {
-  const areaIds = new Set(vacancies.map((vacancy) => vacancy.areaId));
-  const locations = Array.from(new Set(vacancies.map((vacancy) => vacancy.location))).sort();
+  const areaIds = new Set(rows.map((row) => row.areaId));
+  const locations = Array.from(new Set(rows.map((row) => row.location))).sort();
 
   return {
-    areas: areas.filter((area) => areaIds.has(area.areaId)),
+    areas: (allAreas ?? []).filter((area) => areaIds.has(area.areaId)),
     locations,
   };
 }

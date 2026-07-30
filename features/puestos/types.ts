@@ -29,9 +29,9 @@ import type { Company, ContractType, Department, Modality, Vacancy, VacancyStatu
  * (post-moderación, DEC-01) sin importar lo que se mande.
  *
  * `UpdateVacancyRequest` (el `PUT /vacancy/{id}`) es un shape DISTINTO — sin
- * `companyId`/`areaId` (no se reasignan) y con `salaryRange` en vez de
- * `salary` (inconsistencia real del backend entre los dos DTOs, no un typo
- * de este archivo — confirmado contra el código fuente de los dos).
+ * `companyId`/`areaId` (no se reasignan), pero el campo de sueldo se llama
+ * `salary` en los dos DTOs (`Create`/`Update`) — ver el aviso en
+ * `VacancyUpdateInput` sobre la corrección 2026-07-30.
  */
 export interface VacancyInput {
   companyId: string;
@@ -57,12 +57,11 @@ export interface VacancyInput {
  * URL, y el área queda fija desde la creación (el contrato no la deja
  * editar).
  *
- * ⚠️ **NO se deriva de `VacancyInput` con `Omit`** — no es solo cuestión de
- * quitarle `companyId`/`areaId`: el `PUT` real solo aplica el cambio de
- * sueldo si el campo del BODY se llama `salaryRange`, aunque este tipo
- * (como el resto de la UI) lo exponga como `salary` — esa traducción de red
- * vive en `use-edit-job.ts`, no acá (AGENTS.md, A-15). Por eso es una
- * interface explícita, no un `Omit`.
+ * ⚠️ **NO se deriva de `VacancyInput` con `Omit`** — no es cuestión de un
+ * simple `Omit` de `companyId`/`areaId`: es un DTO de update parcial
+ * (`UpdateVacancyRequest`), conceptualmente distinto del de creación aunque
+ * hoy comparta casi todos los nombres de campo. Por eso es una interface
+ * explícita.
  *
  * A-06 (qué se puede editar) — resuelto por el BACKEND, no es decisión de
  * front: `PUT /vacancy/{id}` (`VacancyServiceImpl.updateVacancy`, rama `dev`)
@@ -83,9 +82,10 @@ export interface VacancyUpdateInput {
   requirements: string;
   contractType: ContractType;
   modality: Modality;
-  /** Wire real de LECTURA (`Vacancy.salary`); el `PUT /vacancy/{id}` real solo
-   *  aplica el cambio si el campo se llama `salaryRange` — la traducción se
-   *  hace en el borde de red (`use-edit-job.ts`), no acá (AGENTS.md, A-15). */
+  /** Mismo campo `salary` que `VacancyInput` y que `Vacancy.salary` de
+   *  lectura — verificado 2026-07-30 contra `UpdateVacancyRequest.java`
+   *  (rama `dev`): no hay `salaryRange`, esa traducción vieja era un bug
+   *  (corregido en `use-edit-job.ts`, ver AGENTS.md A-15). */
   salary: string;
   location: Department;
   /** `YYYY-MM-DD`. Read-only en el form de edición: se reenvía el valor previo
@@ -203,17 +203,31 @@ export interface CompanyVacancyFilters {
  * Fila de la tabla de "Mis ofertas": la `Vacancy` del MER más los datos
  * derivados que la pantalla necesita mostrar. No es una entidad del MER —
  * por eso vive acá y no en @/types.
+ *
+ * ⚠️ **2026-07-30: pasó a alimentarse de `GET
+ * /vacancy/company/{companyId}/management`** (`VacancyManagementResponse`,
+ * verificado contra el código fuente del backend — no documentado en
+ * ninguna versión de `ENDPOINTS.md`), no de `GET /vacancy` + un fetch de
+ * postulaciones por vacante. El endpoint ya devuelve `companyName`/
+ * `areaName`/`applicationCount`/`newApplicationsCount` calculados del lado
+ * del servidor (y ya filtra `deleted = false` — `VacancyRepository.
+ * findManagementByCompanyId`), así que se elimina el N+1 de
+ * `use-company-vacancies.ts` por completo.
  */
 export interface CompanyVacancyRow extends Vacancy {
   areaName: string;
   applicantsCount: number;
-  /** `false` si no se pudo confirmar el conteo (falló `GET
-   *  /vacancy-application?vacancyId={id}`) — en ese caso `applicantsCount`
-   *  vale `0` pero NO es confiable. El gate de edición de A-06
-   *  (`vacancy-table.tsx`) trata "desconocido" como "hay postulantes": más
-   *  seguro ocultar el lápiz de más que dejar editar una oferta que en
-   *  realidad ya tiene postulantes. */
+  /** Siempre `true` desde el cambio al endpoint agregado: el conteo viene
+   *  en la MISMA respuesta que la fila (no hay un fetch aparte por vacante
+   *  que pueda fallar de forma independiente). Se mantiene el campo para no
+   *  tocar el gate de edición de A-06 en `vacancy-table.tsx`, que sigue
+   *  siendo válido si en el futuro alguna fuente parcial vuelve a fallar. */
   applicantsCountKnown: boolean;
-  /** Postulaciones de los últimos 7 días. Alimenta el "+N esta semana". */
-  newApplicantsThisWeek: number;
+  /** Postulaciones en estado `PENDIENTE` (sin revisar por la empresa),
+   *  `VacancyManagementResponse.newApplicationsCount`. Reemplaza al criterio
+   *  anterior ("postulado en los últimos 7 días", que exigía el `appliedAt`
+   *  de cada postulación) — decisión del equipo 2026-07-30: este criterio
+   *  es el que ya calcula el backend y no depende de la fecha, solo del
+   *  estado PENDIENTE→VISTO de la máquina de postulaciones. */
+  unreviewedApplicantsCount: number;
 }
