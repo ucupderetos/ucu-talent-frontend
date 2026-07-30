@@ -6,8 +6,27 @@
 //
 // `PUT /student-profile/{id}` reemplaza el objeto entero (ver
 // use-update-student-profile.ts): el submit manda `phoneNumber`/
-// `linkedinUrl`/`description` de `profile` sin tocar, junto con los skills
-// editados acá. Por eso recibe `profile` completo y no solo `skills`.
+// `linkedinUrl`/`description` del borrador compartido (`draft`, dueño en
+// `student-profile-view.tsx`) sin tocar, junto con los skills editados acá.
+// Es el mismo borrador que usa "Información personal" — necesario porque el
+// backend exige los cuatro campos no vacíos en cada request, y las dos
+// pestañas los reparten (ver el comentario en `StudentProfileDraft`,
+// features/perfil/types.ts).
+//
+// ⚠️ `addSkill`/`removeSkill` empujan a `onDraftChange` EN VIVO, no recién al
+// guardar — mismo motivo que los campos de "Información personal": si
+// "Habilidades" solo actualizara el borrador al guardar, una cuenta recién
+// creada (los cuatro campos vacíos) nunca podría guardar "Información
+// personal" primero (necesitaría `skills` ya en el borrador antes de que
+// esta pestaña se haya guardado ni una vez).
+//
+// ⚠️ Si el guardado falla (ej. el backend rechaza un array de skills vacío
+// con "El skills es obligatorio" — no se puede sacar la última skill), hay
+// que REVERTIR el borrador compartido a lo que tenía antes de este intento de
+// edición. Sin este rollback, el empuje en vivo de arriba deja el borrador
+// (y por lo tanto la vista) mostrando el estado fallido — "sin habilidades"
+// aunque el servidor todavía tenga la skill guardada (encontrado en QA
+// manual). `skillsBeforeEdit` guarda ese punto de partida.
 
 import { useState } from "react";
 import { XIcon } from "lucide-react";
@@ -22,21 +41,42 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useUpdateStudentProfile } from "@/features/perfil/hooks/use-update-student-profile";
-import type { StudentProfile } from "@/types";
+import type { StudentProfileDraft } from "@/features/perfil/types";
 
-export function SkillsTab({ profile }: { profile: StudentProfile }) {
+export function SkillsTab({
+  studentProfileId,
+  draft,
+  onDraftChange,
+}: {
+  studentProfileId: string;
+  draft: StudentProfileDraft;
+  onDraftChange: (patch: Partial<StudentProfileDraft>) => void;
+}) {
   const [mode, setMode] = useState<"view" | "edit">("view");
-  const [savedSkills, setSavedSkills] = useState(profile.skills);
-  const [draftSkills, setDraftSkills] = useState(profile.skills);
+  const [draftSkills, setDraftSkills] = useState(draft.skills);
+  const [skillsBeforeEdit, setSkillsBeforeEdit] = useState(draft.skills);
   const [inputValue, setInputValue] = useState("");
-  const { updateProfile, isLoading, error } = useUpdateStudentProfile(profile.studentProfileId);
+  const { updateProfile, isLoading, error } = useUpdateStudentProfile(studentProfileId);
 
   function startEditing() {
-    setDraftSkills(savedSkills);
+    setDraftSkills(draft.skills);
+    setSkillsBeforeEdit(draft.skills);
     setInputValue("");
     setMode("edit");
+  }
+
+  function cancelEditing() {
+    // Revierte el borrador compartido al punto de partida de esta edición —
+    // como `addSkill`/`removeSkill` empujan en vivo a `onDraftChange`,
+    // cancelar sin esto dejaría los cambios descartados pegados en la vista y
+    // guardables desde "Información personal" (mismo rollback que el `catch`
+    // de `save`).
+    setDraftSkills(skillsBeforeEdit);
+    onDraftChange({ skills: skillsBeforeEdit });
+    setMode("view");
   }
 
   function addSkill() {
@@ -45,24 +85,39 @@ export function SkillsTab({ profile }: { profile: StudentProfile }) {
       setInputValue("");
       return;
     }
-    setDraftSkills((current) => [...current, value]);
+    const next = [...draftSkills, value];
+    setDraftSkills(next);
+    onDraftChange({ skills: next });
     setInputValue("");
   }
 
   function removeSkill(skill: string) {
-    setDraftSkills((current) => current.filter((s) => s !== skill));
+    const next = draftSkills.filter((s) => s !== skill);
+    setDraftSkills(next);
+    onDraftChange({ skills: next });
   }
 
   async function save() {
-    await updateProfile({
-      phoneNumber: profile.phoneNumber ?? "",
-      linkedinUrl: profile.linkedinUrl ?? "",
-      description: profile.description ?? "",
-      skills: draftSkills,
-    });
-    setSavedSkills(draftSkills);
-    setMode("view");
-    toast.success("Habilidades actualizadas.");
+    try {
+      // `phoneNumber`/`linkedinUrl`/`description` salen del borrador
+      // compartido: pueden haber sido editados desde "Información personal"
+      // sin que esa pestaña se haya guardado todavía.
+      await updateProfile({
+        phoneNumber: draft.phoneNumber,
+        linkedinUrl: draft.linkedinUrl,
+        description: draft.description,
+        skills: draftSkills,
+      });
+      onDraftChange({ skills: draftSkills });
+      setMode("view");
+      toast.success("Habilidades actualizadas.");
+    } catch {
+      // Revierte el borrador compartido al punto de partida de esta edición
+      // — sin esto, el empuje en vivo de addSkill/removeSkill deja la vista
+      // mostrando el intento fallido en vez del último estado real guardado.
+      setDraftSkills(skillsBeforeEdit);
+      onDraftChange({ skills: skillsBeforeEdit });
+    }
   }
 
   if (mode === "view") {
@@ -78,13 +133,13 @@ export function SkillsTab({ profile }: { profile: StudentProfile }) {
           </Button>
         </CardHeader>
         <CardContent>
-          {savedSkills.length === 0 ? (
+          {draft.skills.length === 0 ? (
             <p className="text-sm italic text-muted-foreground">
               Todavía no agregaste habilidades.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {savedSkills.map((skill) => (
+              {draft.skills.map((skill) => (
                 <Badge
                   key={skill}
                   variant="secondary"
@@ -145,13 +200,13 @@ export function SkillsTab({ profile }: { profile: StudentProfile }) {
           ))}
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <FieldError>{error}</FieldError>}
 
         <div className="flex gap-2">
           <Button type="button" disabled={isLoading} onClick={save} className="w-fit">
             {isLoading ? "Guardando..." : "Guardar cambios"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => setMode("view")} className="w-fit">
+          <Button type="button" variant="outline" onClick={cancelEditing} className="w-fit">
             Cancelar
           </Button>
         </div>
