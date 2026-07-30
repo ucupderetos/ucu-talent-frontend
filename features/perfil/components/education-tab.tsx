@@ -14,7 +14,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -39,6 +41,7 @@ import {
 import { PROFILE_ITEM_DESCRIPTION_MAX } from "@/features/perfil/types";
 import type { EducationInput } from "@/features/perfil/types";
 import { ApiError } from "@/lib/api-client";
+import { DEGREE_LEVEL_LABELS } from "@/lib/degree-levels";
 import { applyFieldErrors } from "@/lib/form-errors";
 import type { Degree, DegreeLevel, Education } from "@/types";
 
@@ -52,13 +55,6 @@ import type { Degree, DegreeLevel, Education } from "@/types";
 // aclarar que esas carreras van con nivel "Grado", no "Licenciatura" (en
 // Uruguay el título de Ingeniero es un grado, no una licenciatura) — de ahí el
 // texto de ayuda debajo del selector, no un cambio del enum.
-const DEGREE_LEVEL_LABEL: Record<DegreeLevel, string> = {
-  TECNICATURA: "Tecnicatura",
-  LICENCIATURA: "Licenciatura",
-  GRADO: "Grado",
-  POSGRADO: "Posgrado",
-  DOCTORADO: "Doctorado",
-};
 
 const EDUCATION_KNOWN_FIELDS = new Set([
   "degreeId",
@@ -135,12 +131,27 @@ interface EducationTabProps {
 export const EducationTab = forwardRef<EducationTabHandle, EducationTabProps>(
   function EducationTab({ studentProfileId, education, hideAddButton }, ref) {
     const [items, setItems] = useState(education);
+    // `items` empieza como copia de `education` y de ahí en más se actualiza a
+    // mano (crear/editar/borrar) para feedback instantáneo. Si `education`
+    // cambia por otra vía — el refetch de fondo de TanStack Query tras la
+    // invalidación de alguna mutación, u otra pestaña re-sembrando el perfil —
+    // esto vuelve a alinear la copia local durante el render (patrón de React
+    // para "ajustar estado cuando cambia una prop", no un useEffect: evita el
+    // render extra en cascada), para que no quede desincronizada del server
+    // state real.
+    const [prevEducation, setPrevEducation] = useState(education);
+    if (education !== prevEducation) {
+      setPrevEducation(education);
+      setItems(education);
+    }
+
     const [editingItem, setEditingItem] = useState<Education | "new" | null>(null);
+    const [deletingItem, setDeletingItem] = useState<Education | null>(null);
     const degrees = useDegrees();
 
     const { createEducation } = useCreateEducation();
     const { updateEducation } = useUpdateEducation();
-    const { deleteEducation } = useDeleteEducation();
+    const { deleteEducation, isLoading: isDeleting } = useDeleteEducation();
 
     useImperativeHandle(ref, () => ({
       openCreateDialog: () => setEditingItem("new"),
@@ -168,10 +179,12 @@ export const EducationTab = forwardRef<EducationTabHandle, EducationTabProps>(
       setEditingItem(null);
     }
 
-    async function handleDelete(item: Education) {
-      await deleteEducation({ educationId: item.educationId, studentProfileId });
-      setItems((current) => current.filter((i) => i.educationId !== item.educationId));
+    async function confirmDelete() {
+      if (!deletingItem) return;
+      await deleteEducation({ educationId: deletingItem.educationId, studentProfileId });
+      setItems((current) => current.filter((i) => i.educationId !== deletingItem.educationId));
       toast.success("Formación académica eliminada.");
+      setDeletingItem(null);
     }
 
     return (
@@ -198,7 +211,7 @@ export const EducationTab = forwardRef<EducationTabHandle, EducationTabProps>(
                   <div className="min-w-0">
                     <p className="font-medium">{degreeName(degrees, item.degreeId)}</p>
                     <p className="text-sm text-muted-foreground">
-                      {DEGREE_LEVEL_LABEL[item.degreeLevel]}
+                      {DEGREE_LEVEL_LABELS[item.degreeLevel]}
                       {item.institution ? ` · ${item.institution}` : ""}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -225,7 +238,7 @@ export const EducationTab = forwardRef<EducationTabHandle, EducationTabProps>(
                       variant="ghost"
                       size="icon-sm"
                       aria-label="Eliminar formación"
-                      onClick={() => handleDelete(item)}
+                      onClick={() => setDeletingItem(item)}
                     >
                       <TrashIcon />
                     </Button>
@@ -241,6 +254,38 @@ export const EducationTab = forwardRef<EducationTabHandle, EducationTabProps>(
           onOpenChange={(open) => !open && setEditingItem(null)}
           onSubmit={handleSubmit}
         />
+
+        <Dialog open={deletingItem !== null} onOpenChange={(open) => !open && setDeletingItem(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="pr-8">
+              <DialogTitle className="text-lg">¿Eliminar esta formación?</DialogTitle>
+              <DialogDescription>
+                {deletingItem && (
+                  <>
+                    <strong>{degreeName(degrees, deletingItem.degreeId)}</strong> se borra de tu
+                    perfil. Esta acción es <strong>irreversible</strong>.
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button" className="w-full sm:w-auto">
+                  Cancelar
+                </Button>
+              </DialogClose>
+              <Button
+                variant="destructive"
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="w-full sm:w-auto"
+              >
+                {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   },
@@ -369,7 +414,7 @@ function EducationDialog({
                       <SelectValue placeholder="Seleccioná un nivel" />
                     </SelectTrigger>
                     <SelectContent position="popper">
-                      {Object.entries(DEGREE_LEVEL_LABEL).map(([value, label]) => (
+                      {Object.entries(DEGREE_LEVEL_LABELS).map(([value, label]) => (
                         <SelectItem key={value} value={value}>
                           {label}
                         </SelectItem>
