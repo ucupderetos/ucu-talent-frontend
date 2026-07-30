@@ -3,13 +3,10 @@
 //
 // ⚠️ PUNTO DE CONFLICTO entre los 3 grupos — coordinar antes de editar.
 //
-// ⚠️ NINGÚN `href` puede ser prefijo de otro. El item activo se resuelve por
-// prefijo en tres lugares (`sidebar.tsx`, y dos veces en `navbar.tsx`), así que
-// un href padre se traga a sus hijos: resalta dos items a la vez en el sidebar
-// y, en el navbar, `items.find` devuelve el padre con `isNested = true` — o sea
-// que el header queda esperando un `usePageBreadcrumb` que la pantalla no llama
-// y muestra un Skeleton para siempre. Por eso las pantallas de admin cuelgan
-// todas de `/moderacion/*` y ninguna se queda con `/moderacion` a secas.
+// El item activo lo resuelve `findActiveNavItem` (abajo), la única
+// implementación del repo: la usan `sidebar.tsx` y `navbar.tsx` (breadcrumb y
+// Sheet mobile). Antes cada uno hacía su propio `pathname.startsWith(href)` y
+// habían divergido entre sí.
 
 import {
   BriefcaseIcon,
@@ -55,3 +52,39 @@ export const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
     { label: "Ofertas", href: "/moderacion/ofertas", icon: ShieldCheckIcon },
   ],
 };
+
+/**
+ * ¿Esta ruta cae dentro de esta sección? Match exacto, o ruta anidada debajo
+ * del item (`/puestos/123/postulantes` cae en `/puestos`).
+ *
+ * La barra final es lo que hace que sea el segmento y no el texto: sin ella,
+ * `/perfil` matchearía también `/perfil-empresa`, que es otra sección.
+ */
+function matchesNavItem(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * El item de nav activo para una ruta, o `undefined` si ninguno la cubre.
+ *
+ * **Gana el match más específico** (el `href` más largo de los que matchean).
+ * Eso es lo que permite que un href padre y sus hijos convivan en el mismo
+ * menú: estando en `/moderacion/ofertas`, un item `/moderacion` matchea igual,
+ * pero pierde contra el hijo. Sin este criterio, el padre se los tragaba —
+ * resaltaba dos items a la vez en el sidebar y, en el navbar, devolvía el padre
+ * con `isNested = true`, dejando el header esperando un `usePageBreadcrumb` que
+ * la pantalla nunca llama (Skeleton para siempre).
+ */
+export function findActiveNavItem(
+  items: readonly NavItem[],
+  pathname: string,
+): NavItem | undefined {
+  let active: NavItem | undefined;
+
+  for (const item of items) {
+    if (!matchesNavItem(pathname, item.href)) continue;
+    if (!active || item.href.length > active.href.length) active = item;
+  }
+
+  return active;
+}

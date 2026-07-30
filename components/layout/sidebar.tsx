@@ -14,7 +14,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { NAV_BY_ROLE } from "@/components/layout/nav-items";
+import { NAV_BY_ROLE, findActiveNavItem } from "@/components/layout/nav-items";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLogout } from "@/hooks/use-logout";
@@ -32,6 +32,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const items = NAV_BY_ROLE[role];
+  const activeItem = findActiveNavItem(items, pathname);
   const logout = useLogout();
 
   const logoutButton = (
@@ -97,7 +98,7 @@ export function Sidebar({
 
         <nav className="flex flex-col gap-1 p-2">
           {items.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            const isActive = item.href === activeItem?.href;
             const link = (
               <Link
                 key={item.href}
