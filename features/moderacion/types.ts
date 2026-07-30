@@ -88,7 +88,7 @@ export interface AdminStudentEducation extends Education {
  *  el contrato actual no expone. */
 export interface AdminStudentDetail {
   user: User;
-  profile: StudentProfile;
+  profile: StudentProfile | null;
   education: AdminStudentEducation[];
   workExperience: WorkExperience[];
 }

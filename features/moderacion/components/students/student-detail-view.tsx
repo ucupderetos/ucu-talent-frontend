@@ -26,7 +26,8 @@ import {
 
 import { EmptyState } from "@/components/layout/empty-state";
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfileImage } from "@/hooks/use-profile-image";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -72,12 +73,15 @@ function formatWorkDateRange({ startDate, endDate }: WorkExperience): string {
 
 export function StudentDetailView({ studentProfileId }: { studentProfileId: string }) {
   const { data: student, isLoading, isError } = useAdminStudentDetail(studentProfileId);
+  const { imageUrl } = useProfileImage(student?.user.userId);
 
   usePageBreadcrumb(
     isLoading
       ? undefined
       : student
-        ? `${student.profile.name} ${student.profile.surname}`
+        ? student.profile
+          ? `${student.profile.name} ${student.profile.surname}`
+          : student.user.email
         : null,
   );
 
@@ -102,6 +106,7 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
   }
 
   const { user, profile, education, workExperience } = student;
+  const displayName = profile ? `${profile.name} ${profile.surname}` : user.email;
 
   return (
     <div className="flex flex-col gap-6">
@@ -109,15 +114,14 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
 
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="lg">
+          {imageUrl && <AvatarImage src={imageUrl} alt="" />}
           <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-            {initialsFrom(profile.name, profile.surname)}
+            {profile ? initialsFrom(profile.name, profile.surname) : "?"}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-2xl font-semibold tracking-tight">
-              {profile.name} {profile.surname}
-            </h1>
+            <h1 className="truncate text-2xl font-semibold tracking-tight">{displayName}</h1>
             <AccountStatusBadge status={user.status} />
           </div>
           <p className="mt-1 flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
@@ -135,7 +139,7 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
           <StudentModerationActions
             userId={user.userId}
             status={user.status}
-            displayName={`${profile.name} ${profile.surname}`}
+            displayName={displayName}
           />
         </CardContent>
       </Card>
@@ -153,7 +157,11 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
               <InformationItem
                 icon={IdCardIcon}
                 label="Documento"
-                value={`${DOCUMENT_TYPE_LABELS[profile.documentType]} ${profile.documentNumber}`}
+                value={
+                  profile
+                    ? `${DOCUMENT_TYPE_LABELS[profile.documentType]} ${profile.documentNumber}`
+                    : "Perfil incompleto"
+                }
               />
               <InformationItem icon={UserRoundIcon} label="Rol" value="Alumno" />
               <InformationItem
@@ -183,7 +191,7 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
                 <ContactLink href={`mailto:${user.email}`}>{user.email}</ContactLink>
               </InformationItem>
               <InformationItem icon={PhoneIcon} label="Teléfono">
-                {profile.phoneNumber ? (
+                {profile?.phoneNumber ? (
                   <ContactLink href={`tel:${profile.phoneNumber}`}>
                     {profile.phoneNumber}
                   </ContactLink>
@@ -192,7 +200,7 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
                 )}
               </InformationItem>
               <InformationItem icon={ExternalLinkIcon} label="LinkedIn">
-                {profile.linkedinUrl ? (
+                {profile?.linkedinUrl ? (
                   <ContactLink href={profile.linkedinUrl} external>
                     {profile.linkedinUrl}
                   </ContactLink>
@@ -213,7 +221,7 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {profile.skills.length > 0 ? (
+          {profile && profile.skills.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {profile.skills.map((skill, index) => (
                 <Badge
