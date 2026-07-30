@@ -4,11 +4,9 @@
 // presentación: recibe la fila ya resuelta por use-feed-vacancies.ts.
 
 import Link from "next/link";
-import { BookmarkIcon, BriefcaseIcon, MapPinIcon } from "lucide-react";
-import { toast } from "sonner";
+import { BriefcaseIcon, MapPinIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { FeedVacancyRow } from "@/features/puestos/types";
@@ -56,24 +54,9 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
     >
       <Card className="gap-3">
         <CardContent className="flex flex-1 flex-col gap-3">
-          <div className="flex items-start justify-between gap-2">
-            <span className="truncate text-sm font-semibold text-primary">
-              {vacancy.companyName}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 shrink-0 text-muted-foreground"
-              aria-label="Guardar vacante"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toast.info("Guardar vacantes todavía no está disponible.");
-              }}
-            >
-              <BookmarkIcon className="size-4" />
-            </Button>
-          </div>
+          <span className="truncate text-sm font-semibold text-primary">
+            {vacancy.companyName}
+          </span>
 
           <div>
             <h3 className="font-semibold leading-snug">{vacancy.name}</h3>
