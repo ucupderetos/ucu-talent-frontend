@@ -59,7 +59,7 @@ const MODERATION_MESSAGE: Record<AccountStatus, string> = {
   APROBADO:
     "El alumno está habilitado para postularse. Podés darlo de baja si deja de cumplir los requisitos.",
   RECHAZADO:
-    "El alumno está rechazado y no puede realizar nuevas postulaciones.",
+    "El alumno está rechazado y no puede postularse. Podés aprobarlo si la situación cambió.",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {

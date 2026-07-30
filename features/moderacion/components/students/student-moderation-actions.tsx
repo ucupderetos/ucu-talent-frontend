@@ -103,7 +103,10 @@ const ACTION_CONFIG: Record<StudentModerationAction, ActionConfig> = {
 const AVAILABLE_ACTIONS: Record<AccountStatus, StudentModerationAction[]> = {
   PENDIENTE: ["approve", "reject"],
   APROBADO: ["deactivate"],
-  RECHAZADO: [],
+  // el backend permite alternar APROBADO <-> RECHAZADO libremente (solo
+  // bloquea volver a PENDIENTE), asi que un alumno rechazado se puede
+  // volver a aprobar.
+  RECHAZADO: ["approve"],
 };
 
 interface StudentModerationActionsProps {
