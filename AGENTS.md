@@ -234,8 +234,8 @@ de títulos distinta todavía; si se agrega una, el punto de cambio es esa varia
 
 | Uso | Clases | Ejemplo real |
 |---|---|---|
-| Título de página | `text-2xl font-semibold tracking-tight` | `PageHeader` (`h1`) |
-| Bajada de página | `text-sm text-muted-foreground` | `PageHeader` (`p`, con `mt-1`) |
+| Título de página | `text-2xl font-semibold tracking-tight` | `h1` del Navbar (header dinámico) |
+| Bajada de página | `text-sm text-muted-foreground` | — (no hay bajada de página hoy; ninguna pantalla la usa) |
 | Título de card | `font-heading text-base font-medium` | `CardTitle` |
 | Cuerpo / texto de control | `text-sm` (formularios: `text-base` en el input, `md:text-sm`) | `Input`, `CardDescription` |
 | Label de campo | `text-sm font-medium` | `FieldLabel` / `FieldTitle` |
@@ -249,12 +249,14 @@ quedan sin título ni bajada visibles en el contenido — es a propósito, no un
 crea un componente nuevo por pantalla o por rol (tipo `DashboardHeader`) aunque sea solo
 para admin.
 
-`PageHeader` (`components/layout/page-header.tsx`) existía como contenedor de ese header
-(`title`/`description`/`actions`), pero **hoy no lo renderiza ninguna pantalla**: el título
-y la bajada los da el Navbar (arriba) y la acción primaria pasó a la fila de filtros,
-alineada a la derecha (**2026-07-28** — ver `company-vacancies-view.tsx` y "Barras de
-filtros / toolbars" más abajo). El componente queda disponible por si alguna pantalla
-vuelve a necesitar un header propio, pero sin usos actuales.
+⛔ **`PageHeader` (`components/layout/page-header.tsx`) se borró (2026-07-30).** Existía
+como contenedor de ese header (`title`/`description`/`actions`) "por si alguna pantalla
+volvía a necesitarlo", pero nunca tuvo un uso real: el título y la bajada los da el Navbar
+(arriba) y la acción primaria pasó a la fila de filtros, alineada a la derecha
+(**2026-07-28** — ver `company-vacancies-view.tsx` y "Barras de filtros / toolbars" más
+abajo). Sus únicas referencias en el repo eran comentarios explicando por qué NO se
+usaba — código muerto, no un componente disponible. Si en el futuro una pantalla necesita
+un header propio, se arma en el momento; no se resucita este archivo.
 
 ### Tamaño de controles interactivos
 
@@ -400,7 +402,7 @@ No hay tokens de espaciado propios: se usa la escala default de Tailwind
 
 | Nivel | Clase | Dónde |
 |---|---|---|
-| Página → header | `mb-6` | Separación entre `PageHeader` y el contenido de la página. |
+| Página → header | `mb-6` | Separación entre la fila de filtros/acciones y el contenido de la página. |
 | Contenedor de página | `p-4 md:p-6` | `<main>` de `AppShell` — el padding de toda pantalla autenticada. |
 | Entre secciones de una página | `gap-6` | Bloques grandes dentro de una pantalla (ver `VacancyFeedView`). |
 | Grillas de cards | `gap-4` | `grid` de resultados (feed, tablas en tarjetas). |
@@ -1148,8 +1150,9 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
 
 - `components/ui/`: 16 componentes sobre Radix + tema del preset, incluido `field`
   (el reemplazo de `form`).
-- `components/layout/`: `AppShell`, `Navbar`, `Sidebar`, `PageHeader`, `EmptyState`,
-  `nav-items.ts`. Responsive, verificado en mobile y desktop.
+- `components/layout/`: `AppShell`, `Navbar`, `Sidebar`, `EmptyState`, `nav-items.ts`.
+  Responsive, verificado en mobile y desktop. (`PageHeader` existió acá — borrado
+  2026-07-30 por no tener uso real, ver *Tipografía*.)
 - `layout.tsx` de los 5 route groups, con `RoleGuard` / `GuestOnly`.
 - `app/providers.tsx`: `QueryClient` con los defaults de TanStack Query.
 - `types/index.ts` y los 5 `features/<x>/types.ts`.

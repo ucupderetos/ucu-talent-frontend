@@ -77,8 +77,7 @@ function JobWizardSteps({ currentStep }: { currentStep: number }) {
 
 /** Header del wizard: solo la barra de pasos. El título de la pantalla lo
  *  muestra el Navbar como breadcrumb "Crear oferta > <paso actual>" (header
- *  dinámico) — por AGENTS.md no se repite como `<h1>`/bajada en el contenido,
- *  así que ya no se usa `PageHeader` con `title`/`description`. */
+ *  dinámico) — por AGENTS.md no se repite como `<h1>`/bajada en el contenido. */
 export function JobWizardHeader({ currentStep }: { currentStep: number }) {
   const step = JOB_WIZARD_STEPS.find((s) => s.number === currentStep);
   usePageBreadcrumb(step?.label ?? null);
