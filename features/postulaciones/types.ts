@@ -10,8 +10,48 @@ import type {
   Vacancy,
   VacancyApplication,
   VacancyApplicationStatus,
+  VacancyStatus,
   WorkExperience,
 } from "@/types";
+
+// ---------------------------------------------------------------------------
+// `GET /vacancy-application/me/detailed` (empresa dueña o ADMIN).
+// ---------------------------------------------------------------------------
+
+/**
+ * Wire: resumen anidado `application` de `GET /vacancy-application/me/detailed`.
+ * Ya trae `vacancyName`/`companyId`/`companyName`/`vacancyStatus` resueltos —
+ * a diferencia de `VacancyApplicationResponse` (plano, sección 6 de
+ * `docs/ENDPOINTS.md`).
+ *
+ * ⚠️ **Sigue SIN `studentProfileId`.** No identifica al alumno postulante, así
+ * que NO reemplaza el fetch a `GET /student-profile/{id}` que hace
+ * `use-company-applicants.ts` para el nombre de la fila — solo evita el 1+N
+ * contra `GET /vacancy` (colección completa, filtrada por `companyId` en el
+ * cliente) + un `GET /vacancy-application?vacancyId=` por cada vacante propia.
+ */
+export interface VacancyApplicationSummary {
+  vacancyApplicationId: string;
+  vacancyId: string;
+  vacancyName: string;
+  companyId: string;
+  companyName: string;
+  appliedAt: string;
+  status: VacancyApplicationStatus;
+  vacancyStatus: VacancyStatus;
+}
+
+/**
+ * Wire: item de `GET /vacancy-application/me/detailed`. Trae la `Vacancy`
+ * completa (se reusa el tipo core, sin duplicar sus campos) más
+ * `companyName`/`areaName` ya resueltos.
+ */
+export interface VacancyApplicationDetailedResponse {
+  application: VacancyApplicationSummary;
+  vacancy: Vacancy;
+  companyName: string;
+  areaName: string;
+}
 
 /**
  * Detalle del postulante: la empresa ve el CV completo del candidato.

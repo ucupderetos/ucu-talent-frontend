@@ -169,6 +169,26 @@ export interface PendingStudentsFilters {
 // ---------------------------------------------------------------------------
 
 /**
+ * Wire: `GET /vacancy-application/detailed` (ADMIN) — listado global de
+ * postulaciones YA resuelto: la respuesta trae `application` (mismo shape que
+ * `VacancyApplication`, con `studentProfileId`/`accepted`) más
+ * `studentName`/`studentSurname`/`studentEmail`/`vacancyId`/`vacancyName`/
+ * `companyId`/`companyName` — sin necesidad de cruzar por separado
+ * `StudentProfile`/`User`/`Vacancy`/`Company` como hacía la versión anterior
+ * de `use-applications.ts` (fetch-all × 4 + un GET por status del enum).
+ */
+export interface AdminApplicationDetailedResponse {
+  application: VacancyApplication;
+  studentName: string;
+  studentSurname: string;
+  studentEmail: string;
+  vacancyId: string;
+  vacancyName: string;
+  companyId: string;
+  companyName: string;
+}
+
+/**
  * Fila de la tabla de postulaciones del admin: la `VacancyApplication` del
  * MER más los datos derivados que la pantalla necesita mostrar (postulante,
  * oferta, empresa). No es una entidad del MER, por eso vive acá y no en
@@ -179,9 +199,10 @@ export interface PendingStudentsFilters {
  * contexto), esta fila necesita el nombre de la oferta y de la empresa
  * explícitos porque cruza TODAS las empresas en una sola tabla.
  *
- * 🔴 Sin endpoint real: `docs/ENDPOINTS.md` no tiene un listado global de
- * postulaciones para ADMIN (solo `?studentProfileId=` por alumno puntual, y
- * `/status-summary` para totales) — ver el aviso en `use-applications.ts`.
+ * Se arma directo desde `AdminApplicationDetailedResponse` (`GET
+ * /vacancy-application/detailed`, ver `use-applications.ts`) — reemplaza el
+ * 🔴 anterior ("sin endpoint real, hay que fetch-all × 4 y cruzar en el
+ * cliente").
  */
 export interface AdminApplicationRow extends VacancyApplication {
   studentName: string;
