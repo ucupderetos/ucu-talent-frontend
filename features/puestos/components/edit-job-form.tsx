@@ -286,10 +286,10 @@ export function EditJobForm({
       values.salaryMode === "free"
         ? (values.salaryText ?? "").trim()
         : formatSalary(
-          values.salaryCurrency as SalaryCurrency,
-          values.salaryMin ?? "",
-          values.salaryMax ?? "",
-        );
+            values.salaryCurrency as SalaryCurrency,
+            values.salaryMin ?? "",
+            values.salaryMax ?? "",
+          );
 
     onSubmit({
       name: values.name,
@@ -381,12 +381,12 @@ export function EditJobForm({
 
             <Field data-invalid={Boolean(errors.modality)}>
               <FieldLabel>Modalidad *</FieldLabel>
-                <ModalitySelector
-                  value={modality}
-                  onChange={(value) => setValue("modality", value, { shouldValidate: true })}
-                  disabled={isLocked}
-                />
-                <FieldError errors={[errors.modality]} />
+              <ModalitySelector
+                value={modality}
+                onChange={(value) => setValue("modality", value, { shouldValidate: true })}
+                disabled={isLocked}
+              />
+              <FieldError errors={[errors.modality]} />
             </Field>
 
             <Field data-invalid={Boolean(errors.location)}>

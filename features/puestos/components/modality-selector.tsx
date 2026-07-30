@@ -5,7 +5,7 @@ import { HomeIcon, LaptopIcon, MapPinIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Modality } from "@/types";
 
-export const MODALITY_OPTIONS = [
+const MODALITY_OPTIONS = [
   { value: "PRESENCIAL", label: "Presencial", helper: "En sitio", icon: MapPinIcon },
   { value: "HIBRIDO", label: "Híbrida", helper: "Combinada", icon: HomeIcon },
   { value: "REMOTO", label: "Remota", helper: "A distancia", icon: LaptopIcon },
