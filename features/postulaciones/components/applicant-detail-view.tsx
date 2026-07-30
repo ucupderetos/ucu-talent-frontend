@@ -16,12 +16,13 @@
 // VISTO — es la empresa "abriendo el perfil del postulante", que es
 // justamente el disparador real de esa transición (ver AGENTS.md).
 //
-// Deliberadamente NO incluye: notas internas, historial de estados, foto de
-// perfil, ubicación/experiencia/disponibilidad resumidas ni botón de
-// descargar CV — ninguno de esos campos existe hoy en el contrato
-// (`StudentProfile`/`VacancyApplication`, ver types/index.ts). Sí muestra
-// educación y experiencia laboral: esas son entidades reales del MER
-// (`Education`/`WorkExperience`) que la empresa puede ver.
+// Deliberadamente NO incluye: notas internas, historial de estados, ni
+// ubicación/experiencia/disponibilidad resumidas — ninguno de esos campos
+// existe hoy en el contrato (`StudentProfile`/`VacancyApplication`, ver
+// types/index.ts). Sí muestra educación y experiencia laboral: esas son
+// entidades reales del MER (`Education`/`WorkExperience`) que la empresa puede
+// ver, y desde 2026-07-30 también la foto de perfil y el **CV adjunto**
+// (`StudentProfile.cvFile`), que sí existen en el contrato.
 
 import { useEffect } from "react";
 import Link from "next/link";
@@ -29,6 +30,7 @@ import {
   ArrowLeftIcon,
   BriefcaseIcon,
   ExternalLinkIcon,
+  FileTextIcon,
   GraduationCapIcon,
   MailIcon,
   PhoneIcon,
@@ -36,12 +38,14 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout/empty-state";
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { useCvUrl } from "@/hooks/use-cv";
 import { useSignedProfileImageUrl } from "@/hooks/use-profile-image";
 import { ApplicationStatusBadge } from "@/components/vacancies/application-status-badge";
 import { useApplicantDetail } from "@/features/postulaciones/hooks/use-applicant-detail";
@@ -57,6 +61,52 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
 
 function formatDate(iso: string | null): string {
   return iso ? dateFormatter.format(new Date(iso)) : "Actualidad";
+}
+
+/**
+ * Acceso al CV adjunto del postulante. Los tres estados que NO son "acá está el
+ * link" se muestran como texto, no como un botón deshabilitado: un botón que no
+ * hace nada obliga a adivinar por qué.
+ *
+ * `detail.profile` ya es el `StudentProfile` completo, así que la key del CV
+ * viene incluida — lo único que falta es canjearla por la URL firmada.
+ */
+function CvAction({ cvFile }: { cvFile: string | null }) {
+  const { cvUrl, isLoading, isUnavailable } = useCvUrl(cvFile);
+
+  if (!cvFile) {
+    return <p className="text-sm text-muted-foreground">No adjuntó CV</p>;
+  }
+
+  if (isLoading) {
+    return <Skeleton className="h-8 w-28 rounded-lg" />;
+  }
+
+  // Hay CV subido pero el backend no puede firmar su URL (`503`: el storage del
+  // entorno no está configurado — ver el aviso en `hooks/use-cv.ts`). Sin este
+  // texto la pantalla se ve igual que la de un postulante que no adjuntó nada.
+  if (isUnavailable || !cvUrl) {
+    return <p className="text-sm text-muted-foreground">CV no disponible en este momento</p>;
+  }
+
+  return (
+    // Es el CTA principal de la pantalla para quien está revisando postulantes,
+    // así que va con el color de marca escrito literal (`bg-ucu-blue`, no el
+    // token `bg-primary`) y con el alto de un CTA suelto en contenido (`h-10
+    // px-6`) — las dos cosas, tal como las pide AGENTS.md.
+    <Button
+      asChild
+      type="button"
+      className="h-10 bg-ucu-blue px-6 text-white hover:bg-ucu-blue/90"
+    >
+      {/* `rel` obligatorio con target="_blank": la URL firmada es de GCS, un
+          origen ajeno. */}
+      <a href={cvUrl} target="_blank" rel="noopener noreferrer">
+        <FileTextIcon />
+        Ver CV
+      </a>
+    </Button>
+  );
 }
 
 function BackLink() {
@@ -133,12 +183,12 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
     <div className="flex flex-col gap-6">
       <BackLink />
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Avatar size="lg">
           {imageUrl && <AvatarImage src={imageUrl} alt="" />}
           <AvatarFallback>{initialsFrom(detail.profile.name, detail.profile.surname)}</AvatarFallback>
         </Avatar>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-semibold tracking-tight">
             {detail.profile.name} {detail.profile.surname}
           </h1>
@@ -147,6 +197,10 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
             <span className="truncate">{detail.user.email}</span>
           </p>
         </div>
+
+        {/* El CV va acá arriba, no en una card más abajo: para quien está
+            revisando postulantes es la acción principal de la pantalla. */}
+        <CvAction cvFile={detail.profile.cvFile} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

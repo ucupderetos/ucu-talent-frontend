@@ -58,6 +58,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSession } from "@/hooks/use-session";
+import { CvUploader } from "@/features/perfil/components/cv-uploader";
 import { EducationTab, type EducationTabHandle } from "@/features/perfil/components/education-tab";
 import { PersonalInfoTab } from "@/features/perfil/components/personal-info-tab";
 import { SkillsTab } from "@/features/perfil/components/skills-tab";
@@ -150,8 +151,21 @@ export function StudentProfileView() {
                 </TabsTrigger>
               </TabsList>
 
+              {/* El CV va con la información personal (misma sección en las dos
+                  variantes de layout): es un dato de identidad más, no amerita
+                  una quinta pestaña propia. */}
               <TabsContent value="personal" className="mt-4">
-                <PersonalInfoTab profile={data.profile} draft={draft} onDraftChange={updateDraft} />
+                <div className="flex flex-col gap-6">
+                  <PersonalInfoTab
+                    profile={data.profile}
+                    draft={draft}
+                    onDraftChange={updateDraft}
+                  />
+                  <CvUploader
+                    studentProfileId={data.profile.studentProfileId}
+                    cvFile={data.profile.cvFile}
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="experiencia" className="mt-4">
@@ -182,7 +196,17 @@ export function StudentProfileView() {
           {!isDesktop && (
             <div className="flex flex-col gap-6">
               <ProfileSection icon={UserIcon} title="Información personal">
-                <PersonalInfoTab profile={data.profile} draft={draft} onDraftChange={updateDraft} />
+                <div className="flex flex-col gap-4">
+                  <PersonalInfoTab
+                    profile={data.profile}
+                    draft={draft}
+                    onDraftChange={updateDraft}
+                  />
+                  <CvUploader
+                    studentProfileId={data.profile.studentProfileId}
+                    cvFile={data.profile.cvFile}
+                  />
+                </div>
               </ProfileSection>
 
               <ProfileSection
