@@ -17,12 +17,10 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import { MOCK_APPLICATIONS, MOCK_STUDENT_PROFILES, MOCK_VACANCIES } from "@/lib/fixtures";
 import type { ApplicantFilters, ApplicantOrder, ApplicantRow } from "@/features/postulaciones/types";
 import type { Paginated, StudentProfile, Vacancy, VacancyApplication } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
-const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function companyApplicantsQueryKey(
@@ -67,8 +65,6 @@ async function fetchCompanyApplicants(
  *  `studentProfileId`) + nombre de la oferta, para TODAS las vacantes de esta
  *  empresa. */
 async function buildRows(companyId: string, signal?: AbortSignal): Promise<ApplicantRow[]> {
-  if (MOCK_ROLE) return buildRowsFromFixtures(companyId);
-
   const vacancies = await fetchCompanyVacancies(companyId, signal);
   const applications = await fetchApplicationsForVacancies(vacancies, signal);
   const profiles = await fetchStudentProfiles(
@@ -80,20 +76,6 @@ async function buildRows(companyId: string, signal?: AbortSignal): Promise<Appli
   const profileById = new Map(profiles.map((profile) => [profile.studentProfileId, profile]));
 
   return applications
-    .map((application) => toRow(application, vacancyById, profileById))
-    .filter((row): row is ApplicantRow => row !== null);
-}
-
-function buildRowsFromFixtures(companyId: string): ApplicantRow[] {
-  const ownVacancyIds = new Set(
-    MOCK_VACANCIES.filter((v) => v.companyId === companyId).map((v) => v.vacancyId),
-  );
-  const vacancyById = new Map<string, Vacancy>(MOCK_VACANCIES.map((v) => [v.vacancyId, v]));
-  const profileById = new Map<string, StudentProfile>(
-    MOCK_STUDENT_PROFILES.map((p) => [p.studentProfileId, p]),
-  );
-
-  return MOCK_APPLICATIONS.filter((application) => ownVacancyIds.has(application.vacancyId))
     .map((application) => toRow(application, vacancyById, profileById))
     .filter((row): row is ApplicantRow => row !== null);
 }

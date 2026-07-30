@@ -8,15 +8,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { MOCK_VACANCIES } from "@/lib/fixtures";
 import { fetchCompanyVacancies } from "@/features/postulaciones/hooks/use-company-applicants";
 
 interface VacancyOption {
   value: string;
   label: string;
 }
-
-const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 /** @public para invalidación puntual futura (AGENTS.md). */
 export function companyVacancyOptionsQueryKey(companyId: string | undefined) {
@@ -37,13 +34,6 @@ async function fetchVacancyOptions(
   companyId: string,
   signal?: AbortSignal,
 ): Promise<VacancyOption[]> {
-  if (MOCK_ROLE) {
-    return MOCK_VACANCIES.filter((v) => v.companyId === companyId).map((v) => ({
-      value: v.vacancyId,
-      label: v.name,
-    }));
-  }
-
   const vacancies = await fetchCompanyVacancies(companyId, signal);
   return vacancies.map((vacancy) => ({ value: vacancy.vacancyId, label: vacancy.name }));
 }

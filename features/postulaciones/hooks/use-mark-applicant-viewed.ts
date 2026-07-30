@@ -18,10 +18,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import { MOCK_APPLICATIONS } from "@/lib/fixtures";
 import type { VacancyApplication } from "@/types";
-
-const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
 
 export function useMarkApplicantViewed() {
   const queryClient = useQueryClient();
@@ -34,24 +31,7 @@ export function useMarkApplicantViewed() {
   });
 }
 
-async function markViewed(vacancyApplicationId: string): Promise<VacancyApplication | undefined> {
-  if (MOCK_ROLE) {
-    const index = MOCK_APPLICATIONS.findIndex(
-      (a) => a.vacancyApplicationId === vacancyApplicationId,
-    );
-    if (index === -1) return undefined;
-
-    const application = MOCK_APPLICATIONS[index];
-    if (application.status !== "PENDIENTE") return application;
-
-    // No mutar el objeto importado en su lugar (efecto secundario oculto que
-    // podía filtrarse a cualquier otro consumidor de MOCK_APPLICATIONS): se
-    // reemplaza la posición por una copia con el status actualizado.
-    const updated: VacancyApplication = { ...application, status: "VISTO" };
-    MOCK_APPLICATIONS[index] = updated;
-    return updated;
-  }
-
+async function markViewed(vacancyApplicationId: string): Promise<VacancyApplication> {
   return apiClient.put<VacancyApplication>(`/vacancy-application/${vacancyApplicationId}`, {
     status: "VISTO",
   });
