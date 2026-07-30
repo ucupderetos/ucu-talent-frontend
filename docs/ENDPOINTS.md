@@ -2,14 +2,15 @@
 
 > Transcripción de `UCU Talent - API Contract - Frontend / Backend` (revisión
 > basada en backlog funcional actualizado, recibida 2026-07-27). Este es el
-> documento que `AGENTS.md` referencia como fuente #3 ("`ENDPOINTS.md` dice
+> documento que `docs/agents/sources-and-precedence.md` referencia como
+> fuente #3 ("`ENDPOINTS.md` dice
 > contra qué podemos programar ahora mismo") — el contrato real, de mayor
 > precedencia que el MER y el SRS. Marcado como **"Contrato funcional
 > cerrado"** por el equipo de backend: las reglas de estados, transiciones,
 > fechas, feed, salario y responses de postulaciones de acá son las
 > acordadas para Front y Backend.
 >
-> Si algo de acá contradice una asunción anterior de `AGENTS.md` o de
+> Si algo de acá contradice una asunción anterior de `docs/agents/*.md` o de
 > `types/index.ts`, gana este documento — así lo establece la tabla de
 > precedencia de `docs/agents/sources-and-precedence.md`.
 >

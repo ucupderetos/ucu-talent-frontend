@@ -29,5 +29,6 @@ yarn-error.log*
 README.md
 AGENTS.md
 CLAUDE.md
+docs
 .vscode
 .idea

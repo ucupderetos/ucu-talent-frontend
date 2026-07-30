@@ -94,7 +94,9 @@ function CvAction({ cvFile }: { cvFile: string | null }) {
     // Es el CTA principal de la pantalla para quien está revisando postulantes,
     // así que va con el color de marca escrito literal (`bg-ucu-blue`, no el
     // token `bg-primary`) y con el alto de un CTA suelto en contenido (`h-10
-    // px-6`) — las dos cosas, tal como las pide AGENTS.md.
+    // px-6`) — las dos cosas, tal como las pide
+    // `docs/agents/design-system.md` ("Colores" y "Tamaño de controles
+    // interactivos").
     <Button
       asChild
       type="button"

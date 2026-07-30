@@ -7,8 +7,13 @@
 ```
                             # ⛔ NO hay proxy.ts (ni middleware.ts). Se borró: no puede
                             #    leer la cookie (vive en el dominio de la API) y causaba
-                            #    un loop de redirección — ver "tres capas"
+                            #    un loop de redirección — ver "El acceso se valida
+                            #    en tres capas" en roles-and-access-control.md
 .env.example                # Plantilla de variables — copiar a .env.local
+docs/                       # Documentación del repo — no entra en la imagen Docker
+├── agents/                 # ⚠️ Las decisiones de arquitectura, un doc por sección.
+│                           #    Indexadas desde AGENTS.md (raíz): editar acá, no ahí
+└── ENDPOINTS.md            # ⚠️ Contrato de API vigente (fuente #3)
 app/                        # Rutas (App Router) — casi sin lógica de negocio
 ├── (auth)/                 # ⚠️ layout.tsx: GuestOnly (si ya hay sesión, redirige)
 │   └── {login,registro}/   # registro = wizard multi-paso (user → login → perfil)
@@ -37,7 +42,9 @@ features/<dominio>/         # auth, perfil, puestos, postulaciones, moderacion
 └── types.ts                # Tipos ESPECÍFICOS del dominio (no las entidades core)
 hooks/                      # ⚠️ Hooks app-wide (React) que cruzan dominios: capa de
 │                           #    sesión (use-session, use-current-company, use-logout)
-│                           #    y use-profile-image (foto: la usan Navbar + 2 dominios).
+│                           #    y la lectura de archivos: use-profile-image (foto: la
+│                           #    usan Navbar + 2 dominios) y use-cv (CV: perfil del
+│                           #    alumno + detalle del postulante).
 │                           #    NO van en lib/ (sin React) ni en components/. Un hook de
 │                           #    UN solo dominio va en features/<x>/hooks/
 lib/
@@ -74,7 +81,10 @@ Qué va en cada lado:
 - **`hooks/`** — hooks **app-wide** (transversales a los dominios) que dependen de React,
   así que no pueden vivir en `lib/` (sin React) ni en `components/` (UI que no lee la
   sesión). Hoy: la capa de sesión (`use-session.ts`, `use-current-company.ts`,
-  `use-logout.ts`). No es un cajón para cualquier hook: si un hook es de un solo dominio,
+  `use-logout.ts`) y la **lectura** de archivos del storage (`use-profile-image.ts`,
+  `use-cv.ts` — las *mutaciones* de esos mismos archivos sí viven en
+  `features/perfil/hooks/`, porque solo las dispara ese dominio).
+  No es un cajón para cualquier hook: si un hook es de un solo dominio,
   va en `features/<x>/hooks/`. Solo sube acá lo que lo consumen **varios dominios o
   `components/`** y no tiene otro hogar legal — es lo que evita tanto el import cruzado
   `features/A → features/B` como el `components/ → features/` (ese fue el caso de

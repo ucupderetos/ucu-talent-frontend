@@ -18,11 +18,11 @@
 //   2. `GET /student-profile/cv?cvFile={key}` la canjea por una URL firmada de
 //      Google Cloud Storage, devuelta como texto plano.
 //
-// ⚠️ El paso 2 **no valida rol ni ownership** (A-25 de AGENTS.md, reportado a
-// backend): `getCvFile` solo chequea que exista algún perfil con esa key y que
-// el token no esté vencido, así que cualquier autenticado con la key obtiene la
-// URL. No lo puede arreglar el front — se documenta acá para que nadie lo tome
-// como garantía de acceso.
+// ⚠️ El paso 2 **no valida rol ni ownership** (A-25 de
+// `docs/agents/open-questions.md`, reportado a backend): `getCvFile` solo
+// chequea que exista algún perfil con esa key y que el token no esté vencido,
+// así que cualquier autenticado con la key obtiene la URL. No lo puede arreglar
+// el front — se documenta acá para que nadie lo tome como garantía de acceso.
 
 import { useQuery } from "@tanstack/react-query";
 

@@ -58,8 +58,9 @@ actual — el backend puede haber cambiado desde la última vez que se probó a 
 
 | # | Qué falta |
 |---|---|
-| **A-11** | ✅ **El CV del alumno ya está implementado, las dos puntas.** Alumno (subir/ver/cambiar/eliminar desde `/perfil`): `features/perfil/hooks/use-cv.ts` (mutaciones + validación) + `features/perfil/components/cv-uploader.tsx`, montado en la pestaña/sección "Información personal" de `student-profile-view.tsx`. Empresa (ver el CV del postulante): `CvAction` en `applicant-detail-view.tsx` — `use-applicant-detail.ts` ya traía el `StudentProfile` completo, así que la key viene incluida y no hay request extra. La LECTURA (canjear key → URL firmada) vive en **`hooks/use-cv.ts`**, app-wide, porque la consumen los dos dominios; mismo reparto que la foto de perfil. **Sigue faltando dónde sube la foto un ADMIN** (no tiene pantalla de perfil: el route group `(perfil)` está guardado a ALUMNO+EMPRESA). ⚠️ **Nada de esto se pudo probar contra el backend todavía**: desde `localhost:3000` no hay sesión posible (cookie third-party, ver A-13) y `https://dev.ucutalent.tech` todavía no tiene este código — falta la prueba end-to-end después de mergear y deployar. |
+| **A-11** | **Lo que queda del ítem de archivos.** El CV del alumno ya está implementado de las dos puntas (subida/borrado desde `/perfil` y descarga desde el detalle del postulante) — el detalle de qué archivo hace qué está en A-24, en la tabla de arriba. Sigue faltando: **(a) dónde sube la foto un ADMIN** — no tiene pantalla de perfil, el route group `(perfil)` está guardado a ALUMNO+EMPRESA; **(b) la prueba end-to-end contra el backend** — desde `localhost:3000` no hay sesión posible (cookie third-party, ver A-13) y `https://dev.ucutalent.tech` todavía no tiene este código, así que hay que verificarlo después de mergear y deployar. |
 | **A-20** | **Semilla de `Area`/`Degree` en `api-dev`** — se confirma con `GET /area`/`GET /degree` logueado. |
 
-No quedan ítems en "🟡 Definiciones de UI (sin bloqueo de backend)" — los dos que había (A-06, A-07)
-se resolvieron contra el código fuente del backend, ver la tabla de arriba.
+No queda ningún ítem 🟡 (definiciones de UI sin bloqueo de backend): los dos que había
+(A-06, A-07) se resolvieron contra el código fuente del backend y están en la tabla de
+arriba. Por eso este documento tiene solo dos tablas y no tres.

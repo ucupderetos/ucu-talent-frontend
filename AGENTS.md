@@ -13,6 +13,19 @@ This version has breaking changes — APIs, conventions, and file structure may 
 > cada sección vive ahora en su propio doc, enlazado abajo. Al editar una decisión, el
 > archivo a tocar es el de `docs/agents/`, no este.
 
+## Cómo usar este archivo
+
+Antes de escribir código, **abrí el doc de la tabla que cubra lo que vas a tocar** — la
+decisión ya está tomada ahí y no se deduce del código. Como mínimo: un formulario →
+`forms.md`; un fetch → `data-fetching.md`; cualquier cosa visual → `design-system.md`; un
+archivo nuevo → `folder-structure.md`; un endpoint → `docs/ENDPOINTS.md` y
+`sources-and-precedence.md`.
+
+[`agent-rules.md`](docs/agents/agent-rules.md) es el resumen de reglas "siempre / nunca" y
+conviene tenerlo leído siempre, no solo cuando aplica. Si algo que necesitás está en
+[`open-questions.md`](docs/agents/open-questions.md), **se frena y se pregunta** — está
+listado justamente porque falta definirlo.
+
 ## Índice
 
 | Documento | Qué cubre |
