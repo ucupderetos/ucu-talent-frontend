@@ -5,12 +5,14 @@
 // EMPRESA — ver app/(perfil)/perfil/page.tsx.
 
 import { EmptyState } from "@/components/layout/empty-state";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/hooks/use-session";
 import { CompanyAccountStatusBanner } from "@/features/perfil/components/company-account-status-banner";
 import { CompanyProfileForm } from "@/features/perfil/components/company-profile-form";
 import { CompanyProfilePreview } from "@/features/perfil/components/company-profile-preview";
 import { CompanyProfileTips } from "@/features/perfil/components/company-profile-tips";
+import { ProfileImageUploader } from "@/features/perfil/components/profile-image-uploader";
 import { useCompanyProfileForm } from "@/features/perfil/hooks/use-company-profile-form";
 
 export function CompanyProfileView() {
@@ -45,6 +47,24 @@ export function CompanyProfileView() {
             />
           </div>
           <div className="flex flex-col gap-6">
+            {/* La imagen no es parte del formulario: se sube y se borra sola,
+                contra `/user/profile/image`, sin pasar por "Guardar cambios". */}
+            {user && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Imagen de perfil</CardTitle>
+                  <CardDescription>
+                    El logo con el que te van a ver los estudiantes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ProfileImageUploader
+                    userId={user.userId}
+                    fallback={(user.name ?? "?").charAt(0).toUpperCase()}
+                  />
+                </CardContent>
+              </Card>
+            )}
             <CompanyProfilePreview form={form} />
             <CompanyProfileTips />
           </div>
