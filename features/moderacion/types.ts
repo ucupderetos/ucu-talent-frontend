@@ -85,9 +85,10 @@ export interface AdminStudentDetail {
   workExperience: WorkExperience[];
 }
 
-/** Filtros del listado de alumnos. Se resuelven en el cliente sobre
- *  fixtures hoy (no hay endpoint — ver aviso arriba); si llega a existir,
- *  probablemente viajen como query params de un GET paginado. */
+/** Filtros del listado de alumnos. Se resuelven en el cliente sobre los datos
+ *  ya traídos de la API real (`use-students.ts`) — no hay endpoint que
+ *  filtre/pagine del lado del servidor; si llega a existir, probablemente
+ *  viajen como query params de un GET paginado. */
 export interface StudentFilters {
   search?: string;
   degreeIds?: string[];
@@ -158,8 +159,10 @@ export interface AdminApplicationRow extends VacancyApplication {
 /** Orden de la tabla de postulaciones del admin, por fecha de postulación. */
 export type AdminApplicationOrder = "recent" | "oldest";
 
-/** Filtros del listado de postulaciones. Se resuelven en el cliente sobre
- *  fixtures hoy (no hay endpoint — ver aviso arriba). */
+/** Filtros del listado de postulaciones. Se resuelven en el cliente sobre los
+ *  datos ya traídos de la API real (`use-applications.ts`) — sigue sin haber
+ *  un endpoint que liste/filtre esto del lado del servidor, ver el aviso en
+ *  `AdminApplicationRow` arriba. */
 export interface AdminApplicationFilters {
   search?: string;
   vacancyIds?: string[];

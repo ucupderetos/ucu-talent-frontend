@@ -2,7 +2,8 @@
 
 // Pestaña "Formación académica" de Mi perfil: lista de `Education` +
 // alta/edición en un Dialog. No hay campo plano "carrera" (AGENTS.md): cada
-// entrada apunta a un `Degree` (MOCK_DEGREES) y tiene su propio `degreeLevel`.
+// entrada apunta a un `Degree` (catálogo real vía `useDegrees()`, GET /degree)
+// y tiene su propio `degreeLevel`.
 
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";

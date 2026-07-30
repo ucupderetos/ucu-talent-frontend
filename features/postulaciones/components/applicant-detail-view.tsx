@@ -85,9 +85,10 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
     // detalle todavía no cargó cuando este efecto corre por primera vez
     // (`status` es `undefined`), así que hace falta que vuelva a correr
     // cuando `useApplicantDetail` resuelve y `status` pasa a "PENDIENTE".
-    // Repetir la mutación no es un problema: `useMarkApplicantViewed` solo
-    // muta si el estado en fixtures sigue siendo "PENDIENTE", así que una
-    // vez que pasa a "VISTO" este efecto no vuelve a disparar nada.
+    // Repetir la mutación no es un problema: este efecto solo llama a
+    // `markViewed` mientras `status` siga siendo "PENDIENTE"; una vez que la
+    // mutación resuelve y el detalle se refresca a "VISTO", no vuelve a
+    // disparar nada.
     if (status === "PENDIENTE") {
       markViewed(vacancyApplicationId);
     }
