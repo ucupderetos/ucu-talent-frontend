@@ -34,7 +34,7 @@ import {
   PhoneIcon,
 } from "lucide-react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -42,6 +42,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout/empty-state";
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { useSignedProfileImageUrl } from "@/hooks/use-profile-image";
 import { ApplicationStatusBadge } from "@/components/vacancies/application-status-badge";
 import { useApplicantDetail } from "@/features/postulaciones/hooks/use-applicant-detail";
 import { useMarkApplicantViewed } from "@/features/postulaciones/hooks/use-mark-applicant-viewed";
@@ -77,6 +78,9 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
     vacancyApplicationId,
   );
   const { mutate: markViewed } = useMarkApplicantViewed();
+  // El detalle ya trae el `User` del alumno (lo pide para el email), así que la
+  // key de su imagen viene incluida: solo falta canjearla por la URL firmada.
+  const { imageUrl } = useSignedProfileImageUrl(detail?.user.profileImage);
 
   const status = detail?.application.status;
 
@@ -131,6 +135,7 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
 
       <div className="flex items-center gap-3">
         <Avatar size="lg">
+          {imageUrl && <AvatarImage src={imageUrl} alt="" />}
           <AvatarFallback>{initialsFrom(detail.profile.name, detail.profile.surname)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0">

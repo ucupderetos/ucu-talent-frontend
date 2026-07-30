@@ -1,9 +1,9 @@
-// Card de resumen de "Mi perfil": avatar (iniciales — sin foto, A-11 no tiene
-// endpoint de upload todavía) + los datos de identidad, de solo lectura. La
-// edición vive en la pestaña "Información personal" de más abajo.
+// Card de resumen de "Mi perfil": foto de perfil (editable acá mismo) + los
+// datos de identidad, de solo lectura. La edición del resto vive en la pestaña
+// "Información personal" de más abajo.
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProfileImageUploader } from "@/features/perfil/components/profile-image-uploader";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/document-types";
 import type { StudentProfile, User } from "@/types";
 
@@ -21,11 +21,11 @@ export function StudentProfileHeader({
   return (
     <Card>
       <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-        <Avatar size="lg" className="size-16">
-          <AvatarFallback className="text-lg font-medium">
-            {initials(profile.name, profile.surname)}
-          </AvatarFallback>
-        </Avatar>
+        <ProfileImageUploader
+          userId={user.userId}
+          fallback={initials(profile.name, profile.surname)}
+          className="shrink-0"
+        />
 
         <div className="flex flex-1 flex-wrap gap-x-10 gap-y-3">
           <InfoItem label="Nombre completo" value={`${profile.name} ${profile.surname}`} />

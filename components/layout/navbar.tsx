@@ -16,7 +16,7 @@ import { useState } from "react";
 
 import { useBreadcrumbLabel } from "@/components/layout/breadcrumb-context";
 import { NAV_BY_ROLE, findActiveNavItem } from "@/components/layout/nav-items";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLogout } from "@/hooks/use-logout";
+import { useProfileImage } from "@/hooks/use-profile-image";
 import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 
@@ -42,7 +43,8 @@ function displayName(user: User): string {
   return [user.name, user.surname].filter(Boolean).join(" ");
 }
 
-/** Iniciales para el fallback del avatar (sin foto todavía en el MER). */
+/** Iniciales para el fallback del avatar: sin foto subida, o mientras se
+ *  resuelve su URL firmada. */
 function initials(user: User): string {
   return `${user.name?.charAt(0) ?? ""}${user.surname?.charAt(0) ?? ""}`.toUpperCase() || "?";
 }
@@ -53,6 +55,9 @@ export function Navbar({ user }: { user: User | null }) {
   const items = user ? NAV_BY_ROLE[user.role] : [];
   const logout = useLogout();
   const breadcrumbLabel = useBreadcrumbLabel();
+  // Sigue sin leer la sesión: el userId llega por props (`user`), igual que el
+  // nombre. `useProfileImage` es infra app-wide de `hooks/`, como `useLogout`.
+  const { imageUrl } = useProfileImage(user?.userId);
 
   const activeItem = findActiveNavItem(items, pathname);
   const isNested = Boolean(activeItem && pathname !== activeItem.href);
@@ -166,6 +171,7 @@ export function Navbar({ user }: { user: User | null }) {
                   aria-label="Cuenta"
                 >
                   <Avatar size="sm">
+                    {imageUrl && <AvatarImage src={imageUrl} alt="" />}
                     <AvatarFallback>{initials(user)}</AvatarFallback>
                   </Avatar>
                   <span className="hidden max-w-40 truncate text-sm sm:inline">

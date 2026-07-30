@@ -86,6 +86,11 @@ async function request<T>(
 ): Promise<T> {
   const url = buildUrl(path, options.params);
 
+  // Subida de archivos (foto de perfil, CV): el body va como FormData y el
+  // `Content-Type` lo pone el browser, porque tiene que incluir el `boundary`
+  // del multipart. Setearlo a mano acá rompe la request.
+  const isMultipart = body instanceof FormData;
+
   let response: Response;
   try {
     response = await fetch(url, {
@@ -94,8 +99,9 @@ async function request<T>(
       // en cross-origin. Si el backend termina usando un token en header, se
       // cambia acá y en ningún otro lado.
       credentials: "include",
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers:
+        body === undefined || isMultipart ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined || isMultipart ? (body as FormData | undefined) : JSON.stringify(body),
       signal: options.signal,
     });
   } catch (cause) {
@@ -121,7 +127,11 @@ function safeJsonParse(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {
-    // El backend mandó algo que no es JSON (ej. un stack trace de Spring en HTML).
+    // El backend mandó algo que no es JSON. Puede ser un error (un stack trace
+    // de Spring en HTML) o una respuesta legítima de texto plano: los endpoints
+    // de archivos devuelven la URL firmada como `ResponseEntity<String>` cruda,
+    // no como JSON. En los dos casos se devuelve el texto tal cual, así un
+    // `apiClient.get<string>()` recibe la URL sin necesitar un caso especial.
     return text;
   }
 }

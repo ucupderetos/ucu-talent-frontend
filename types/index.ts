@@ -98,6 +98,17 @@ export interface User {
   /** Igual que `name`. Las empresas no tienen apellido (`CompanyResponse` no
    *  lo trae) — queda `undefined` en ese caso. */
   surname?: string;
+  /**
+   * Foto de perfil, para los tres roles. ⚠️ **Es la key del objeto en el
+   * storage, NO una URL** (ej. `"users/profile-image/9f3c…​.png"`): para
+   * mostrarla hay que canjearla por una URL firmada con
+   * `GET /user/profile-image?profileObject={key}` — ver `hooks/use-profile-image.ts`.
+   *
+   * Viene en `UserResponse` (`GET /user/{id}`), **no** en `MeResponse`, así que
+   * `useSession()` no la tiene: quien necesite la foto pide el `User` completo.
+   * `null` si el usuario nunca subió una o la borró.
+   */
+  profileImage?: string | null;
 }
 
 // ---------------------------------------------------------------------------
