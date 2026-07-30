@@ -133,13 +133,13 @@ export interface Area {
 // ---------------------------------------------------------------------------
 
 /**
- * Wire: `CompanyResponse`. No expone `userId` (la PK ya lo es: `companyId` =
- * `userId`). `status`/`reviewedAt`/`adminComment` SÍ vienen acá (confirmado en
- * `docs/ENDPOINTS.md`) además de en `User.status` — es la misma aprobación,
- * duplicada en la respuesta para que la pantalla de perfil no necesite un
- * segundo fetch a `/user/{companyId}` solo para mostrarla.
+ * Wire: `CompanyPublicResponse` — la empresa SIN los campos de moderación
+ * (`reviewedAt`/`adminComment`). Es lo que embeben los DTOs resueltos del
+ * backend (hoy `GET /vacancy/{id}/resolved`), no lo que devuelve
+ * `GET /company/{id}` — ese trae `CompanyResponse`, o sea `Company` completa.
+ * Tiparlo aparte evita prometer campos que en runtime no llegan.
  */
-export interface Company {
+export interface CompanyPublic {
   companyId: string;
   /** Razón social — `Company` sí tiene nombre propio (a diferencia de lo que
    *  se asumía antes de tener el contrato). */
@@ -150,6 +150,16 @@ export interface Company {
   linkedinUrl: string;
   location: Department;
   status: AccountStatus;
+}
+
+/**
+ * Wire: `CompanyResponse`. No expone `userId` (la PK ya lo es: `companyId` =
+ * `userId`). `status`/`reviewedAt`/`adminComment` SÍ vienen acá (confirmado en
+ * `docs/ENDPOINTS.md`) además de en `User.status` — es la misma aprobación,
+ * duplicada en la respuesta para que la pantalla de perfil no necesite un
+ * segundo fetch a `/user/{companyId}` solo para mostrarla.
+ */
+export interface Company extends CompanyPublic {
   /** null hasta que un Admin la revise. */
   reviewedAt: string | null;
   /** Motivo del rechazo o nota de revisión, si el Admin la cargó. */

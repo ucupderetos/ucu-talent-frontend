@@ -3,7 +3,14 @@
 // La entidad `Vacancy` vive en @/types (la comparten moderacion y postulaciones).
 // Acá va solo lo específico: filtros, orden e inputs de formulario.
 
-import type { Company, ContractType, Department, Modality, Vacancy, VacancyStatus } from "@/types";
+import type {
+  CompanyPublic,
+  ContractType,
+  Department,
+  Modality,
+  Vacancy,
+  VacancyStatus,
+} from "@/types";
 
 /**
  * Payload para crear una vacante. Wire: `CreateVacancyRequest`
@@ -126,12 +133,15 @@ export interface FeedVacancyRow extends Vacancy {
 
 /**
  * Detalle de una vacante (RF-PUE / vista alumno): la `Vacancy` del MER más la
- * `Company` dueña y los nombres de `Area` ya resueltos, para no repetir esos
+ * empresa dueña y los nombres de `Area` ya resueltos, para no repetir esos
  * `.find()` en el componente. No es una entidad del MER, por eso vive acá y
  * no en @/types.
+ *
+ * `company` es `CompanyPublic` porque sale de `VacancyResolvedResponse` — ver
+ * el aviso ahí sobre los campos de moderación que ese DTO no trae.
  */
 export interface VacancyDetail extends Vacancy {
-  company: Company;
+  company: CompanyPublic;
   areaName: string;
   /** Área padre de `areaName`, si la tiene (jerarquía de `Area`). `null` en
    *  áreas raíz. */
@@ -150,10 +160,14 @@ export interface VacancyDetail extends Vacancy {
  * `areaName`/`parentAreaName` vienen COMO STRING PLANO, no como `Area`
  * completa (a diferencia de cómo se armaba `VacancyDetail` a mano antes) —
  * el mapeo a `VacancyDetail` en `use-vacancy.ts` lo respeta tal cual.
+ *
+ * ⚠️ `company` es `CompanyPublic`, NO `Company`: el backend embebe acá un
+ * `CompanyPublicResponse`, que no trae `reviewedAt`/`adminComment` (sí los
+ * traía el `GET /company/{companyId}` que este endpoint reemplaza).
  */
 export interface VacancyResolvedResponse {
   vacancy: Vacancy;
-  company: Company;
+  company: CompanyPublic;
   areaName: string;
   parentAreaName: string | null;
 }

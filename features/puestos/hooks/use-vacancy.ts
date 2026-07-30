@@ -2,12 +2,13 @@
 
 // Detalle de una vacante (vista alumno) — RF-PUE.
 //
-// ⚠️ docs/ENDPOINTS.md (ninguna versión, ni la local ni la del backend)
-// documenta esto: `GET /vacancy/{id}/resolved` es un endpoint agregado, mismo
-// criterio que A-22/A-26 (`.../management`, `.../me/detailed`) — resuelve
-// `vacancy` + `company` + `areaName`/`parentAreaName` en una sola llamada, en
-// vez de las tres separadas (`GET /vacancy/{id}` + `GET /company/{companyId}`
-// + `GET /area`) que armaba este hook antes.
+// `GET /vacancy/{id}/resolved` resuelve `vacancy` + `company` +
+// `areaName`/`parentAreaName` en una sola llamada, en vez de las tres
+// separadas (`GET /vacancy/{id}` + `GET /company/{companyId}` + `GET /area`)
+// que armaba este hook antes — mismo criterio que A-22/A-26
+// (`.../management`, `.../me/detailed`). La copia local de `ENDPOINTS.md` no
+// lo documenta; la del repo de backend sí (ver A-27 en
+// docs/agents/open-questions.md).
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
