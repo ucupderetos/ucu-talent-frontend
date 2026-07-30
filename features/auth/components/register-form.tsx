@@ -31,18 +31,11 @@ import { useRegister, type RegistrationProfile } from "@/features/auth/hooks/use
 import type { Registration } from "@/features/auth/types";
 import { ApiError } from "@/lib/api-client";
 import { DEPARTMENT_OPTIONS } from "@/lib/departments";
+import { DOCUMENT_TYPE_OPTIONS } from "@/lib/document-types";
 import { applyFieldErrors } from "@/lib/form-errors";
 import { cn } from "@/lib/utils";
 import { isValidDocumentNumber } from "@/lib/validators";
-import type { Department, DocumentType } from "@/types";
-
-/** Wire: `common.DocumentType`. Labels en español para UI — son cara al
- *  usuario. */
-const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
-  { value: "CEDULA_IDENTIDAD", label: "Cédula de identidad" },
-  { value: "PASAPORTE", label: "Pasaporte" },
-  { value: "DNI", label: "DNI" },
-];
+import type { Department } from "@/types";
 
 /** Ignora acentos/mayúsculas para que "rio" encuentre "Río Negro". */
 function normalizeForSearch(value: string): string {
@@ -351,7 +344,7 @@ export function RegisterForm() {
                 type="email"
                 autoComplete="email"
                 aria-invalid={Boolean(errors.email)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("email")}
               />
               <FieldError errors={[errors.email]} />
@@ -365,7 +358,7 @@ export function RegisterForm() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   aria-invalid={Boolean(errors.password)}
-                  className="h-11 px-4 pr-11 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                  className="h-11 px-4 pr-11 text-base"
                   {...register("password")}
                 />
                 <button
@@ -388,7 +381,7 @@ export function RegisterForm() {
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   aria-invalid={Boolean(errors.confirmPassword)}
-                  className="h-11 px-4 pr-11 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                  className="h-11 px-4 pr-11 text-base"
                   {...register("confirmPassword")}
                 />
                 <button
@@ -430,7 +423,7 @@ export function RegisterForm() {
                 id="name"
                 autoComplete="organization"
                 aria-invalid={Boolean(errors.name)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("name")}
               />
               <FieldError errors={[errors.name]} />
@@ -441,7 +434,7 @@ export function RegisterForm() {
               <Input
                 id="industry"
                 aria-invalid={Boolean(errors.industry)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("industry")}
               />
               <FieldError errors={[errors.industry]} />
@@ -452,7 +445,7 @@ export function RegisterForm() {
               <Input
                 id="description"
                 aria-invalid={Boolean(errors.description)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("description")}
               />
               <FieldError errors={[errors.description]} />
@@ -465,7 +458,7 @@ export function RegisterForm() {
                 type="url"
                 autoComplete="url"
                 aria-invalid={Boolean(errors.webUrl)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("webUrl")}
               />
               <FieldError errors={[errors.webUrl]} />
@@ -477,7 +470,7 @@ export function RegisterForm() {
                 id="linkedinUrl"
                 type="url"
                 aria-invalid={Boolean(errors.linkedinUrl)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("linkedinUrl")}
               />
               <FieldError errors={[errors.linkedinUrl]} />
@@ -559,7 +552,7 @@ export function RegisterForm() {
                 id="name"
                 autoComplete="given-name"
                 aria-invalid={Boolean(errors.name)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("name")}
               />
               <FieldError errors={[errors.name]} />
@@ -571,7 +564,7 @@ export function RegisterForm() {
                 id="surname"
                 autoComplete="family-name"
                 aria-invalid={Boolean(errors.surname)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("surname")}
               />
               <FieldError errors={[errors.surname]} />
@@ -592,7 +585,7 @@ export function RegisterForm() {
                       <SelectValue placeholder="Elegí una opción" />
                     </SelectTrigger>
                     <SelectContent position="popper">
-                      {DOCUMENT_TYPES.map((documentType) => (
+                      {DOCUMENT_TYPE_OPTIONS.map((documentType) => (
                         <SelectItem
                           key={documentType.value}
                           value={documentType.value}
@@ -615,7 +608,7 @@ export function RegisterForm() {
                 type="text"
                 autoComplete="off"
                 aria-invalid={Boolean(errors.documentNumber)}
-                className="h-11 px-4 text-base focus-visible:border-ucu-blue focus-visible:ring-ucu-blue/20"
+                className="h-11 px-4 text-base"
                 {...register("documentNumber")}
               />
               <FieldError errors={[errors.documentNumber]} />

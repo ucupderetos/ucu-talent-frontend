@@ -3,9 +3,14 @@
 // Semilla del formulario de perfil de empresa: trae la `Company` del usuario
 // logueado y la mapea al view-model `CompanyProfile`.
 //
-// Wire: `GET /company?userId={userId}` (docs/ENDPOINTS.md, sección 3) — 🔒
-// Autenticado, devuelve `CompanyResponse`. Como la PK es compartida
-// (`companyId === userId`), el `userId` de la sesión alcanza para resolverla.
+// Wire: `GET /company/{id}` (docs/ENDPOINTS.md, sección 3) — 🔒 Autenticado,
+// devuelve `CompanyResponse`. Como la PK es compartida (`companyId ===
+// userId`), el `userId` de la sesión alcanza para resolverla.
+//
+// ⚠️ Path param, NO query param (`?userId=`) — mismo bug que documenta
+// lib/auth.ts (getDisplayProfile): el recurso propio va por
+// `/company/{id}`, `/company?userId=` da `403` contra api-dev aunque el
+// perfil exista.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -39,10 +44,7 @@ async function fetchCompanyProfile(
   userId: string,
   signal?: AbortSignal,
 ): Promise<CompanyProfile> {
-  const company = await apiClient.get<Company>("/company", {
-    params: { userId },
-    signal,
-  });
+  const company = await apiClient.get<Company>(`/company/${userId}`, { signal });
   return toCompanyProfile(company);
 }
 

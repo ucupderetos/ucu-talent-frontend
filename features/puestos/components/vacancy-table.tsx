@@ -38,14 +38,8 @@ import {
 } from "@/components/vacancies/vacancy-status-badge";
 import { ApiError } from "@/lib/api-client";
 import { useCloseJob } from "@/features/puestos/hooks/use-close-job";
+import { MODALITY_LABELS } from "@/lib/modality";
 import type { CompanyVacancyRow } from "@/features/puestos/types";
-import type { Modality } from "@/types";
-
-const MODALITY_LABEL: Record<Modality, string> = {
-  PRESENCIAL: "Presencial",
-  REMOTO: "Remota",
-  HIBRIDO: "Híbrida",
-};
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   day: "2-digit",
@@ -86,7 +80,7 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
                   {vacancy.name}
                 </Link>
                 <p className="text-sm text-muted-foreground">
-                  {vacancy.areaName} · {vacancy.location} · {MODALITY_LABEL[vacancy.modality]}
+                  {vacancy.areaName} · {vacancy.location} · {MODALITY_LABELS[vacancy.modality]}
                 </p>
               </TableCell>
               <TableCell>

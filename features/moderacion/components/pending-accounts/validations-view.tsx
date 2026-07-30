@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TablePagination } from "@/components/filters/table-pagination";
+import { ListPagination } from "@/components/pagination/list-pagination";
 import {
   usePendingCompanies,
   usePendingCompanyIndustries,
@@ -92,7 +92,7 @@ function CompaniesTab() {
       {!isLoading && !isError && data && data.items.length > 0 && (
         <div className="flex flex-col gap-2">
           <PendingCompaniesTable rows={data.items} />
-          <TablePagination
+          <ListPagination
             page={data.page}
             perPage={data.perPage}
             total={data.total}
@@ -162,7 +162,7 @@ function StudentsTab() {
       {!isLoading && !isError && data && data.items.length > 0 && (
         <div className="flex flex-col gap-2">
           <PendingStudentsTable rows={data.items} />
-          <TablePagination
+          <ListPagination
             page={data.page}
             perPage={data.perPage}
             total={data.total}

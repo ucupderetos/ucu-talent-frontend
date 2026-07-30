@@ -2,9 +2,9 @@
 
 // Pestaña "Experiencia laboral" de Mi perfil: lista de `WorkExperience` +
 // alta/edición en un Dialog (todos los campos son opcionales en el wire, ver
-// WorkExperienceInput en features/perfil/types.ts). Baja sin confirmación:
-// es una lista propia del alumno sobre datos mock, no una acción irreversible
-// contra el backend real todavía.
+// WorkExperienceInput en features/perfil/types.ts). El borrado pega contra
+// `DELETE /work-experience/{id}` real (use-work-experience.ts) y por eso pasa
+// por un diálogo de confirmación, igual que "Formación académica".
 
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
@@ -16,7 +16,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -103,11 +105,23 @@ interface WorkExperienceTabProps {
 export const WorkExperienceTab = forwardRef<WorkExperienceTabHandle, WorkExperienceTabProps>(
   function WorkExperienceTab({ studentProfileId, workExperience, hideAddButton }, ref) {
     const [items, setItems] = useState(workExperience);
+    // Ver el mismo comentario en education-tab.tsx: resincroniza la copia
+    // local durante el render (no un useEffect) si `workExperience` cambia
+    // por fuera de las mutaciones de acá (refetch de fondo tras invalidación,
+    // otra pestaña re-sembrando el perfil), para que no quede desalineada del
+    // server state real.
+    const [prevWorkExperience, setPrevWorkExperience] = useState(workExperience);
+    if (workExperience !== prevWorkExperience) {
+      setPrevWorkExperience(workExperience);
+      setItems(workExperience);
+    }
+
     const [editingItem, setEditingItem] = useState<WorkExperience | "new" | null>(null);
+    const [deletingItem, setDeletingItem] = useState<WorkExperience | null>(null);
 
     const { createWorkExperience } = useCreateWorkExperience();
     const { updateWorkExperience } = useUpdateWorkExperience();
-    const { deleteWorkExperience } = useDeleteWorkExperience();
+    const { deleteWorkExperience, isLoading: isDeleting } = useDeleteWorkExperience();
 
     useImperativeHandle(ref, () => ({
       openCreateDialog: () => setEditingItem("new"),
@@ -137,10 +151,17 @@ export const WorkExperienceTab = forwardRef<WorkExperienceTabHandle, WorkExperie
       setEditingItem(null);
     }
 
-    async function handleDelete(item: WorkExperience) {
-      await deleteWorkExperience({ workExperienceId: item.workExperienceId, studentProfileId });
-      setItems((current) => current.filter((i) => i.workExperienceId !== item.workExperienceId));
+    async function confirmDelete() {
+      if (!deletingItem) return;
+      await deleteWorkExperience({
+        workExperienceId: deletingItem.workExperienceId,
+        studentProfileId,
+      });
+      setItems((current) =>
+        current.filter((i) => i.workExperienceId !== deletingItem.workExperienceId),
+      );
       toast.success("Experiencia laboral eliminada.");
+      setDeletingItem(null);
     }
 
     return (
@@ -191,7 +212,7 @@ export const WorkExperienceTab = forwardRef<WorkExperienceTabHandle, WorkExperie
                       variant="ghost"
                       size="icon-sm"
                       aria-label="Eliminar experiencia"
-                      onClick={() => handleDelete(item)}
+                      onClick={() => setDeletingItem(item)}
                     >
                       <TrashIcon />
                     </Button>
@@ -207,6 +228,38 @@ export const WorkExperienceTab = forwardRef<WorkExperienceTabHandle, WorkExperie
           onOpenChange={(open) => !open && setEditingItem(null)}
           onSubmit={handleSubmit}
         />
+
+        <Dialog open={deletingItem !== null} onOpenChange={(open) => !open && setDeletingItem(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="pr-8">
+              <DialogTitle className="text-lg">¿Eliminar esta experiencia?</DialogTitle>
+              <DialogDescription>
+                {deletingItem && (
+                  <>
+                    <strong>{deletingItem.position || "Esta experiencia"}</strong> se borra de tu
+                    perfil. Esta acción es <strong>irreversible</strong>.
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button" className="w-full sm:w-auto">
+                  Cancelar
+                </Button>
+              </DialogClose>
+              <Button
+                variant="destructive"
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="w-full sm:w-auto"
+              >
+                {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   },

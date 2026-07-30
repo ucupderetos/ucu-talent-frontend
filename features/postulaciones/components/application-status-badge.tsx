@@ -1,9 +1,11 @@
 // Traducción visual de `VacancyApplicationStatus` para "Mis postulaciones"
 // (vista alumno). Un solo lugar para no repetir el mapeo en card, filtros, etc.
-// Mismo criterio de color-por-punto que VacancyStatusBadge
-// (components/vacancies/vacancy-status-badge.tsx).
+// El color del punto sale de application-status-colors.ts (compartido con los
+// otros dos badges de este mismo estado) — el LABEL sigue siendo propio de
+// esta vista.
 
 import { Badge } from "@/components/ui/badge";
+import { APPLICATION_STATUS_DOT_CLASS } from "@/components/vacancies/application-status-colors";
 import { cn } from "@/lib/utils";
 import type { VacancyApplicationStatus } from "@/types";
 
@@ -11,12 +13,6 @@ export const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> 
   PENDIENTE: "Pendiente",
   VISTO: "Vista",
   FINALIZADO: "Finalizada",
-};
-
-const APPLICATION_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
-  PENDIENTE: "bg-warning",
-  VISTO: "bg-chart-2",
-  FINALIZADO: "bg-muted-foreground",
 };
 
 export function ApplicationStatusBadge({ status }: { status: VacancyApplicationStatus }) {

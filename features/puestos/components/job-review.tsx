@@ -18,15 +18,10 @@ import { Separator } from "@/components/ui/separator";
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
+import { MODALITY_LABELS } from "@/lib/modality";
 import { formatSalary, type SalaryCurrency } from "@/lib/salary";
 
 import { useCurrentCompany } from "@/hooks/use-current-company";
-
-const MODALITY_LABELS: Record<string, string> = {
-  PRESENCIAL: "Presencial",
-  HIBRIDO: "Híbrida",
-  REMOTO: "Remota",
-};
 
 function formatDate(iso: string): string {
   // `input type="date"` da `YYYY-MM-DD` — `new Date("YYYY-MM-DD")` lo
@@ -90,7 +85,7 @@ export function JobReview() {
               {modality && (
                 <span className="flex items-center gap-1.5">
                   <LaptopIcon className="size-4" />
-                  {MODALITY_LABELS[modality] ?? modality}
+                  {MODALITY_LABELS[modality as keyof typeof MODALITY_LABELS] ?? modality}
                 </span>
               )}
               {salary && (

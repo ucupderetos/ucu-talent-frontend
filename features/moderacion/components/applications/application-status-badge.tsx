@@ -4,6 +4,7 @@
 // `features/puestos/components/vacancy-status-badge.tsx`.
 
 import { Badge } from "@/components/ui/badge";
+import { APPLICATION_STATUS_DOT_CLASS } from "@/components/vacancies/application-status-colors";
 import { cn } from "@/lib/utils";
 import type { VacancyApplicationStatus } from "@/types";
 
@@ -11,12 +12,6 @@ export const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> 
   PENDIENTE: "Pendiente",
   VISTO: "Visto",
   FINALIZADO: "Finalizado",
-};
-
-const APPLICATION_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
-  PENDIENTE: "bg-chart-2",
-  VISTO: "bg-chart-4",
-  FINALIZADO: "bg-success",
 };
 
 export function ApplicationStatusBadge({ status }: { status: VacancyApplicationStatus }) {

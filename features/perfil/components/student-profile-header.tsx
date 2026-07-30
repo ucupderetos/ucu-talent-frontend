@@ -4,13 +4,8 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import type { DocumentType, StudentProfile, User } from "@/types";
-
-const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
-  CEDULA_IDENTIDAD: "Cédula de Identidad",
-  DNI: "DNI",
-  PASAPORTE: "Pasaporte",
-};
+import { DOCUMENT_TYPE_LABELS } from "@/lib/document-types";
+import type { StudentProfile, User } from "@/types";
 
 function initials(name: string, surname: string): string {
   return `${name[0] ?? ""}${surname[0] ?? ""}`.toUpperCase() || "?";
@@ -37,7 +32,7 @@ export function StudentProfileHeader({
           <InfoItem label="Email" value={user.email} />
           <InfoItem
             label="Documento"
-            value={`${DOCUMENT_TYPE_LABEL[profile.documentType]} · ${profile.documentNumber}`}
+            value={`${DOCUMENT_TYPE_LABELS[profile.documentType]} · ${profile.documentNumber}`}
           />
           <InfoItem label="Teléfono" value={profile.phoneNumber ?? "Sin completar"} />
         </div>

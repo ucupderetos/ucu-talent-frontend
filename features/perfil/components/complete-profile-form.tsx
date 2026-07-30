@@ -28,9 +28,10 @@ import { useCompleteProfile } from "@/features/perfil/hooks/use-complete-profile
 import { ApiError } from "@/lib/api-client";
 import { homeRouteFor } from "@/lib/auth";
 import { DEPARTMENT_OPTIONS } from "@/lib/departments";
+import { DOCUMENT_TYPE_OPTIONS } from "@/lib/document-types";
 import { applyFieldErrors } from "@/lib/form-errors";
 import { isValidDocumentNumber } from "@/lib/validators";
-import type { Department, DocumentType, Role } from "@/types";
+import type { Department, Role } from "@/types";
 
 // Campos que el backend puede devolver en `errores` (A-19), espejando 1 a 1 los
 // DTOs de perfil (`CreateStudentProfileRequest` / `CreateCompanyRequest`,
@@ -44,13 +45,6 @@ const COMPANY_BACKEND_FIELDS = new Set([
   "linkedinUrl",
   "location",
 ]);
-
-/** Wire: `common.DocumentType`. Labels en español para UI. */
-const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
-  { value: "CEDULA_IDENTIDAD", label: "Cédula de identidad" },
-  { value: "PASAPORTE", label: "Pasaporte" },
-  { value: "DNI", label: "DNI" },
-];
 
 const studentSchema = z
   .object({
@@ -123,13 +117,23 @@ function StudentForm() {
       <FieldGroup>
         <Field data-invalid={Boolean(errors.name)}>
           <FieldLabel htmlFor="name">Nombre</FieldLabel>
-          <Input id="name" autoComplete="given-name" {...register("name")} />
+          <Input
+            id="name"
+            autoComplete="given-name"
+            className="h-11 px-4 text-base"
+            {...register("name")}
+          />
           <FieldError errors={[errors.name]} />
         </Field>
 
         <Field data-invalid={Boolean(errors.surname)}>
           <FieldLabel htmlFor="surname">Apellido</FieldLabel>
-          <Input id="surname" autoComplete="family-name" {...register("surname")} />
+          <Input
+            id="surname"
+            autoComplete="family-name"
+            className="h-11 px-4 text-base"
+            {...register("surname")}
+          />
           <FieldError errors={[errors.surname]} />
         </Field>
 
@@ -142,13 +146,13 @@ function StudentForm() {
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger
                   id="documentType"
-                  className="w-full"
+                  className="data-[size=default]:h-11 w-full px-4 text-base"
                   aria-invalid={Boolean(errors.documentType)}
                 >
                   <SelectValue placeholder="Elegí una opción" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES.map((documentType) => (
+                  {DOCUMENT_TYPE_OPTIONS.map((documentType) => (
                     <SelectItem key={documentType.value} value={documentType.value}>
                       {documentType.label}
                     </SelectItem>
@@ -162,13 +166,22 @@ function StudentForm() {
 
         <Field data-invalid={Boolean(errors.documentNumber)}>
           <FieldLabel htmlFor="documentNumber">Número de documento</FieldLabel>
-          <Input id="documentNumber" autoComplete="off" {...register("documentNumber")} />
+          <Input
+            id="documentNumber"
+            autoComplete="off"
+            className="h-11 px-4 text-base"
+            {...register("documentNumber")}
+          />
           <FieldError errors={[errors.documentNumber]} />
         </Field>
 
         {error && <FieldError>{error}</FieldError>}
 
-        <Button type="submit" disabled={isLoading}>
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="h-12 bg-ucu-blue text-base font-medium text-white hover:bg-ucu-blue/90"
+        >
           {isLoading ? "Guardando..." : "Continuar"}
         </Button>
       </FieldGroup>
@@ -215,31 +228,47 @@ function CompanyForm() {
       <FieldGroup>
         <Field data-invalid={Boolean(errors.name)}>
           <FieldLabel htmlFor="name">Razón social</FieldLabel>
-          <Input id="name" autoComplete="organization" {...register("name")} />
+          <Input
+            id="name"
+            autoComplete="organization"
+            className="h-11 px-4 text-base"
+            {...register("name")}
+          />
           <FieldError errors={[errors.name]} />
         </Field>
 
         <Field data-invalid={Boolean(errors.industry)}>
           <FieldLabel htmlFor="industry">Rubro</FieldLabel>
-          <Input id="industry" {...register("industry")} />
+          <Input id="industry" className="h-11 px-4 text-base" {...register("industry")} />
           <FieldError errors={[errors.industry]} />
         </Field>
 
         <Field data-invalid={Boolean(errors.description)}>
           <FieldLabel htmlFor="description">Descripción</FieldLabel>
-          <Input id="description" {...register("description")} />
+          <Input id="description" className="h-11 px-4 text-base" {...register("description")} />
           <FieldError errors={[errors.description]} />
         </Field>
 
         <Field data-invalid={Boolean(errors.webUrl)}>
           <FieldLabel htmlFor="webUrl">Sitio web</FieldLabel>
-          <Input id="webUrl" type="url" autoComplete="url" {...register("webUrl")} />
+          <Input
+            id="webUrl"
+            type="url"
+            autoComplete="url"
+            className="h-11 px-4 text-base"
+            {...register("webUrl")}
+          />
           <FieldError errors={[errors.webUrl]} />
         </Field>
 
         <Field data-invalid={Boolean(errors.linkedinUrl)}>
           <FieldLabel htmlFor="linkedinUrl">LinkedIn</FieldLabel>
-          <Input id="linkedinUrl" type="url" {...register("linkedinUrl")} />
+          <Input
+            id="linkedinUrl"
+            type="url"
+            className="h-11 px-4 text-base"
+            {...register("linkedinUrl")}
+          />
           <FieldError errors={[errors.linkedinUrl]} />
         </Field>
 
@@ -250,7 +279,11 @@ function CompanyForm() {
             name="location"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="location" className="w-full" aria-invalid={Boolean(errors.location)}>
+                <SelectTrigger
+                  id="location"
+                  className="data-[size=default]:h-11 w-full px-4 text-base"
+                  aria-invalid={Boolean(errors.location)}
+                >
                   <SelectValue placeholder="Elegí un departamento" />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,7 +301,11 @@ function CompanyForm() {
 
         {error && <FieldError>{error}</FieldError>}
 
-        <Button type="submit" disabled={isLoading}>
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="h-12 bg-ucu-blue text-base font-medium text-white hover:bg-ucu-blue/90"
+        >
           {isLoading ? "Guardando..." : "Continuar"}
         </Button>
       </FieldGroup>

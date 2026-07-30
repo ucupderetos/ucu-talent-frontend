@@ -45,6 +45,8 @@ import { useCurrentCompany } from "@/hooks/use-current-company";
 import { ApplicantStatusBadge } from "@/features/postulaciones/components/applicant-status-badge";
 import { useApplicantDetail } from "@/features/postulaciones/hooks/use-applicant-detail";
 import { useMarkApplicantViewed } from "@/features/postulaciones/hooks/use-mark-applicant-viewed";
+import { initialsFrom } from "@/lib/avatar";
+import { DEGREE_LEVEL_LABELS } from "@/lib/degree-levels";
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   day: "2-digit",
@@ -52,20 +54,8 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   year: "numeric",
 });
 
-const DEGREE_LEVEL_LABEL: Record<string, string> = {
-  TECNICATURA: "Tecnicatura",
-  LICENCIATURA: "Licenciatura",
-  GRADO: "Grado",
-  POSGRADO: "Posgrado",
-  DOCTORADO: "Doctorado",
-};
-
 function formatDate(iso: string | null): string {
   return iso ? dateFormatter.format(new Date(iso)) : "Actualidad";
-}
-
-function initials(name: string, surname: string): string {
-  return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
 }
 
 function BackLink() {
@@ -140,7 +130,7 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
 
       <div className="flex items-center gap-3">
         <Avatar size="lg">
-          <AvatarFallback>{initials(detail.profile.name, detail.profile.surname)}</AvatarFallback>
+          <AvatarFallback>{initialsFrom(detail.profile.name, detail.profile.surname)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold tracking-tight">
@@ -222,7 +212,7 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
                 {detail.education.map((education, index) => (
                   <li key={education.educationId}>
                     {index > 0 && <Separator className="mb-3" />}
-                    <p className="text-sm font-medium">{DEGREE_LEVEL_LABEL[education.degreeLevel]}</p>
+                    <p className="text-sm font-medium">{DEGREE_LEVEL_LABELS[education.degreeLevel as keyof typeof DEGREE_LEVEL_LABELS]}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(education.startDate)} – {formatDate(education.endDate)}
                     </p>
