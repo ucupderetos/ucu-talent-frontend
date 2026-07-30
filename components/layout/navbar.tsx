@@ -15,7 +15,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { useBreadcrumbLabel } from "@/components/layout/breadcrumb-context";
-import { NAV_BY_ROLE, type NavItem } from "@/components/layout/nav-items";
+import { NAV_BY_ROLE, findActiveNavItem } from "@/components/layout/nav-items";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -45,13 +45,6 @@ function displayName(user: User): string {
 /** Iniciales para el fallback del avatar (sin foto todavía en el MER). */
 function initials(user: User): string {
   return `${user.name?.charAt(0) ?? ""}${user.surname?.charAt(0) ?? ""}`.toUpperCase() || "?";
-}
-
-/** El item de nav activo: match exacto (pantalla de listado) o el segmento
- *  raíz de una ruta anidada (ej. "/puestos/123/postulantes" matchea el item
- *  "/puestos"). Misma fuente que resalta el item activo del Sidebar/Sheet. */
-function findActiveNavItem(items: readonly NavItem[], pathname: string): NavItem | undefined {
-  return items.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
 }
 
 export function Navbar({ user }: { user: User | null }) {
@@ -101,7 +94,7 @@ export function Navbar({ user }: { user: User | null }) {
                     onClick={() => setMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm",
-                      pathname.startsWith(item.href)
+                      item.href === activeItem?.href
                         ? "bg-secondary-blue font-medium text-secondary-blue-foreground"
                         : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                     )}
