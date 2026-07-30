@@ -98,9 +98,10 @@ export interface VacancyUpdateInput {
 
 /**
  * Filtros del feed de vacantes (vista alumno) tal como se resuelven HOY en el
- * cliente sobre fixtures — ver `hooks/use-feed-vacancies.ts`. Por A-05
- * (✅ Resuelto), el filtrado queda en el front: no hay query params de
- * `GET /vacancy` que reemplacen esto, ni aunque exista paginación (A-04).
+ * cliente sobre los datos ya traídos de `GET /vacancy` — ver
+ * `hooks/use-feed-vacancies.ts`. Por A-05 (✅ Resuelto), el filtrado queda en
+ * el front: no hay query params de `GET /vacancy` que reemplacen esto, ni
+ * aunque exista paginación (A-04).
  * `areaIds`/`contractTypes`: multi-selección (RF-14 no pide exclusión mutua
  * entre carreras o tipos de contrato — un alumno puede cursar varias).
  */

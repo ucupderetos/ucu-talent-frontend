@@ -32,8 +32,9 @@ export function ValidationsView() {
 
   // El número de las pestañas es el total SIN filtrar, así que va en una query
   // aparte de la de cada tab (con otro queryKey — es un fetch propio, no el
-  // mismo). Con fixtures es gratis; contra la API real conviene que el back
-  // exponga el conteo (o un endpoint de solo-total) para no traer toda la lista.
+  // mismo). Ya pega contra la API real: trae la lista completa de pendientes
+  // y saca el total en el cliente — convendría que el back exponga el conteo
+  // (o un endpoint de solo-total) para no traer toda la lista solo por esto.
   const companiesCount = usePendingCompanies({}).data?.total ?? 0;
   const studentsCount = usePendingStudents({}).data?.total ?? 0;
 
