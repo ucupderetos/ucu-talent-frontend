@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 
-import { TablePagination } from "@/components/filters/table-pagination";
+import { ListPagination } from "@/components/pagination/list-pagination";
 import { EmptyState } from "@/components/layout/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VacanciesFilters } from "@/features/moderacion/components/vacancies/vacancies-filters";
@@ -60,7 +60,7 @@ export function AdminVacanciesView() {
       {!isLoading && !isError && data && data.items.length > 0 && (
         <div className="space-y-2">
           <VacanciesTable vacancies={data.items} />
-          <TablePagination
+          <ListPagination
             page={data.page}
             perPage={data.perPage}
             total={data.total}

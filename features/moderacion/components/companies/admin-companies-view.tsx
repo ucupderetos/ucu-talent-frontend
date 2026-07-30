@@ -7,7 +7,7 @@
 import { useState } from "react";
 
 import { EmptyState } from "@/components/layout/empty-state";
-import { TablePagination } from "@/components/filters/table-pagination";
+import { ListPagination } from "@/components/pagination/list-pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompaniesFilters } from "@/features/moderacion/components/companies/companies-filters";
 import { CompaniesTable } from "@/features/moderacion/components/companies/companies-table";
@@ -67,7 +67,7 @@ export function AdminCompaniesView() {
       {!isLoading && !isError && data && data.items.length > 0 && (
         <div className="space-y-2">
           <CompaniesTable companies={data.items} />
-          <TablePagination
+          <ListPagination
             page={data.page}
             perPage={data.perPage}
             total={data.total}

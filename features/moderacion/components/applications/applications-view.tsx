@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import { EmptyState } from "@/components/layout/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TablePagination } from "@/components/filters/table-pagination";
+import { ListPagination } from "@/components/pagination/list-pagination";
 import {
   useApplicationFilterOptions,
   useApplications,
@@ -73,7 +73,7 @@ export function ApplicationsView() {
       {!isLoading && !isError && data && data.items.length > 0 && (
         <div className="space-y-2">
           <ApplicationsTable rows={data.items} />
-          <TablePagination
+          <ListPagination
             page={data.page}
             perPage={data.perPage}
             total={data.total}
