@@ -5,9 +5,17 @@ import { useWatch } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
+import { SALARY_CURRENCIES, type SalaryCurrency } from "@/lib/salary";
 
 const DESCRIPTION_MAX = 2000;
 
@@ -16,10 +24,12 @@ export function JobDetailsForm() {
   const {
     register,
     control,
+    setValue,
     formState: { errors },
   } = form;
 
   const description = useWatch({ control, name: "description" }) ?? "";
+  const salaryCurrency = useWatch({ control, name: "salaryCurrency" });
 
   return (
     <Card>
@@ -64,16 +74,52 @@ export function JobDetailsForm() {
             </Field>
           </FieldSet>
 
-          <Field data-invalid={Boolean(errors.salary)}>
-            <FieldLabel htmlFor="salary">Rango salarial *</FieldLabel>
-            <Input
-              id="salary"
-              className="h-11"
-              placeholder="$45.000 - $60.000 UYU"
-              aria-invalid={Boolean(errors.salary)}
-              {...register("salary")}
-            />
-            <FieldError errors={[errors.salary]} />
+          <Field
+            data-invalid={Boolean(errors.salaryCurrency || errors.salaryMin || errors.salaryMax)}
+          >
+            <FieldLabel htmlFor="salaryMin">Rango salarial *</FieldLabel>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[6.5rem_1fr_1fr]">
+              <Select
+                value={salaryCurrency}
+                onValueChange={(value) =>
+                  setValue("salaryCurrency", value as SalaryCurrency, { shouldValidate: true })
+                }
+              >
+                <SelectTrigger
+                  className="w-full data-[size=default]:h-11"
+                  aria-label="Moneda"
+                  aria-invalid={Boolean(errors.salaryCurrency)}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SALARY_CURRENCIES.map((currency) => (
+                    <SelectItem key={currency} value={currency}>
+                      {currency}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                id="salaryMin"
+                className="h-11"
+                inputMode="decimal"
+                placeholder="Desde"
+                aria-label="Monto desde"
+                aria-invalid={Boolean(errors.salaryMin)}
+                {...register("salaryMin")}
+              />
+              <Input
+                id="salaryMax"
+                className="h-11"
+                inputMode="decimal"
+                placeholder="Hasta (opcional)"
+                aria-label="Monto hasta"
+                aria-invalid={Boolean(errors.salaryMax)}
+                {...register("salaryMax")}
+              />
+            </div>
+            <FieldError errors={[errors.salaryCurrency, errors.salaryMin, errors.salaryMax]} />
           </Field>
         </FieldGroup>
       </CardContent>

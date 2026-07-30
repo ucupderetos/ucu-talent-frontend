@@ -37,6 +37,15 @@ import { ModalitySelector } from "@/features/puestos/components/modality-selecto
 import { CONTRACT_TYPES, CONTRACT_TYPE_OPTIONS } from "@/lib/contract-types";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { applyFieldErrors } from "@/lib/form-errors";
+import {
+  formatSalary,
+  parseSalary,
+  SALARY_AMOUNT_PATTERN,
+  SALARY_CURRENCIES,
+  SALARY_MODES,
+  type SalaryCurrency,
+  type SalaryMode,
+} from "@/lib/salary";
 import type { VacancyDetail, VacancyUpdateInput } from "@/features/puestos/types";
 import type { ContractType, Department, Modality } from "@/types";
 
@@ -61,55 +70,10 @@ const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readon
 // caso común) y "texto libre" (un único input, para puestos viejos con texto
 // no numérico como "A convenir" que el modo estructurado no puede
 // representar sin perder información). El modo inicial lo decide
-// `parseSalary` según si pudo extraer un monto numérico del valor guardado;
-// la empresa puede cambiar de modo a mano con el link de arriba del campo.
-// No hay enum de moneda confirmado en docs/ENDPOINTS.md: se fija una lista
-// chica de uso real (UYU/USD) para el modo estructurado.
-const SALARY_CURRENCIES = ["UYU", "USD"] as const;
-type SalaryCurrency = (typeof SALARY_CURRENCIES)[number];
-
-const SALARY_MODES = ["structured", "free"] as const;
-type SalaryMode = (typeof SALARY_MODES)[number];
-
-const AMOUNT_PATTERN = /^\d+([.,]\d+)?$/;
-
-/** Arma el string del wire a partir de moneda + rango. Sin "hasta" (o
- *  igual al "desde") queda un monto fijo, "MONEDA monto" (ej. "USD 700").
- *  Con "hasta", el formato pasa a ser "MONEDAdesde-hasta" pegado, sin
- *  espacios (ej. "USD700-900") — pedido explícito de negocio, no el mismo
- *  formato que el monto fijo. */
-function formatSalary(currency: SalaryCurrency, min: string, max: string): string {
-  const cleanMin = min.trim();
-  const cleanMax = max.trim();
-  if (!cleanMax || cleanMax === cleanMin) return `${currency} ${cleanMin}`;
-  return `${currency}${cleanMin}-${cleanMax}`;
-}
-
-/**
- * Lee un `salary` existente para precargar los controles. El wire real usa
- * "MONEDA monto" para un monto fijo o "MONEDAdesde-hasta" pegado para un
- * rango (ver formatSalary), pero hay puestos viejos con texto libre ("A
- * convenir", "$35.000 - $45.000" con `$` en vez de un código ISO, o el
- * formato anterior "MONEDA desde - hasta" con espacios) — para esos, `min`
- * queda vacío (no se pudo rescatar ningún número), y ESE es justo el
- * criterio que usa `EditJobForm` para arrancar en modo "texto libre" en vez
- * de "estructurado": mejor mostrar el texto original tal cual que forzarlo a
- * 3 campos numéricos y perder la información.
- *
- * El regex de moneda no exige `\b` al final: con el formato pegado
- * ("USD700") no hay borde de palabra entre la "D" y el "7" (los dos son
- * `\w`), así que un `\b` ahí nunca matchearía.
- */
-function parseSalary(raw: string): { currency: SalaryCurrency; min: string; max: string } {
-  const currencyMatch = raw.match(/\b(UYU|USD)/i);
-  const currency = (currencyMatch?.[1]?.toUpperCase() ?? "UYU") as SalaryCurrency;
-  const [min = "", max = ""] = raw.match(/\d+(?:[.,]\d+)*/g) ?? [];
-  return {
-    currency: SALARY_CURRENCIES.includes(currency) ? currency : "UYU",
-    min,
-    max: max === min ? "" : max,
-  };
-}
+// `parseSalary` según si pudo extraer un monto numérico del valor guardado.
+// Las utilidades (`formatSalary`/`parseSalary`/constantes) viven en
+// `lib/salary.ts`, compartidas con el wizard de creación
+// (`use-create-job-form.tsx`/`job-details-form.tsx`).
 
 // Mismas reglas que `jobFormSchema` (use-create-job-form.tsx), sin `areaId`
 // (`UpdateVacancyRequest` no lo incluye — el área queda fija desde la creación)
@@ -159,21 +123,21 @@ function makeEditJobSchema(publicationDate: string) {
       if (!data.salaryCurrency) {
         ctx.addIssue({ code: "custom", path: ["salaryCurrency"], message: "Seleccioná una moneda." });
       }
-      if (!data.salaryMin || !AMOUNT_PATTERN.test(data.salaryMin)) {
+      if (!data.salaryMin || !SALARY_AMOUNT_PATTERN.test(data.salaryMin)) {
         ctx.addIssue({
           code: "custom",
           path: ["salaryMin"],
           message: "Ingresá un monto mínimo válido.",
         });
       }
-      if (data.salaryMax && !AMOUNT_PATTERN.test(data.salaryMax)) {
+      if (data.salaryMax && !SALARY_AMOUNT_PATTERN.test(data.salaryMax)) {
         ctx.addIssue({ code: "custom", path: ["salaryMax"], message: "Ingresá un monto válido." });
       }
       if (
         data.salaryMin &&
         data.salaryMax &&
-        AMOUNT_PATTERN.test(data.salaryMin) &&
-        AMOUNT_PATTERN.test(data.salaryMax) &&
+        SALARY_AMOUNT_PATTERN.test(data.salaryMin) &&
+        SALARY_AMOUNT_PATTERN.test(data.salaryMax) &&
         parseFloat(data.salaryMax.replace(",", ".")) < parseFloat(data.salaryMin.replace(",", "."))
       ) {
         ctx.addIssue({
