@@ -34,17 +34,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiError } from "@/lib/api-client";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { MODALITY_LABELS } from "@/lib/modality";
 import { useSession } from "@/hooks/use-session";
 import { getVacancyDetailPreviewExtras } from "@/features/puestos/components/vacancy-detail-preview-mock";
 import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
-import type { AccountStatus, Modality } from "@/types";
-
-const MODALITY_LABEL: Record<Modality, string> = {
-  PRESENCIAL: "Presencial",
-  REMOTO: "Remota",
-  HIBRIDO: "Híbrida",
-};
+import type { AccountStatus } from "@/types";
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   day: "2-digit",
@@ -243,7 +238,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               )}
               <DetailRow
                 label="Modalidad"
-                value={<Badge variant="outline">{MODALITY_LABEL[vacancy.modality]}</Badge>}
+                value={<Badge variant="outline">{MODALITY_LABELS[vacancy.modality]}</Badge>}
               />
               {vacancy.salary && (
                 <DetailRow label="Rango salarial" value={vacancy.salary} />

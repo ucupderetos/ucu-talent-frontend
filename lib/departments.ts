@@ -25,3 +25,11 @@ export const DEPARTMENT_LABELS: Record<Department, string> = {
 export const DEPARTMENT_OPTIONS: { value: Department; label: string }[] = DEPARTMENTS.map(
   (value) => ({ value, label: DEPARTMENT_LABELS[value] }),
 );
+
+/** Label de un departamento cuando el valor llega tipado como `string` (filas
+ *  de vacantes/empresas de moderación). Cae al valor crudo si no está en el
+ *  catálogo, en vez de romper. Reemplaza los `formatDepartment` que estaban
+ *  reimplementados en cada tabla. */
+export function formatDepartment(value: string): string {
+  return DEPARTMENT_LABELS[value as Department] ?? value;
+}

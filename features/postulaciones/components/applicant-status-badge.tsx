@@ -14,6 +14,7 @@
 // sistema lo haga solo.
 
 import { Badge } from "@/components/ui/badge";
+import { APPLICATION_STATUS_DOT_CLASS } from "@/components/vacancies/application-status-colors";
 import { cn } from "@/lib/utils";
 import type { VacancyApplicationStatus } from "@/types";
 
@@ -23,17 +24,11 @@ export const APPLICANT_STATUS_LABEL: Record<VacancyApplicationStatus, string> = 
   FINALIZADO: "Finalizado",
 };
 
-const APPLICANT_STATUS_DOT_CLASS: Record<VacancyApplicationStatus, string> = {
-  PENDIENTE: "bg-success",
-  VISTO: "bg-warning",
-  FINALIZADO: "bg-muted-foreground",
-};
-
 export function ApplicantStatusBadge({ status }: { status: VacancyApplicationStatus }) {
   return (
     <Badge variant="outline" className="gap-1.5">
       <span
-        className={cn("size-1.5 shrink-0 rounded-full", APPLICANT_STATUS_DOT_CLASS[status])}
+        className={cn("size-1.5 shrink-0 rounded-full", APPLICATION_STATUS_DOT_CLASS[status])}
         aria-hidden
       />
       {APPLICANT_STATUS_LABEL[status]}

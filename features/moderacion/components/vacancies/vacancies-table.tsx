@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
+import { MODALITY_LABELS } from "@/lib/modality";
 import {
   parseCalendarDate,
   parseMontevideoDateTime,
@@ -20,6 +20,7 @@ import {
 import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
 import { VacancyStatusBadge } from "@/components/vacancies/vacancy-status-badge";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { formatDepartment } from "@/lib/departments";
 import type { AdminVacancyRow } from "@/features/moderacion/types";
 
 export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) {
@@ -85,7 +86,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                   </Link>
                 </TableCell>
 
-                <TableCell>{VACANCY_MODALITY_LABEL[vacancy.modality]}</TableCell>
+                <TableCell>{MODALITY_LABELS[vacancy.modality]}</TableCell>
                 <TableCell>{formatPublicationDate(vacancy.publicationDate)}</TableCell>
                 <TableCell>{vacancy.applicationCount.toLocaleString("es-UY")}</TableCell>
                 <TableCell>
@@ -120,10 +121,3 @@ function wasCreatedWithinLastDay(createdAt: string): boolean {
   return elapsed >= 0 && elapsed <= 24 * 60 * 60 * 1000;
 }
 
-function formatDepartment(department: string): string {
-  return department
-    .toLocaleLowerCase("es")
-    .split("_")
-    .map((word) => word.charAt(0).toLocaleUpperCase("es") + word.slice(1))
-    .join(" ");
-}

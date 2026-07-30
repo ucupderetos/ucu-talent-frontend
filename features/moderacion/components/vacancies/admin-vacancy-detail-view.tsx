@@ -39,10 +39,11 @@ import {
   parseCalendarDate,
   parseMontevideoDateTime,
 } from "@/features/moderacion/date-utils";
-import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
+import { MODALITY_LABELS } from "@/lib/modality";
 import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
 import { useAdminVacancyDetail } from "@/features/moderacion/hooks/use-admin-vacancies";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { formatDepartment } from "@/lib/departments";
 import type { AdminVacancyDetail } from "@/features/moderacion/types";
 import type { VacancyApplicationStatus } from "@/types";
 
@@ -83,13 +84,6 @@ function formatDateTime(iso: string | null, emptyLabel: string): string {
   return date ? dateTimeFormatter.format(date) : emptyLabel;
 }
 
-function formatDepartment(department: string): string {
-  return department
-    .toLocaleLowerCase("es")
-    .split("_")
-    .map((word) => word.charAt(0).toLocaleUpperCase("es") + word.slice(1))
-    .join(" ");
-}
 
 export function AdminVacancyDetailView({ vacancyId }: { vacancyId: string }) {
   const { data: vacancy, isLoading, isError } = useAdminVacancyDetail(vacancyId);
@@ -181,7 +175,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: AdminVacancyDetail }) {
             <OverviewItem
               icon={BuildingIcon}
               label="Modalidad"
-              value={VACANCY_MODALITY_LABEL[vacancy.modality]}
+              value={MODALITY_LABELS[vacancy.modality]}
             />
             <OverviewItem
               icon={CalendarDaysIcon}
@@ -313,7 +307,7 @@ function VacancyInformation({ vacancy }: { vacancy: AdminVacancyDetail }) {
         />
         <DetailRow
           label="Modalidad"
-          value={<Badge variant="outline">{VACANCY_MODALITY_LABEL[vacancy.modality]}</Badge>}
+          value={<Badge variant="outline">{MODALITY_LABELS[vacancy.modality]}</Badge>}
         />
         <DetailRow label="Ubicación" value={formatDepartment(vacancy.location)} />
         <DetailRow

@@ -15,16 +15,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEPARTMENT_LABEL, dateFormatter } from "@/features/puestos/components/vacancy-feed-card";
+import { dateFormatter } from "@/features/puestos/components/vacancy-feed-card";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { DEPARTMENT_LABELS } from "@/lib/departments";
+import { MODALITY_LABELS } from "@/lib/modality";
 import type { FeedVacancyRow } from "@/features/puestos/types";
-import type { Modality } from "@/types";
-
-const MODALITY_LABEL: Record<Modality, string> = {
-  PRESENCIAL: "Presencial",
-  REMOTO: "Remota",
-  HIBRIDO: "Híbrida",
-};
 
 export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
   return (
@@ -63,10 +58,10 @@ export function VacancyFeedTable({ rows }: { rows: FeedVacancyRow[] }) {
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {DEPARTMENT_LABEL[vacancy.location]}
+                {DEPARTMENT_LABELS[vacancy.location]}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {MODALITY_LABEL[vacancy.modality]}
+                {MODALITY_LABELS[vacancy.modality]}
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {CONTRACT_TYPE_LABELS[vacancy.contractType] ?? vacancy.contractType}

@@ -9,36 +9,8 @@ import { BriefcaseIcon, MapPinIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { DEPARTMENT_LABELS } from "@/lib/departments";
 import type { FeedVacancyRow } from "@/features/puestos/types";
-import type { Department } from "@/types";
-
-/**
- * Duplica el diccionario de RegisterForm.tsx/CompleteProfileForm.tsx — no hay
- * todavía un lugar compartido para labels de `Department` (los 19 valores
- * reales, ver docs/ENDPOINTS.md). Exportado para que `vacancy-feed-table.tsx`
- * (la vista en lista del mismo feed) no agregue una quinta copia.
- */
-export const DEPARTMENT_LABEL: Record<Department, string> = {
-  ARTIGAS: "Artigas",
-  CANELONES: "Canelones",
-  CERRO_LARGO: "Cerro Largo",
-  COLONIA: "Colonia",
-  DURAZNO: "Durazno",
-  FLORES: "Flores",
-  FLORIDA: "Florida",
-  LAVALLEJA: "Lavalleja",
-  MALDONADO: "Maldonado",
-  MONTEVIDEO: "Montevideo",
-  PAYSANDU: "Paysandú",
-  RIO_NEGRO: "Río Negro",
-  RIVERA: "Rivera",
-  ROCHA: "Rocha",
-  SALTO: "Salto",
-  SAN_JOSE: "San José",
-  SORIANO: "Soriano",
-  TACUAREMBO: "Tacuarembó",
-  TREINTA_Y_TRES: "Treinta y Tres",
-};
 
 export const dateFormatter = new Intl.DateTimeFormat("es-UY", {
   day: "2-digit",
@@ -77,7 +49,7 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
           <div className="mt-auto flex flex-col gap-1.5 pt-1 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <MapPinIcon className="size-4 shrink-0" aria-hidden />
-              {DEPARTMENT_LABEL[vacancy.location]}, Uruguay
+              {DEPARTMENT_LABELS[vacancy.location]}, Uruguay
             </span>
             <span className="flex items-center gap-1.5">
               <BriefcaseIcon className="size-4 shrink-0" aria-hidden />

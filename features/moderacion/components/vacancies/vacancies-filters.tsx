@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { VACANCY_STATUS_LABEL } from "@/components/vacancies/vacancy-status-badge";
-import { VACANCY_MODALITY_LABEL } from "@/features/moderacion/components/vacancies/vacancy-labels";
+import { MODALITY_LABELS } from "@/lib/modality";
 import type { AdminVacancyFilters } from "@/features/moderacion/types";
 import type { Company, Modality, VacancyStatus } from "@/types";
 
@@ -94,7 +94,7 @@ export function VacanciesFilters({
             <MultiSelect
               label="Modalidad"
               placeholder="Todas las modalidades"
-              options={Object.entries(VACANCY_MODALITY_LABEL).map(([value, label]) => ({
+              options={Object.entries(MODALITY_LABELS).map(([value, label]) => ({
                 value,
                 label,
               }))}

@@ -34,24 +34,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AccountStatusBadge } from "@/features/moderacion/components/account-status-badge";
 import { useAdminStudentDetail } from "@/features/moderacion/hooks/use-admin-student-detail";
 import { StudentModerationActions } from "@/features/moderacion/components/students/student-moderation-actions";
+import { initialsFrom } from "@/lib/avatar";
+import { DEGREE_LEVEL_LABELS } from "@/lib/degree-levels";
+import { DOCUMENT_TYPE_LABELS } from "@/lib/document-types";
 import type { AdminStudentEducation } from "@/features/moderacion/types";
-import type { AccountStatus, DegreeLevel, DocumentType, WorkExperience } from "@/types";
+import type { AccountStatus, WorkExperience } from "@/types";
 
 const STUDENTS_ROUTE = "/moderacion/estudiantes";
-
-const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
-  CEDULA_IDENTIDAD: "Cédula de identidad",
-  DNI: "DNI",
-  PASAPORTE: "Pasaporte",
-};
-
-const DEGREE_LEVEL_LABEL: Record<DegreeLevel, string> = {
-  TECNICATURA: "Tecnicatura",
-  LICENCIATURA: "Licenciatura",
-  GRADO: "Grado",
-  POSGRADO: "Posgrado",
-  DOCTORADO: "Doctorado",
-};
 
 const MODERATION_MESSAGE: Record<AccountStatus, string> = {
   PENDIENTE:
@@ -80,9 +69,6 @@ function formatWorkDateRange({ startDate, endDate }: WorkExperience): string {
   return `${formatDate(startDate)} – ${endDate ? formatDate(endDate) : "Actualidad"}`;
 }
 
-function initials(name: string, surname: string): string {
-  return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
-}
 
 export function StudentDetailView({ studentProfileId }: { studentProfileId: string }) {
   const { data: student, isLoading, isError } = useAdminStudentDetail(studentProfileId);
@@ -124,7 +110,7 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
       <div className="flex min-w-0 items-center gap-3">
         <Avatar size="lg">
           <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-            {initials(profile.name, profile.surname)}
+            {initialsFrom(profile.name, profile.surname)}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
@@ -167,7 +153,7 @@ export function StudentDetailView({ studentProfileId }: { studentProfileId: stri
               <InformationItem
                 icon={IdCardIcon}
                 label="Documento"
-                value={`${DOCUMENT_TYPE_LABEL[profile.documentType]} ${profile.documentNumber}`}
+                value={`${DOCUMENT_TYPE_LABELS[profile.documentType]} ${profile.documentNumber}`}
               />
               <InformationItem icon={UserRoundIcon} label="Rol" value="Alumno" />
               <InformationItem
@@ -359,7 +345,7 @@ function ContactLink({
 
 function EducationItem({ education }: { education: AdminStudentEducation }) {
   const metadata = [
-    DEGREE_LEVEL_LABEL[education.degreeLevel],
+    DEGREE_LEVEL_LABELS[education.degreeLevel],
     education.area?.name,
     education.degree ? (education.degree.isUcu ? "UCU" : "Institución externa") : null,
   ]

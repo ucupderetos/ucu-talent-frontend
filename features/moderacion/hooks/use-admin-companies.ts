@@ -11,6 +11,7 @@ import type {
   AdminCompanyRow,
 } from "@/features/moderacion/types";
 import { ApiError, apiClient } from "@/lib/api-client";
+import { formatDepartment } from "@/lib/departments";
 import type { Company, Paginated, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
@@ -183,13 +184,6 @@ function compareCompanies(a: AdminCompanyRow, b: AdminCompanyRow): number {
   );
 }
 
-function formatDepartment(department: string): string {
-  return department
-    .toLocaleLowerCase("es")
-    .split("_")
-    .map((word) => word.charAt(0).toLocaleUpperCase("es") + word.slice(1))
-    .join(" ");
-}
 
 function initialsOf(name: string): string {
   const fromCapitals = name
