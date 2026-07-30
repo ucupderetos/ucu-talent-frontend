@@ -6,8 +6,10 @@
 // necesita en una sola llamada (application + vacancy + companyName +
 // areaName) — reemplaza al `GET /vacancy-application/me` + `GET /vacancy` +
 // `GET /company` + `GET /area` de antes (mismo N+1 que ya se corrigió en
-// "Mis ofertas", ver A-22 en AGENTS.md). No documentado en ninguna versión
-// de `ENDPOINTS.md` — DTO específico para esta pantalla, agregado 2026-07-30.
+// "Mis ofertas", ver A-22 en docs/agents/open-questions.md). No documentado
+// en la copia local de `ENDPOINTS.md` — DTO específico para esta pantalla,
+// agregado 2026-07-30 y confirmado contra el `ENDPOINTS.md` del repo de
+// backend (ver A-26 en docs/agents/open-questions.md).
 //
 // ⚠️ `application.status` es del ENUM DTO (VacancyApplicationStatus), no
 // confundir con `application.vacancyStatus`, el estado de la vacante en el
