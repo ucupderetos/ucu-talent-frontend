@@ -298,7 +298,7 @@ export interface AdminCompanyDetail extends AdminCompanyRow {
  * Estado de búsqueda, filtros y paginación de la vista de empresas.
  *
  * Los filtros son arrays y no un valor único con centinela `"TODAS"`: la barra
- * de filtros del repo usa `MultiSelect` (AGENTS.md, "Barras de filtros"), y
+ * de filtros del repo usa `MultiSelect` (`docs/agents/design-system.md`, "Barras de filtros"), y
  * "sin filtro" se representa con el array vacío, no con un valor mágico.
  */
 export interface AdminCompanyFilters {

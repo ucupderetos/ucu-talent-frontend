@@ -9,12 +9,13 @@
 // (popup centrado) son overlays flotantes — en una pantalla chica compiten
 // con el contenido y no dejan mucho margen para un CV completo (educación +
 // experiencia). Una página propia es el mismo patrón en mobile y desktop, y
-// es el que ya sugiere AGENTS.md para el detalle de un ítem anidado
-// (breadcrumb "Sección > Nombre del ítem").
+// es el que ya sugiere `docs/agents/design-system.md` para el detalle de un
+// ítem anidado (breadcrumb "Sección > Nombre del ítem").
 //
 // Al montarse (postulante PENDIENTE) dispara la transición automática a
 // VISTO — es la empresa "abriendo el perfil del postulante", que es
-// justamente el disparador real de esa transición (ver AGENTS.md).
+// justamente el disparador real de esa transición (ver
+// `docs/agents/applications-state-machine.md`).
 //
 // Deliberadamente NO incluye: notas internas, historial de estados, ni
 // ubicación/experiencia/disponibilidad resumidas — ninguno de esos campos

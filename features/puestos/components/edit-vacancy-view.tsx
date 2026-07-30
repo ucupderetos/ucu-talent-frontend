@@ -27,7 +27,7 @@ export function EditVacancyView({ vacancyId }: { vacancyId: string }) {
 
   usePageBreadcrumb(isLoadingVacancy ? undefined : (vacancy?.name ?? null));
 
-  // Chequeo de UX, no de seguridad (AGENTS.md): el backend ya rechaza el PUT
+  // Chequeo de UX, no de seguridad (`docs/agents/roles-and-access-control.md`): el backend ya rechaza el PUT
   // si no sos la empresa dueña, esto solo evita mostrar un form que va a
   // fallar apenas se guarde.
   const isOwner = Boolean(user && vacancy && user.userId === vacancy.companyId);

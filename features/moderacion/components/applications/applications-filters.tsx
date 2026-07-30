@@ -3,13 +3,13 @@
 // Barra de filtros de "Postulaciones": búsqueda + orden (siempre visibles) +
 // un botón único "Filtros" que abre un panel con tres MultiSelect (oferta,
 // empresa, estado) — mismo patrón que
-// `features/puestos/components/vacancy-filters.tsx` (AGENTS.md, "Barras de
-// filtros"). Controlado desde afuera.
+// `features/puestos/components/vacancy-filters.tsx` (`docs/agents/design-system.md`,
+// "Barras de filtros"). Controlado desde afuera.
 //
 // Filtrado inmediato: cada cambio se aplica al toque, sin "Aplicar filtros".
 // "Limpiar todo" vive DENTRO del popover de "Filtros", al pie de las
 // secciones. El orden usa `onOrderChange` en vez de `onChange` porque no es
-// un filtro (AGENTS.md) — aunque los dos se apliquen igual de inmediato.
+// un filtro (`docs/agents/design-system.md`) — aunque los dos se apliquen igual de inmediato.
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 

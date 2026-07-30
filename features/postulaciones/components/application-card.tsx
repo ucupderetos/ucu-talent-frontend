@@ -29,7 +29,7 @@ export function ApplicationCard({ row }: { row: MyApplicationRow }) {
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            {/* Sin logoUrl en el modelo todavía (A-11, AGENTS.md) — fallback
+            {/* Sin logoUrl en el modelo todavía (A-11, `docs/agents/open-questions.md`) — fallback
              *  con la inicial de la empresa, mismo criterio que el avatar del
              *  navbar. */}
             <Avatar className="size-12 shrink-0">

@@ -4,7 +4,7 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 // Sin next-themes: el proyecto no tiene dark mode activado todavía (ver
-// AGENTS.md, "Stack") — "system" deja que Sonner mire prefers-color-scheme
+// `docs/agents/stack.md`) — "system" deja que Sonner mire prefers-color-scheme
 // directo, sin la dependencia extra.
 const Toaster = ({ ...props }: ToasterProps) => {
   return (

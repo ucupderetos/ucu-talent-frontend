@@ -1,8 +1,8 @@
 "use client";
 
 // Paso 3 del registro (`POST /student-profile` o `POST /company`), disparado
-// desde `/completar-perfil` — ver AGENTS.md, "Registro en dos pasos y
-// ProfileGuard". Es el mismo request que `useRegister()` hace en el camino
+// desde `/completar-perfil` — ver `docs/agents/roles-and-access-control.md`,
+// "Registro en dos pasos y ProfileGuard". Es el mismo request que `useRegister()` hace en el camino
 // feliz; este hook existe para cuando `ProfileGuard` detecta que ese paso
 // nunca se completó y hay que reintentarlo con una sesión ya activa.
 

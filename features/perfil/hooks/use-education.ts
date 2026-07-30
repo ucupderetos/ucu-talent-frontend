@@ -12,7 +12,7 @@ import { studentProfileQueryKey } from "@/features/perfil/hooks/use-student-prof
 import type { EducationInput } from "@/features/perfil/types";
 import type { Degree, Education } from "@/types";
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function degreesQueryKey() {
   return ["perfil", "degrees"] as const;
 }

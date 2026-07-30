@@ -14,7 +14,7 @@ import type { VacancyUpdateInput } from "@/features/puestos/types";
 import type { Vacancy } from "@/types";
 
 /**
- * ⚠️ Corrección 2026-07-30: la corrección anterior (AGENTS.md A-15) traducía
+ * ⚠️ Corrección 2026-07-30: la corrección anterior (`docs/agents/open-questions.md` A-15) traducía
  * `salary` → `salaryRange` en el borde de red, basada en una prueba a mano
  * contra Swagger del 2026-07-29. Verificado ahora directo contra el código
  * fuente del backend (`vacancy/dto/UpdateVacancyRequest.java`, rama `dev`):

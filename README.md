@@ -172,5 +172,7 @@ ucu-talent-frontend/
 
 ## Documentación adicional
 
-- `AGENTS.md`: reglas de arquitectura y convenciones del equipo.
+- `AGENTS.md`: índice de las reglas de arquitectura y convenciones del equipo — el
+  contenido vive en `docs/agents/*.md`, enlazado desde ahí.
 - `CLAUDE.md`: referencia al mismo documento de reglas.
+- `docs/ENDPOINTS.md`: contrato de API vigente contra el backend.

@@ -41,7 +41,7 @@ export async function getCurrentUser(signal?: AbortSignal): Promise<User | null>
  * Devuelve `null` (no lanza) si el perfil todavía no existe (`404`): es el
  * caso de una cuenta que se quedó a mitad del registro (`POST /user` +
  * `POST /auth/login` sin el `POST /student-profile`/`/company` final, ver
- * "Registro en dos pasos y ProfileGuard" en AGENTS.md). `ProfileGuard`
+ * "Registro en dos pasos y ProfileGuard" en `docs/agents/roles-and-access-control.md`). `ProfileGuard`
  * (`features/perfil/components/`) usa esto para saber si mandar a
  * `/completar-perfil`.
  *

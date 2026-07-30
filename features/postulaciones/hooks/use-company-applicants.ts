@@ -22,7 +22,7 @@ import type { Paginated, StudentProfile, Vacancy, VacancyApplication } from "@/t
 
 const DEFAULT_PER_PAGE = 10;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function companyApplicantsQueryKey(
   companyId: string | undefined,
   filters: ApplicantFilters,

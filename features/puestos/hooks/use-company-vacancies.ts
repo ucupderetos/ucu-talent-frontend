@@ -33,7 +33,7 @@ interface VacancyManagementResponse {
   newApplicationsCount: number;
 }
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function companyVacanciesQueryKey(
   companyId: string | undefined,
   filters: CompanyVacancyFilters,

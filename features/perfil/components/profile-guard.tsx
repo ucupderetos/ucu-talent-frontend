@@ -1,7 +1,7 @@
 "use client";
 
 // Red que atrapa a quien se registró pero se quedó sin perfil a mitad de
-// camino (ver AGENTS.md, "Registro en dos pasos y ProfileGuard"): el alta
+// camino (ver `docs/agents/roles-and-access-control.md`, "Registro en dos pasos y ProfileGuard"): el alta
 // real son 3 llamadas encadenadas (`POST /user` → `POST /auth/login` →
 // `POST /student-profile`/`/company`), y `POST /auth/login` ya deja logueado
 // aunque la última nunca se haya hecho (pestaña cerrada, error de red).

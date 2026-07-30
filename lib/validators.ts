@@ -7,7 +7,7 @@
 // backend. El back además limpia separadores (puntos, comas) antes de guardar,
 // así que acá `cleanDocumentNumber` hace lo mismo antes de medir el largo: el
 // usuario puede tipear "1.234.567-8" y se valida contra "12345678".
-// Ver AGENTS.md, sección de registro (A-10).
+// Ver `docs/agents/roles-and-access-control.md` (A-10 en `docs/agents/open-questions.md`).
 
 import type { DocumentType } from "@/types";
 

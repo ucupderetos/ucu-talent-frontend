@@ -47,7 +47,7 @@ export function AdminDashboard() {
 }
 
 /** Mismo tamaño y radio que el contenido final, no un spinner centrado
- *  (AGENTS.md, "Estados de los componentes"). */
+ *  (`docs/agents/design-system.md`, "Estados de los componentes"). */
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-6">

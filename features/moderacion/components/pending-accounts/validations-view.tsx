@@ -41,7 +41,7 @@ export function ValidationsView() {
   return (
     <div className="flex flex-col gap-6">
       {/* Sin título/bajada propios: los muestra el Navbar (header dinámico,
-          item "Validaciones" del nav admin) — AGENTS.md. */}
+          item "Validaciones" del nav admin) — `docs/agents/design-system.md`. */}
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
         <TabsList>
           <TabsTrigger value="empresas">Empresas ({companiesCount})</TabsTrigger>

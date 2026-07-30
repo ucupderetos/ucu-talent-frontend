@@ -13,7 +13,7 @@ import { apiClient } from "@/lib/api-client";
 import type { StudentProfileData } from "@/features/perfil/types";
 import type { Education, StudentProfile, WorkExperience } from "@/types";
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function studentProfileQueryKey(studentProfileId: string | undefined) {
   return ["perfil", "alumno", studentProfileId] as const;
 }

@@ -3,7 +3,7 @@
 // Barra de filtros de "Usuarios": búsqueda (siempre visible, ancho fijo) + un
 // botón único "Filtros" que abre un panel con tres MultiSelect (estado,
 // carrera, área) — mismo patrón que `companies-filters.tsx`
-// (AGENTS.md, "Barras de filtros"). Controlado desde afuera — este componente
+// (`docs/agents/design-system.md`, "Barras de filtros"). Controlado desde afuera — este componente
 // no sabe de dónde vienen los datos, solo emite el filtro nuevo.
 //
 // Filtrado inmediato: cada cambio se aplica al toque, sin "Aplicar filtros".
