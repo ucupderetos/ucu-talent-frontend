@@ -7,36 +7,9 @@
 // quién es el usuario es preguntándoselo al backend.
 
 import { ApiError, apiClient } from "@/lib/api-client";
-import { MOCK_USERS } from "@/lib/fixtures";
 import type { Admin, Company, Role, StudentProfile, User } from "@/types";
 
 const CURRENT_USER_ENDPOINT = "/me";
-
-/**
- * Modo desarrollo sin backend: NEXT_PUBLIC_MOCK_SESSION=ALUMNO|EMPRESA|ADMIN
- * saltea el GET /me y devuelve un usuario de fixtures.
- *
- * Existe porque, sin esto, no hay backend → falla /me → RoleGuard bloquea toda
- * ruta protegida y ningún grupo puede ver sus pantallas. Poné el rol de tu
- * grupo en .env.local y trabajá.
- *
- * 🔴 BORRAR cuando exista el backend. No es seguridad: solo cambia lo que el
- * frontend CREE que sos. Spring Boot no lo mira, así que en producción un
- * usuario que se lo setee no gana ningún permiso — pero igual no queremos este
- * código vivo cuando ya no haga falta.
- */
-const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
-
-function mockUser(): User | null {
-  if (!MOCK_ROLE) return null;
-  if (MOCK_ROLE in MOCK_USERS) return MOCK_USERS[MOCK_ROLE as Role];
-
-  // Typo en .env.local: mejor gritar que fingir que no hay sesión y mandar a
-  // login sin explicar por qué.
-  throw new Error(
-    `NEXT_PUBLIC_MOCK_SESSION="${MOCK_ROLE}" no es un rol válido. Usá: ALUMNO, EMPRESA o ADMIN.`,
-  );
-}
 
 /**
  * Devuelve el usuario de la sesión actual (identidad pura, sin nombre), o
@@ -47,9 +20,6 @@ function mockUser(): User | null {
  * queremos mostrar la pantalla de login cuando en realidad se cayó el backend.
  */
 export async function getCurrentUser(signal?: AbortSignal): Promise<User | null> {
-  const mock = mockUser();
-  if (mock) return mock;
-
   try {
     return await apiClient.get<User>(CURRENT_USER_ENDPOINT, { signal });
   } catch (error) {
@@ -97,8 +67,6 @@ export async function getDisplayProfile(
   user: User,
   signal?: AbortSignal,
 ): Promise<{ name: string; surname?: string } | null> {
-  if (MOCK_ROLE) return { name: user.name ?? "", surname: user.surname };
-
   try {
     switch (user.role) {
       case "ALUMNO": {

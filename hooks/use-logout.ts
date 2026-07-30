@@ -15,22 +15,12 @@ import { apiClient } from "@/lib/api-client";
 
 const LOGOUT_ENDPOINT = "/auth/logout";
 
-/**
- * En modo mock (`NEXT_PUBLIC_MOCK_SESSION`) no hay cookie real que invalidar:
- * el usuario sale de una variable de entorno, no del backend. Igual se limpia
- * el cache y se redirige, pero la próxima carga vuelve a loguear con el mismo
- * rol — para "salir" de verdad en desarrollo hay que sacar la variable de
- * `.env.local`.
- */
-const IS_MOCK_SESSION = Boolean(process.env.NEXT_PUBLIC_MOCK_SESSION);
-
 export function useLogout() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
   return useMutation({
     mutationFn: async () => {
-      if (IS_MOCK_SESSION) return;
       await apiClient.post(LOGOUT_ENDPOINT);
     },
     onSuccess: () => {

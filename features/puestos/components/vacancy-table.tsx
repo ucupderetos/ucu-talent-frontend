@@ -1,8 +1,8 @@
 "use client";
 
 // Tabla de "Mis ofertas". Puramente de presentación: recibe las filas ya
-// filtradas/ordenadas/paginadas por el hook y no sabe nada de fixtures ni de
-// TanStack Query.
+// filtradas/ordenadas/paginadas por el hook y no sabe nada del origen de los
+// datos ni de TanStack Query.
 
 import { useState } from "react";
 import Link from "next/link";
