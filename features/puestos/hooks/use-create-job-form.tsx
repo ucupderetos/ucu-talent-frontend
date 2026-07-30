@@ -8,9 +8,6 @@
 // `CreateVacancyRequest` real del back. `companyId` NO se pide en el form:
 // se resuelve con useCurrentCompany() al armar el payload final (ver
 // use-publish-job.ts), no lo tipea el usuario.
-//
-// TODO: RF-PUE-01 pide "Guardar borrador". Hoy el estado solo vive en memoria
-// del navegador — se pierde si se recarga la página.
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createContext, useContext, useState, type ReactNode } from "react";

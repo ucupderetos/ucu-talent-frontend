@@ -190,6 +190,13 @@ export interface StudentProfile {
   linkedinUrl: string | null;
   skills: string[];
   description: string | null;
+  /**
+   * **Key del objeto en el storage, NO una URL** (`{carpeta}/{UUID}.pdf`) —
+   * mismo patrón que `User.profileImage`. Se canjea por una URL firmada con
+   * `GET /student-profile/cv?cvFile={key}` (ver A-24 en AGENTS.md y
+   * `features/perfil/hooks/use-cv.ts`). null si el alumno no subió CV.
+   */
+  cvFile: string | null;
   status: AccountStatus;
   /** null hasta que un Admin lo revise. */
   reviewedAt: string | null;
