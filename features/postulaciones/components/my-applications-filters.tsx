@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
-import { APPLICATION_STATUS_LABEL } from "@/features/postulaciones/components/application-status-badge";
+import { APPLICATION_STATUS_LABEL } from "@/components/vacancies/application-status-badge";
 import type { MyApplicationFilters } from "@/features/postulaciones/types";
 import type { Area, VacancyApplicationStatus } from "@/types";
 

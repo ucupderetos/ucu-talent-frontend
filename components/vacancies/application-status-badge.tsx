@@ -1,8 +1,9 @@
-// Traducción visual de `VacancyApplicationStatus` para "Mis postulaciones"
-// (vista alumno). Un solo lugar para no repetir el mapeo en card, filtros, etc.
-// El color del punto sale de application-status-colors.ts (compartido con los
-// otros dos badges de este mismo estado) — el LABEL sigue siendo propio de
-// esta vista.
+// Badge único para `VacancyApplicationStatus`, compartido por las 3 vistas
+// (alumno, empresa, admin). Antes cada una tenía su propio componente con
+// color Y label distintos — el color ya se había unificado en
+// application-status-colors.ts, dejando el label "propio de cada vista a
+// propósito". Esa distinción se cerró por decisión de producto: los tres
+// roles muestran el mismo texto (traducción literal del enum wire).
 
 import { Badge } from "@/components/ui/badge";
 import { APPLICATION_STATUS_DOT_CLASS } from "@/components/vacancies/application-status-colors";
@@ -11,8 +12,8 @@ import type { VacancyApplicationStatus } from "@/types";
 
 export const APPLICATION_STATUS_LABEL: Record<VacancyApplicationStatus, string> = {
   PENDIENTE: "Pendiente",
-  VISTO: "Vista",
-  FINALIZADO: "Finalizada",
+  VISTO: "Visto",
+  FINALIZADO: "Finalizado",
 };
 
 export function ApplicationStatusBadge({ status }: { status: VacancyApplicationStatus }) {

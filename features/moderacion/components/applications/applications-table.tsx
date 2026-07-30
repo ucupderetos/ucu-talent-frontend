@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ApplicationStatusBadge } from "@/features/moderacion/components/applications/application-status-badge";
+import { ApplicationStatusBadge } from "@/components/vacancies/application-status-badge";
 import { avatarColorFor, initialsFrom } from "@/lib/avatar";
 import type { AdminApplicationRow } from "@/features/moderacion/types";
 

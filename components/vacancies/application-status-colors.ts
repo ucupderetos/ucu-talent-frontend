@@ -1,17 +1,14 @@
-// Mapa de color único para `VacancyApplicationStatus`, compartido por los tres
-// badges que lo pintan (postulaciones/application-status-badge.tsx —vista
-// alumno—, postulaciones/applicant-status-badge.tsx —vista empresa— y
-// moderacion/applications/application-status-badge.tsx —vista admin—).
+// Mapa de color único para `VacancyApplicationStatus`, usado por el único
+// `ApplicationStatusBadge` compartido (components/vacancies/application-status-badge.tsx),
+// consumido por las 3 vistas (alumno, empresa, admin).
 //
-// Antes cada uno tenía su propio mapa y quedaban incoherentes entre sí
-// (PENDIENTE era `warning` en uno, `success` en otro y `chart-2` en el
-// tercero) — incluso contradiciendo el semáforo que ya usa
-// `vacancy-status-badge.tsx` (warning = necesita atención, muted = estado
-// terminal). Este archivo es la única fuente de esos colores; el LABEL de
-// cada estado sigue siendo propio de cada badge a propósito (ver AGENTS.md /
-// checklist de auditoría: si los tres roles deberían llamar igual al mismo
-// estado es una decisión de producto todavía sin definir, no algo que este
-// cambio deba forzar).
+// Antes cada vista tenía su propio componente con su propio mapa de color Y
+// de label, y quedaban incoherentes entre sí (PENDIENTE era `warning` en uno,
+// `success` en otro y `chart-2` en el tercero) — incluso contradiciendo el
+// semáforo que ya usa `vacancy-status-badge.tsx` (warning = necesita
+// atención, muted = estado terminal). Se unificó primero el color acá, y
+// después el label también (decisión de producto: los tres roles muestran
+// el mismo texto para el mismo estado) — ver `application-status-badge.tsx`.
 
 import type { VacancyApplicationStatus } from "@/types";
 
