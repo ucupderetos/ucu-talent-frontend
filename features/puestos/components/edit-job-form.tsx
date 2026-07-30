@@ -59,6 +59,16 @@ function formatDate(iso: string): string {
   return `${day}/${month}/${year}`;
 }
 
+/** `YYYY-MM-DD` de hoy, en horario local (mismo criterio que `formatDate`:
+ *  evita el corrimiento de día de `toISOString()` en UTC-3). */
+function todayIso(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 // satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto
 // rompe la build en vez de quedar desincronizado en silencio (mismo criterio
 // que use-create-job-form.tsx).
@@ -196,7 +206,13 @@ export function EditJobForm({
 }) {
   // `publicationDate` es read-only: se fija a la de la vacante y alimenta tanto
   // el refine de `closingDate` como el `min` del input y el display.
-  const publicationDate = vacancy.publicationDate.slice(0, 10);
+  //
+  // El backend rechaza `PUT /vacancy/{id}` con `publicationDate` anterior a
+  // hoy (misma regla que en la creación). Como el campo no es editable,
+  // reenviamos hoy en vez del valor guardado cuando ese valor ya pasó.
+  const storedPublicationDate = vacancy.publicationDate.slice(0, 10);
+  const publicationDate =
+    storedPublicationDate < todayIso() ? todayIso() : storedPublicationDate;
   const schema = useMemo(() => makeEditJobSchema(publicationDate), [publicationDate]);
 
   const parsedSalary = parseSalary(vacancy.salary);
@@ -496,9 +512,11 @@ export function EditJobForm({
               <Field>
                 <FieldLabel>Fecha de publicación</FieldLabel>
                 {/* Read-only: no se mueve la fecha de publicación de algo ya
-                    publicado. Se reenvía tal cual en el submit. */}
+                    publicado. Se muestra la fecha real guardada; el submit
+                    puede reenviar `publicationDate` (hoy) si esa fecha real
+                    ya pasó — ver el comentario sobre `storedPublicationDate`. */}
                 <div className="flex h-11 items-center rounded-lg border border-input bg-muted px-4 text-sm text-muted-foreground">
-                  {formatDate(publicationDate)}
+                  {formatDate(storedPublicationDate)}
                 </div>
               </Field>
 
