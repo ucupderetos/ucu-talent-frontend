@@ -22,6 +22,7 @@ import type { StudentFilters, StudentRow } from "@/features/moderacion/types";
 import type { Area, Degree, Education, Paginated, StudentProfile, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
+const USER_PAGE_SIZE = 100;
 
 /** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function studentsQueryKey(filters: StudentFilters) {
@@ -40,7 +41,7 @@ async function fetchStudents(filters: StudentFilters): Promise<Paginated<Student
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   const [users, profiles, degrees, areas, educations] = await Promise.all([
-    apiClient.get<User[]>("/user", { params: { role: "ALUMNO" } }),
+    fetchAllStudentUsers(),
     apiClient.get<StudentProfile[]>("/student-profile"),
     apiClient.get<Degree[]>("/degree"),
     apiClient.get<Area[]>("/area"),
@@ -71,6 +72,22 @@ async function fetchStudents(filters: StudentFilters): Promise<Paginated<Student
   const items = filtered.slice(start, start + perPage);
 
   return { items, total: filtered.length, page, perPage };
+}
+
+/** GET /user pagina del lado del servidor (no documentado en ninguna version
+ *  de ENDPOINTS.md) — sin page/size solo trae la primera pagina, y esta
+ *  pantalla mostraba menos alumnos que el dashboard (que si pagina, ver
+ *  use-dashboard.ts) por esto mismo. */
+async function fetchAllStudentUsers(): Promise<User[]> {
+  const users: User[] = [];
+
+  for (let page = 0; ; page += 1) {
+    const batch = await apiClient.get<User[]>("/user", {
+      params: { role: "ALUMNO", page, size: USER_PAGE_SIZE },
+    });
+    users.push(...batch);
+    if (batch.length < USER_PAGE_SIZE) return users;
+  }
 }
 
 /** un alumno puede tener varias educaciones cargadas, para esta tabla nos

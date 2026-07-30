@@ -14,6 +14,7 @@ import type { PendingCompaniesFilters, PendingCompanyRow } from "@/features/mode
 import type { Company, Paginated, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
+const USER_PAGE_SIZE = 100;
 
 /** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function pendingCompaniesQueryKey(filters: PendingCompaniesFilters) {
@@ -49,7 +50,7 @@ async function fetchPendingCompanies(
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   const [pendingUsers, companies] = await Promise.all([
-    apiClient.get<User[]>("/user", { params: { status: "PENDIENTE", role: "EMPRESA" } }),
+    fetchAllPendingCompanyUsers(),
     apiClient.get<Company[]>("/company"),
   ]);
 
@@ -61,6 +62,21 @@ async function fetchPendingCompanies(
   const items = filtered.slice(start, start + perPage);
 
   return { items, total: filtered.length, page, perPage };
+}
+
+/** GET /user pagina del lado del servidor (no documentado en ninguna version
+ *  de ENDPOINTS.md) — sin page/size solo trae la primera pagina. Mismo caso
+ *  que use-students.ts. */
+async function fetchAllPendingCompanyUsers(): Promise<User[]> {
+  const users: User[] = [];
+
+  for (let page = 0; ; page += 1) {
+    const batch = await apiClient.get<User[]>("/user", {
+      params: { status: "PENDIENTE", role: "EMPRESA", page, size: USER_PAGE_SIZE },
+    });
+    users.push(...batch);
+    if (batch.length < USER_PAGE_SIZE) return users;
+  }
 }
 
 function toRow(user: User, company: Company | undefined): PendingCompanyRow {
