@@ -1,8 +1,8 @@
 "use client";
 
 // Tabla de "Postulantes". Puramente de presentación: recibe las filas ya
-// filtradas/ordenadas/paginadas por el hook y no sabe nada de fixtures ni de
-// TanStack Query. La celda del postulante (avatar + nombre) linkea al detalle
+// filtradas/ordenadas/paginadas por el hook y no sabe nada del origen de los
+// datos ni de TanStack Query. La celda del postulante (avatar + nombre) linkea al detalle
 // (/postulantes/[id]) — página propia, no panel lateral ni modal.
 
 import Link from "next/link";

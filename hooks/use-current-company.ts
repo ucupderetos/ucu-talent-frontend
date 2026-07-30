@@ -11,7 +11,6 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import { MOCK_COMPANIES } from "@/lib/fixtures";
 import { useSession } from "@/hooks/use-session";
 import type { Company } from "@/types";
 
@@ -20,13 +19,7 @@ interface CurrentCompany {
   isLoading: boolean;
 }
 
-const MOCK_ROLE = process.env.NEXT_PUBLIC_MOCK_SESSION;
-
 function fetchCurrentCompany(userId: string, signal?: AbortSignal): Promise<Company | null> {
-  if (MOCK_ROLE) {
-    return Promise.resolve(MOCK_COMPANIES.find((c) => c.companyId === userId) ?? null);
-  }
-
   // PK compartida: `companyId` de `Company` ES el `userId` de la sesión.
   return apiClient.get<Company>(`/company/${userId}`, { signal });
 }

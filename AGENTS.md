@@ -926,7 +926,6 @@ hooks/                      # ⚠️ Hooks app-wide (React) que cruzan dominios:
 lib/
 ├── api-client.ts           # ⚠️ Wrapper de fetch hacia la API de Spring Boot
 ├── auth.ts                 # ⚠️ Sesión, usuario actual, guards de rol
-├── fixtures.ts             # 🔴 Datos mock — BORRAR cuando exista el backend
 └── utils.ts                # cn() — lo genera shadcn
 types/
 └── index.ts                # ⚠️ Entidades core del modelo de datos
@@ -1064,8 +1063,8 @@ tenerlo explícito porque si no cada grupo lo resuelve distinto:
   "salvo auth": la sesión ya NO vive en `features/auth`, vive en `hooks/`.
 - **No importar desde `features/` dentro de `components/`** — la dependencia va al revés:
   `features/` → `components/`, nunca al revés.
-- **No dejar `lib/fixtures.ts` ni `NEXT_PUBLIC_MOCK_SESSION` vivos** cuando exista el
-  backend — son andamio temporal.
+- **No armar juegos de datos falsos compartidos** — si una pantalla necesita datos, los
+  trae de la API por un hook de TanStack Query.
 
 ## Convención de trabajo en equipo
 
@@ -1159,7 +1158,7 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   encabezado de este archivo).
 - `lib/auth.ts` + `features/auth/`: sesión vía `GET /me` (`hooks/use-session.ts`) y
   guards de rol (`components/role-guard.tsx`, `components/guest-only.tsx`).
-- `.env.example`, `lib/fixtures.ts` y el modo sesión mock.
+- `.env.example`.
 - ✅ **`ProfileGuard`** (`features/perfil/components/ProfileGuard.tsx`) y la ruta
   **`app/completar-perfil/page.tsx`** — ver *Registro en dos pasos y ProfileGuard*.
   Montado en `(alumno)/layout.tsx` y `(empresa)/layout.tsx`, adentro de `RoleGuard`.
@@ -1171,9 +1170,9 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   `/completar-perfil`.
 
 **⚠️ 2026-07-30: esta lista quedó desactualizada durante un tiempo** (escrita cuando
-todavía se maquetaba sobre fixtures) y llegó a decir cosas ya falsas — que `/feed`,
-`/postulaciones` y `/puestos/[id]/postulantes` eran placeholders, que `features/<x>/hooks/`
-estaban vacíos salvo 2-3 dominios, que `use-company-vacancies.ts` seguía sobre fixtures.
+todavía se maquetaban las pantallas sin backend) y llegó a decir cosas ya falsas — que
+`/feed`, `/postulaciones` y `/puestos/[id]/postulantes` eran placeholders, y que
+`features/<x>/hooks/` estaban vacíos salvo en 2-3 dominios.
 Nada de eso es cierto hoy: los 5 dominios (`auth`, `perfil`, `puestos`, `postulaciones`,
 `moderacion`) tienen sus hooks reales contra `apiClient`, y las tres pantallas mencionadas
 existen y están conectadas. Se corrige acá para no volver a confiar en esa versión vieja.
@@ -1243,24 +1242,17 @@ pasa el CORS y llega hasta auth (`401` esperado sin cookie, con `detail` bien fo
 confirmar los atributos del `Set-Cookie` (`SameSite=None; Secure`) con un login real desde
 `https://dev.ucutalent.tech` — eso todavía no se probó.
 
-### Modo mock (en retirada)
+### Desarrollar con sesión
 
-Sigue existiendo mientras la cookie cross-origin no ande:
+La sesión siempre es la real, contra `api-dev`: los 5 dominios pegan contra `apiClient`,
+así que no hay forma de ver una pantalla con datos sin una sesión válida. Para eso hace
+falta un origen que el backend tenga en la whitelist de CORS (ver A-13 — desde
+`localhost:3000` el `GET /me` da `401` porque la cookie es third-party; desde
+`https://dev.ucutalent.tech` no).
 
-```bash
-NEXT_PUBLIC_MOCK_SESSION=ALUMNO   # o EMPRESA | ADMIN
-```
-
-Saltea el `GET /me` y devuelve un usuario de `lib/fixtures.ts`. **No es seguridad**: solo
-cambia lo que el frontend *cree* que sos, el backend no lo mira.
-
-**Ahora que la API existe, esto es deuda con fecha de vencimiento.** Apenas el login real
-funcione contra `api-dev`, se borran `lib/fixtures.ts`, `NEXT_PUBLIC_MOCK_SESSION` y sus
-usos en `lib/auth.ts` y `hooks/use-logout.ts`.
-
-✅ **La migración a `Role: ALUMNO|EMPRESA|ADMIN` ya se hizo** en `lib/auth.ts`,
-`lib/fixtures.ts` y `.env.example` (ver *Idioma del código*) — ya no queda código usando
-los literales viejos (`student`/`company`/`admin`).
+✅ **La migración a `Role: ALUMNO|EMPRESA|ADMIN` ya se hizo** en `lib/auth.ts` y
+`.env.example` (ver *Idioma del código*) — ya no queda código usando los literales viejos
+(`student`/`company`/`admin`).
 
 ## Pendiente de aclarar / estado de definición
 
