@@ -1,7 +1,8 @@
 "use client";
 
 // Pestaña "Formación académica" de Mi perfil: lista de `Education` +
-// alta/edición en un Dialog. No hay campo plano "carrera" (AGENTS.md): cada
+// alta/edición en un Dialog. No hay campo plano "carrera" (ver
+// `docs/agents/folder-structure.md`): cada
 // entrada apunta a un `Degree` (catálogo real vía `useDegrees()`, GET /degree)
 // y tiene su propio `degreeLevel`.
 

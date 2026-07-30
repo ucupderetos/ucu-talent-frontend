@@ -72,7 +72,7 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
                 <Link
                   href={`/postulantes?vacancyId=${vacancy.vacancyId}`}
                   // Mismo foco navy que el resto del sitio (`--ring`, ver
-                  // "Estados" en AGENTS.md) — un `<Link>` no es un primitivo
+                  // "Estados" en `docs/agents/design-system.md`) — un `<Link>` no es un primitivo
                   // de `components/ui/`, así que no trae el ancho de foco
                   // solo (`ring-3`) y hay que ponerlo a mano.
                   className="rounded-sm font-medium outline-none hover:underline focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"

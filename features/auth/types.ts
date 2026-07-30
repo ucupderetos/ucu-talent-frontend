@@ -2,7 +2,7 @@
 //
 // `User`, `Role`, `DocumentType`, `Department` viven en @/types. Acá va lo
 // específico: credenciales y los payloads de las 3 llamadas encadenadas del
-// registro (ver AGENTS.md, "Registro en dos pasos y ProfileGuard"):
+// registro (ver `docs/agents/roles-and-access-control.md`, "Registro en dos pasos y ProfileGuard"):
 //   1. POST /user            → 201, no loguea
 //   2. POST /auth/login      → 200 + Set-Cookie httpOnly — obligatorio, no opcional
 //   3. POST /student-profile → 201 (o POST /company, según el rol)

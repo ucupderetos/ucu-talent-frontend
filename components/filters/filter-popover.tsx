@@ -1,7 +1,7 @@
 "use client";
 
-// Piezas compartidas del popover de "Filtros" (AGENTS.md, "Barras de filtros
-// / toolbars"): un `FilterSection` por cada `MultiSelect`, y un pie de
+// Piezas compartidas del popover de "Filtros" (`docs/agents/design-system.md`,
+// "Barras de filtros / toolbars"): un `FilterSection` por cada `MultiSelect`, y un pie de
 // "Limpiar todo" que aparece solo si hay algo tildado. Vive en
 // `components/filters/` (no en `features/<dominio>/`) porque lo usan los
 // tres dominios (puestos, postulaciones, moderacion) — importarlo desde

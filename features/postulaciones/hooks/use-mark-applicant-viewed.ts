@@ -1,8 +1,8 @@
 "use client";
 
 // Transición PENDIENTE → VISTO: dispara automáticamente cuando la empresa
-// abre el detalle de un postulante (RN documentada en AGENTS.md — "Postulaciones:
-// máquina de estados"). No es una acción manual del usuario, por eso no hay un
+// abre el detalle de un postulante (RN documentada en
+// `docs/agents/applications-state-machine.md`). No es una acción manual del usuario, por eso no hay un
 // botón para esto: se llama sola desde `applicant-detail-view.tsx` al montarse,
 // y solo cuando el estado actual es "PENDIENTE" (ver el guard ahí) — este hook
 // no necesita repetir esa validación.

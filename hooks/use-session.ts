@@ -32,7 +32,7 @@ interface Session {
   /**
    * `false` cuando el `User` existe pero el perfil (`StudentProfile`/
    * `Company`) todavía no (`404` — se cortó a mitad del registro, ver
-   * "Registro en dos pasos y ProfileGuard" en AGENTS.md). La usa
+   * "Registro en dos pasos y ProfileGuard" en `docs/agents/roles-and-access-control.md`). La usa
    * `ProfileGuard` para mandar a `/completar-perfil`. Sin sentido para
    * `ADMIN` (perfil se crea en la misma transacción que la cuenta) — no
    * chequear esto fuera de `(alumno)`/`(empresa)`.

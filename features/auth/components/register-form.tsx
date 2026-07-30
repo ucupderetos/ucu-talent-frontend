@@ -50,7 +50,7 @@ function normalizeForSearch(value: string): string {
 
 /**
  * Formulario multi-paso EN UNA SOLA PANTALLA, sin navegación entre medio (ver
- * AGENTS.md, "Registro en dos pasos y ProfileGuard"): "sin navegación entre
+ * `docs/agents/roles-and-access-control.md`, "Registro en dos pasos y ProfileGuard"): "sin navegación entre
  * medio" es sobre rutas, no sobre pasos visuales — sigue siendo un único
  * componente en `/registro` que junta los datos de los 2 pasos del registro
  * real (`POST /user` + `POST /student-profile`/`/company`) en un único
@@ -70,7 +70,7 @@ function normalizeForSearch(value: string): string {
  * completa después desde `/perfil`.
  *
  * El email NO exige dominio `@ucu.edu.uy`: la vía de aprobación automática
- * por dominio institucional se descartó (ver AGENTS.md) — todo alumno se
+ * por dominio institucional se descartó (ver `docs/agents/out-of-scope.md`) — todo alumno se
  * registra igual, con cédula, y queda `PENDIENTE` hasta que se resuelva su
  * validación contra el padrón.
  */

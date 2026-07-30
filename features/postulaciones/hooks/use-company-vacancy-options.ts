@@ -15,7 +15,7 @@ interface VacancyOption {
   label: string;
 }
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function companyVacancyOptionsQueryKey(companyId: string | undefined) {
   return ["postulantes", "empresa", companyId, "opciones-oferta"] as const;
 }

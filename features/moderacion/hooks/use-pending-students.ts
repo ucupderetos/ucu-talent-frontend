@@ -5,10 +5,10 @@
 // GET /student-profile (ADMIN) devuelve todos los perfiles con el status ya
 // adentro. cruzamos con GET /user?status=PENDIENTE&role=ALUMNO por la pk
 // compartida (studentProfileId === userId) para sacar email y fecha de
-// registro. ojo que AGENTS.md decia que el alumno nacia APROBADO directo
-// (A-01) pero probado en vivo el 28/7 el alumno SI nace PENDIENTE y se pudo
-// aprobar bien — parece que ya lo corrigieron del lado del back, falta
-// avisarle al equipo para que actualicen el doc.
+// registro. ojo que una versión vieja de este doc decia que el alumno nacia
+// APROBADO directo (A-01) pero probado en vivo el 28/7 el alumno SI nace
+// PENDIENTE y se pudo aprobar bien — ya corregido, ver
+// `docs/agents/roles-and-access-control.md`.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -18,7 +18,7 @@ import type { Paginated, StudentProfile, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function pendingStudentsQueryKey(filters: PendingStudentsFilters) {
   return ["moderacion", "alumnos-pendientes", filters] as const;
 }

@@ -1,7 +1,8 @@
 "use client";
 
-// Paso 2 del registro, reintentado con sesión ya activa — ver AGENTS.md,
-// "Registro en dos pasos y ProfileGuard". Vive en /completar-perfil (FUERA de
+// Paso 2 del registro, reintentado con sesión ya activa — ver
+// `docs/agents/roles-and-access-control.md`, "Registro en dos pasos y
+// ProfileGuard". Vive en /completar-perfil (FUERA de
 // los route groups a propósito: adentro, `ProfileGuard` la redirigiría a sí
 // misma en loop).
 //

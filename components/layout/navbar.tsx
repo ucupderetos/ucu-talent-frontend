@@ -123,7 +123,7 @@ export function Navbar({ user }: { user: User | null }) {
         {activeItem ? (
           isNested ? (
             // Breadcrumb "Sección > Ítem": la sección es link, el ítem actual
-            // va en negrita y sin link (AGENTS.md — "Header dinámico +
+            // va en negrita y sin link (`docs/agents/design-system.md` — "Header dinámico +
             // breadcrumb"). El nombre del ítem lo pone la propia página de
             // detalle vía `usePageBreadcrumb`.
             <nav aria-label="Ruta actual" className="flex min-w-0 items-center gap-1.5">

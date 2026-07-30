@@ -29,7 +29,7 @@ import type {
 const DEFAULT_PER_PAGE = 10;
 const ALL_STATUSES: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADO"];
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function applicationsQueryKey(filters: AdminApplicationFilters) {
   return ["moderacion", "postulaciones", filters] as const;
 }

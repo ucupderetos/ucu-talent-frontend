@@ -2,7 +2,7 @@ import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
 
 /**
  * Mapea el mapa de errores por campo del backend (`ApiError.fieldErrors`,
- * A-19: `{ campo: mensaje }`, ver `lib/api-client.ts` y AGENTS.md) a los
+ * A-19: `{ campo: mensaje }`, ver `lib/api-client.ts` y `docs/agents/open-questions.md`) a los
  * errores de un formulario de React Hook Form, para que cada mensaje se vea
  * pegado a su control en vez de solo en un toast/banner genérico.
  *

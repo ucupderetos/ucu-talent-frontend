@@ -1,7 +1,7 @@
 "use client";
 
 // Estado del breadcrumb del Navbar (título "Sección > Ítem" en pantallas de
-// detalle anidadas — ver AGENTS.md, "Header dinámico + breadcrumb").
+// detalle anidadas — ver `docs/agents/design-system.md`, "Header dinámico + breadcrumb").
 //
 // Vive en components/layout/ sin lógica de dominio: el Navbar solo sabe leer
 // un string. Es la propia página de detalle (en features/<dominio>/) la que

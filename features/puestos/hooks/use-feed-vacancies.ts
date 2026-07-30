@@ -20,7 +20,7 @@ import { apiClient } from "@/lib/api-client";
 import type { FeedFilters, FeedVacancyRow } from "@/features/puestos/types";
 import type { Area, Company, ContractType, Vacancy } from "@/types";
 
-/** @public para invalidación puntual futura (AGENTS.md). */
+/** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function feedVacanciesQueryKey() {
   return ["puestos", "feed"] as const;
 }

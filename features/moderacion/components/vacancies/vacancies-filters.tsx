@@ -2,7 +2,7 @@
 
 // Barra de filtros de Ofertas: búsqueda visible + un único popover. Los
 // cambios se aplican en vivo y "Limpiar todo" vive dentro del popover vía
-// `FilterPopoverContent` (AGENTS.md, "Barras de filtros").
+// `FilterPopoverContent` (`docs/agents/design-system.md`, "Barras de filtros").
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 

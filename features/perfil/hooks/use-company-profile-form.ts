@@ -3,7 +3,7 @@
 // Estado del formulario de perfil de empresa (MER: `Company`).
 //
 // ⚠️ Alineado al modelo de vista `CompanyProfile` (features/perfil/types.ts),
-// que refleja el MER con `legalName` en inglés (AGENTS.md). Se siembra con
+// que refleja el MER con `legalName` en inglés (ver `docs/agents/language-conventions.md`). Se siembra con
 // `useCompanyProfile()` — que trae la `Company` REAL del backend
 // (`GET /company?userId=`), asíncrono: mientras carga, `profile` es undefined
 // y el form arranca vacío (la vista muestra un skeleton, no el form vacío).

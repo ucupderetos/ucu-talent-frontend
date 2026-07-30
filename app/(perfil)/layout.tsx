@@ -8,7 +8,7 @@
 // FUERA de los route groups, así que no hay loop de redirect.
 //
 // Delgado a propósito, y del equipo (no de un grupo de rol) — coordinar antes
-// de tocarlo. Ver AGENTS.md, "Roles y control de acceso".
+// de tocarlo. Ver `docs/agents/roles-and-access-control.md`.
 
 import { RoleGuard } from "@/features/auth/components/role-guard";
 import { ProfileGuard } from "@/features/perfil/components/profile-guard";

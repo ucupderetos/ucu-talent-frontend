@@ -3,8 +3,8 @@
 // Barra de filtros de "Mis postulaciones" (vista alumno): búsqueda + un botón
 // único "Filtros" que abre un panel con dos MultiSelect (estado, carrera).
 // Mismo patrón que VacancyFeedFilters
-// (features/puestos/components/vacancy-feed-filters.tsx) — ver AGENTS.md,
-// "Barras de filtros / toolbars".
+// (features/puestos/components/vacancy-feed-filters.tsx) — ver
+// `docs/agents/design-system.md`, "Barras de filtros / toolbars".
 
 import { FilterIcon, SearchIcon } from "lucide-react";
 
