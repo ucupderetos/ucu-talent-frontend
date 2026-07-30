@@ -2,13 +2,10 @@
 
 // trae los alumnos pendientes de aprobar, mismo criterio que empresas.
 //
-// GET /student-profile (ADMIN) devuelve todos los perfiles con el status ya
-// adentro. cruzamos con GET /user?status=PENDIENTE&role=ALUMNO por la pk
-// compartida (studentProfileId === userId) para sacar email y fecha de
-// registro. ojo que AGENTS.md decia que el alumno nacia APROBADO directo
-// (A-01) pero probado en vivo el 28/7 el alumno SI nace PENDIENTE y se pudo
-// aprobar bien — parece que ya lo corrigieron del lado del back, falta
-// avisarle al equipo para que actualicen el doc.
+// base = User (PENDIENTE, rol ALUMNO), no StudentProfile: un alumno puede
+// haber completado el paso 1 del registro (POST /user) y nunca el paso 2
+// (POST /student-profile) — antes esa cuenta desaparecia de la cola entera.
+// Ahora se muestra igual, con los campos del perfil vacios.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -41,10 +38,8 @@ async function fetchPendingStudents(
     apiClient.get<StudentProfile[]>("/student-profile"),
   ]);
 
-  const pendingUsersById = new Map(pendingUsers.map((u) => [u.userId, u]));
-  const rows = profiles
-    .filter((p) => p.status === "PENDIENTE" && pendingUsersById.has(p.studentProfileId))
-    .map((p) => toRow(p, pendingUsersById.get(p.studentProfileId)!));
+  const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
+  const rows = pendingUsers.map((user) => toRow(user, profilesById.get(user.userId)));
   const filtered = filterRows(rows, filters);
 
   const start = (page - 1) * perPage;
@@ -53,9 +48,22 @@ async function fetchPendingStudents(
   return { items, total: filtered.length, page, perPage };
 }
 
-function toRow(profile: StudentProfile, user: User): PendingStudentRow {
+function toRow(user: User, profile: StudentProfile | undefined): PendingStudentRow {
   return {
-    ...profile,
+    studentProfileId: user.userId,
+    name: profile?.name ?? "",
+    surname: profile?.surname ?? "",
+    documentType: profile?.documentType ?? null,
+    documentNumber: profile?.documentNumber ?? "",
+    phoneNumber: profile?.phoneNumber ?? null,
+    linkedinUrl: profile?.linkedinUrl ?? null,
+    skills: profile?.skills ?? [],
+    description: profile?.description ?? null,
+    status: user.status,
+    reviewedAt: profile?.reviewedAt ?? null,
+    adminComment: profile?.adminComment ?? null,
+    cvFile: profile?.cvFile ?? null,
+    hasProfile: profile !== undefined,
     email: user.email,
     registeredAt: user.registeredAt,
   };
