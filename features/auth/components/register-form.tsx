@@ -27,9 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AuthFormSkeleton } from "@/features/auth/components/auth-layout";
-import { useRegister, type RegistrationProfile } from "@/features/auth/hooks/use-register";
+import {
+  RegistrationError,
+  useRegister,
+  type RegistrationProfile,
+} from "@/features/auth/hooks/use-register";
 import type { Registration } from "@/features/auth/types";
-import { ApiError } from "@/lib/api-client";
 import { DEPARTMENT_OPTIONS } from "@/lib/departments";
 import { DOCUMENT_TYPE_OPTIONS } from "@/lib/document-types";
 import { applyFieldErrors } from "@/lib/form-errors";
@@ -274,16 +277,17 @@ export function RegisterForm() {
     try {
       await submitRegistration(toRegistration(values), toProfile(values));
     } catch (cause) {
-      if (!(cause instanceof ApiError)) return;
+      if (!(cause instanceof RegistrationError)) return;
+      const { step: failedStep, apiError } = cause;
 
-      // El 409 (email duplicado, paso 1) se muestra en el campo, no en el
-      // banner genérico — `useRegister().error` ya lo silencia para ese caso.
-      // El campo `email` vive en el paso "cuenta": si el submit se dispara
-      // desde "perfil" (como siempre, el submit real es del paso 2), el error
-      // quedaba seteado en un campo que no se renderizaba y el usuario no lo
-      // veía hasta volver manualmente al paso 1. Por eso el catch también
-      // vuelve al paso donde el campo es visible.
-      if (cause.status === 409) {
+      // El 409 SOLO significa "email duplicado" cuando viene del paso 1. Los
+      // otros dos pasos también devuelven 409 (perfil ya existente, documento
+      // repetido — ver RegistrationError), y tratarlos igual mandaba al usuario
+      // al paso 1 con un mensaje falso sobre un campo que estaba bien.
+      // El campo `email` vive en el paso "cuenta": como el submit real se
+      // dispara desde "perfil", hay que volver a ese paso para que el error sea
+      // visible.
+      if (failedStep === "cuenta" && apiError.status === 409) {
         setStep("cuenta");
         setError("email", {
           type: "manual",
@@ -294,13 +298,18 @@ export function RegisterForm() {
 
       // A-19: errores por campo del backend (ej. documento inválido, URL mal
       // formada) pegados a su control. Lo no mapeable cae en el banner genérico
-      // que ya muestra `useRegister().error` para un 400.
-      if (cause.fieldErrors) {
-        const { applied } = applyFieldErrors(cause.fieldErrors, setError, BACKEND_FIELD_NAMES);
+      // que ya muestra `useRegister().error`.
+      if (apiError.fieldErrors) {
+        const { applied } = applyFieldErrors(apiError.fieldErrors, setError, BACKEND_FIELD_NAMES);
         if (applied.some((field) => ACCOUNT_STEP_ERROR_FIELDS.has(field))) {
           setStep("cuenta");
         }
       }
+
+      // Un fallo del paso "perfil" deja al usuario donde está: la cuenta ya se
+      // creó y la sesión está abierta, así que corregir el dato y reenviar
+      // reintenta solo ese paso (ver el ref de `useRegister`). El motivo real
+      // sale por el banner de arriba del botón.
     }
   }
 

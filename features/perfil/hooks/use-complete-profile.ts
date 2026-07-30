@@ -55,10 +55,16 @@ export function useCompleteProfile() {
       profile: StudentProfileRegistrationInput | CompanyRegistrationInput,
     ) => mutation.mutateAsync({ role, profile }),
     isLoading: mutation.isPending,
+    /**
+     * El `detail` del backend (A-19) gana sobre cualquier texto genérico: en
+     * este paso el error típico es un 409 con el motivo exacto ("Ya existe un
+     * alumno con ese tipo y numero de documento"), y taparlo con "Intentá
+     * nuevamente" dejaba al usuario reintentando lo mismo sin saber qué
+     * corregir. Solo se cae al genérico cuando no hay mensaje del backend
+     * (red caída, 5xx sin cuerpo).
+     */
     error: mutation.isError
-      ? apiError?.status === 400
-        ? "Revisá los datos ingresados."
-        : "No se pudo completar tu perfil. Intentá nuevamente."
+      ? (apiError?.message ?? "No se pudo completar tu perfil. Intentá nuevamente.")
       : null,
   };
 }
