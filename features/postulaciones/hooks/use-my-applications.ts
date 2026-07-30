@@ -2,29 +2,46 @@
 
 // Postulaciones del alumno logueado (vista "Mis postulaciones") — RF-POS.
 //
-// ⚠️ `GET /vacancy-application/me` NO devuelve vacancyName/companyName/
-// vacancyStatus resueltos — corrige una versión anterior de este comentario,
-// escrita contra docs/ENDPOINTS.md (que sí los prometía). Verificado contra
-// el código fuente real del backend
-// (`vacancyapplication/dto/VacancyApplicationStudentResponse.java`): el wire
-// es `{ vacancyApplicationId, vacancyId, studentProfileId, status, appliedAt }`,
-// nada más. Se completa cruzando contra `GET /vacancy` (colección completa,
-// sin paginar, sección 5) + `GET /company` + `GET /area`, mismo patrón que el
-// feed (`use-feed-vacancies.ts`).
+// `GET /vacancy-application/me/detailed` ya resuelve todo lo que la card
+// necesita en una sola llamada (application + vacancy + companyName +
+// areaName) — reemplaza al `GET /vacancy-application/me` + `GET /vacancy` +
+// `GET /company` + `GET /area` de antes (mismo N+1 que ya se corrigió en
+// "Mis ofertas", ver A-22 en AGENTS.md). No documentado en ninguna versión
+// de `ENDPOINTS.md` — DTO específico para esta pantalla, agregado 2026-07-30.
+//
+// ⚠️ `application.status` es del ENUM DTO (VacancyApplicationStatus), no
+// confundir con `application.vacancyStatus`, el estado de la vacante en el
+// momento de la postulación.
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
 import type { MyApplicationRow } from "@/features/postulaciones/types";
-import type { Area, Company, Vacancy, VacancyApplication, VacancyApplicationStatus } from "@/types";
+import type { Area, Vacancy, VacancyApplication, VacancyApplicationStatus, VacancyStatus } from "@/types";
 
-interface MyVacancyApplicationResponse {
+/** Wire: `application` dentro de `GET /vacancy-application/me/detailed`.
+ *  A diferencia de `VacancyApplicationStudentResponse` (`GET
+ *  /vacancy-application/me`), este viene con `vacancyName`/`companyId`/
+ *  `companyName`/`vacancyStatus` ya resueltos — no trae `studentProfileId`
+ *  ni `accepted` (mismos motivos que antes: el alumno no ve `accepted`). */
+interface MyApplicationDetailItemResponse {
   vacancyApplicationId: string;
   vacancyId: string;
-  studentProfileId: string;
-  status: VacancyApplicationStatus;
+  vacancyName: string;
+  companyId: string;
+  companyName: string;
   appliedAt: string;
+  status: VacancyApplicationStatus;
+  vacancyStatus: VacancyStatus;
+}
+
+/** Wire: item de `GET /vacancy-application/me/detailed`. */
+interface MyApplicationDetailResponse {
+  application: MyApplicationDetailItemResponse;
+  vacancy: Vacancy;
+  companyName: string;
+  areaName: string;
 }
 
 /**
@@ -46,52 +63,34 @@ export function useMyApplications(studentProfileId: string | undefined) {
 }
 
 async function fetchMyApplications(studentProfileId: string): Promise<MyApplicationRow[]> {
-  const [applications, vacancies, companies, areas] = await Promise.all([
-    apiClient.get<MyVacancyApplicationResponse[]>("/vacancy-application/me"),
-    apiClient.get<Vacancy[]>("/vacancy"),
-    apiClient.get<Company[]>("/company"),
-    apiClient.get<Area[]>("/area"),
-  ]);
+  const items = await apiClient.get<MyApplicationDetailResponse[]>(
+    "/vacancy-application/me/detailed",
+  );
 
-  const rows = applications
-    .map((item) => toRow(item, studentProfileId, vacancies, companies, areas))
-    .filter((row): row is MyApplicationRow => row != null);
+  const rows = items.map((item) => toRow(item, studentProfileId));
 
   return sortByRecent(rows);
 }
 
-function toRow(
-  item: MyVacancyApplicationResponse,
-  studentProfileId: string,
-  vacancies: Vacancy[],
-  companies: Company[],
-  areas: Area[],
-): MyApplicationRow | null {
-  const vacancy = vacancies.find((v) => v.vacancyId === item.vacancyId);
-  if (!vacancy) return null;
-
-  const company = companies.find((c) => c.companyId === vacancy.companyId);
-  const area = areas.find((a) => a.areaId === vacancy.areaId);
-
+function toRow(item: MyApplicationDetailResponse, studentProfileId: string): MyApplicationRow {
   const application: VacancyApplication = {
-    vacancyApplicationId: item.vacancyApplicationId,
-    vacancyId: item.vacancyId,
+    vacancyApplicationId: item.application.vacancyApplicationId,
+    vacancyId: item.application.vacancyId,
     studentProfileId,
-    status: item.status,
-    appliedAt: item.appliedAt,
-    // `GET /vacancy-application/me` devuelve `VacancyApplicationStudentResponse`
-    // (wire), que a propósito NO trae `accepted` — el alumno no puede ver si
-    // quedó seleccionado (ver el aviso en `VacancyApplication`, types/index.ts).
-    // Hardcodeado en `false`: ninguna pantalla de este dominio lo lee para
-    // decidir nada, es solo para satisfacer el tipo compartido.
+    status: item.application.status,
+    appliedAt: item.application.appliedAt,
+    // Ver el comentario de arriba: `GET /vacancy-application/me/detailed`
+    // tampoco expone `accepted` al alumno. Hardcodeado en `false`: ninguna
+    // pantalla de este dominio lo lee para decidir nada, es solo para
+    // satisfacer el tipo compartido.
     accepted: false,
   };
 
   return {
     application,
-    vacancy,
-    companyName: company?.name ?? "Empresa no disponible",
-    areaName: area?.name ?? "—",
+    vacancy: item.vacancy,
+    companyName: item.companyName,
+    areaName: item.areaName,
   };
 }
 
