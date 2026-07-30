@@ -72,16 +72,6 @@ export interface WorkExperienceInput {
   description?: string;
 }
 
-/**
- * RF-05/06/07 — import de LinkedIn.
- *
- * ⚠️ PENDIENTE DE ACLARAR: el formato se contradice en v3 — RF-05 dice
- * ZIP/CSV/PDF/txt y el flujo 6.2 dice PDF/DOCX. `docs/ENDPOINTS.md` no tiene
- * NINGÚN endpoint de import — ni de LinkedIn ni de archivos en general. Sigue
- * bajo prioridad Baja: no bloquea el MVP, pero confirmar con backend si esto
- * está en el roadmap antes de construir la UI.
- */
-export type LinkedInImportFormat = "pendiente-de-confirmar";
 // ---------------------------------------------------------------------------
 // Empresa (MER/wire: `Company`)
 // ---------------------------------------------------------------------------

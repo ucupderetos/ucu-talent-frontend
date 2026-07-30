@@ -112,21 +112,3 @@ export interface MyApplicationFilters {
   statuses?: VacancyApplicationStatus[];
   areaIds?: string[];
 }
-
-/**
- * Cambio de estado de una postulación, hecho por la empresa.
- * Wire: `UpdateVacancyApplicationRequest` — `PUT /vacancy-application/{id}`.
- *
- * 🔴 GAP CONFIRMADO: el payload real SOLO tiene `status`. No existe ningún
- * campo para transmitir "seguir con el candidato o no" (lo que en el diseño
- * original de RF-21 se llamaba `continueWithCandidate`). Tal como está el
- * contrato hoy, el backend no tiene forma de saber qué mail mandarle al
- * postulante al pasar a `FINALIZADO` — o decide el contenido del mail solo en
- * base al `status`, o falta un campo que `docs/ENDPOINTS.md` todavía no
- * documenta. Confirmar con backend ANTES de construir la UI de "marcar
- * postulación como finalizada": si se asume un campo que no existe, la
- * request rompe con 400.
- */
-export interface ApplicationStatusChange {
-  status: VacancyApplicationStatus;
-}
