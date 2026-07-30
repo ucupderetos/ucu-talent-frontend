@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ApplicationProgress } from "@/features/postulaciones/components/application-progress";
-import { ApplicationStatusBadge } from "@/features/postulaciones/components/application-status-badge";
+import { ApplicationStatusBadge } from "@/components/vacancies/application-status-badge";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import type { MyApplicationRow } from "@/features/postulaciones/types";
 

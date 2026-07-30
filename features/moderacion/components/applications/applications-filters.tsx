@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { FilterPopoverContent, FilterSection } from "@/components/filters/filter-popover";
 import { MultiSelect } from "@/components/filters/multi-select";
-import { APPLICATION_STATUS_LABEL } from "@/features/moderacion/components/applications/application-status-badge";
+import { APPLICATION_STATUS_LABEL } from "@/components/vacancies/application-status-badge";
 import type { AdminApplicationFilters, AdminApplicationOrder } from "@/features/moderacion/types";
 import type { Company, Vacancy, VacancyApplicationStatus } from "@/types";
 

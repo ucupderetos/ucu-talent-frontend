@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { APPLICANT_STATUS_LABEL } from "@/features/postulaciones/components/applicant-status-badge";
+import { APPLICATION_STATUS_LABEL } from "@/components/vacancies/application-status-badge";
 import type { VacancyApplicationStatus } from "@/types";
 import type { ApplicantFilters, ApplicantOrder } from "@/features/postulaciones/types";
 
@@ -89,7 +89,7 @@ export function ApplicantFiltersBar({
             <MultiSelect
               label="Estado"
               placeholder="Todos los estados"
-              options={Object.entries(APPLICANT_STATUS_LABEL).map(([value, label]) => ({
+              options={Object.entries(APPLICATION_STATUS_LABEL).map(([value, label]) => ({
                 value,
                 label,
               }))}

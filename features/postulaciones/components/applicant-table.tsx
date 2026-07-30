@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ApplicantStatusBadge } from "@/features/postulaciones/components/applicant-status-badge";
+import { ApplicationStatusBadge } from "@/components/vacancies/application-status-badge";
 import type { ApplicantRow } from "@/features/postulaciones/types";
 
 const dateFormatter = new Intl.DateTimeFormat("es-UY", {
@@ -69,7 +69,7 @@ export function ApplicantTable({ rows }: { rows: ApplicantRow[] }) {
                 {row.vacancyName}
               </TableCell>
               <TableCell>
-                <ApplicantStatusBadge status={row.application.status} />
+                <ApplicationStatusBadge status={row.application.status} />
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {formatDate(row.application.appliedAt)}

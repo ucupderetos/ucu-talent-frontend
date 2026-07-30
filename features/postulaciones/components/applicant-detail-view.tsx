@@ -42,7 +42,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/layout/empty-state";
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
 import { useCurrentCompany } from "@/hooks/use-current-company";
-import { ApplicantStatusBadge } from "@/features/postulaciones/components/applicant-status-badge";
+import { ApplicationStatusBadge } from "@/components/vacancies/application-status-badge";
 import { useApplicantDetail } from "@/features/postulaciones/hooks/use-applicant-detail";
 import { useMarkApplicantViewed } from "@/features/postulaciones/hooks/use-mark-applicant-viewed";
 import { initialsFrom } from "@/lib/avatar";
@@ -152,7 +152,7 @@ export function ApplicantDetailView({ vacancyApplicationId }: { vacancyApplicati
               <span className="text-xs text-muted-foreground">
                 Postulado el {formatDate(detail.application.appliedAt)}
               </span>
-              <ApplicantStatusBadge status={detail.application.status} />
+              <ApplicationStatusBadge status={detail.application.status} />
             </div>
           </CardContent>
         </Card>
