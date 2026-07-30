@@ -3,10 +3,8 @@
 //
 // Este archivo define la FORMA del cliente (verbos, errores, base URL), no los
 // endpoints — esos están en docs/ENDPOINTS.md (contrato funcional cerrado). Los
-// hooks de cada dominio viven en features/<x>/hooks/ y usan estos helpers.
-//
-// Es agnóstico de la capa de cache: sirve tal cual con TanStack Query o con
-// useEffect + useState (decisión pendiente del equipo).
+// hooks de cada dominio viven en features/<x>/hooks/ y usan estos helpers con
+// TanStack Query (ver AGENTS.md, "Fetching de datos") — no useEffect + useState.
 
 /**
  * Base URL de la API. Se lee en build time — tiene que existir en .env.local.

@@ -122,10 +122,11 @@ Instalado y en uso:
   preset `b1Ymqvgm0` (tema blue, tipografía Inter, radius medium)
 - **TanStack Query v5** — toda la capa de fetching CSR
 - **React Hook Form + Zod v4** (`@hookform/resolvers`) — todos los formularios
-- `sonner` (toasts) — arrastró `next-themes` como dependencia transitiva:
-  el componente `sonner` de shadcn lo importa para leer el tema. Los tokens
-  `.dark` existen en `globals.css` pero **nada los activa todavía**. Si no se
-  hace dark mode, `next-themes` es peso muerto y se puede sacar.
+- `sonner` (toasts). ✅ `next-themes` (dependencia transitiva que arrastraba —
+  el componente `sonner` de shadcn lo importaba solo para leer el tema) se
+  sacó: sin dark mode activado (los tokens `.dark` de `globals.css` siguen sin
+  nada que los dispare), era peso muerto. `components/ui/sonner.tsx` quedó con
+  `theme="system"` fijo en vez de `useTheme()`.
 
 ⚠️ **Zod es v4, no v3.** La mayoría de los tutoriales y respuestas de IA asumen v3, que
 tiene otra API. Ante la duda, chequear la doc de v4 antes de copiar un snippet.
