@@ -98,16 +98,6 @@ export function AuthHeader({ title, subtitle }: { title: string; subtitle: strin
   );
 }
 
-/** Placeholder de `AuthHeader` mientras `GuestOnly` resuelve la sesión. */
-export function AuthHeaderSkeleton() {
-  return (
-    <div className="mb-8">
-      <Skeleton className="h-11 w-64 max-w-full" />
-      <Skeleton className="mt-3 h-5 w-80 max-w-full" />
-    </div>
-  );
-}
-
 /**
  * Placeholder de un formulario de auth mientras `GuestOnly` resuelve la
  * sesión — mismo alto de campo (`h-12`) y mismo `gap-5` que `FieldGroup`,
