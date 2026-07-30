@@ -14,19 +14,18 @@ import type { VacancyUpdateInput } from "@/features/puestos/types";
 import type { Vacancy } from "@/types";
 
 /**
- * ⚠️ Corrección 2026-07-29 (AGENTS.md A-15): `docs/ENDPOINTS.md` documenta
- * `UpdateVacancyRequest.salary`, pero probado a mano contra Swagger en
- * `api-dev`, el `PUT /vacancy/{id}` real solo aplica el cambio si el campo
- * se llama `salaryRange` — con `salary` el request devuelve 200 pero el
- * valor queda sin tocar. La `VacancyResponse` de lectura SÍ usa `salary`
- * (confirmado en el propio Swagger), así que es un wire distinto por
- * dirección: el back renombró el campo de lectura pero no el de escritura.
- * Se traduce acá, en el borde de red, para no ensuciar `VacancyUpdateInput`
- * (que sigue en `salary`, igual que el resto de la UI) con el nombre viejo.
+ * ⚠️ Corrección 2026-07-30: la corrección anterior (AGENTS.md A-15) traducía
+ * `salary` → `salaryRange` en el borde de red, basada en una prueba a mano
+ * contra Swagger del 2026-07-29. Verificado ahora directo contra el código
+ * fuente del backend (`vacancy/dto/UpdateVacancyRequest.java`, rama `dev`):
+ * el campo se llama `salary`, sin `salaryRange` en ningún lado del DTO — el
+ * backend debe haber corregido esa inconsistencia entre el 29 y el 30. Con
+ * la traducción vieja, `PUT /vacancy/{id}` mandaba un `salaryRange` que el
+ * DTO real ignora: el salario dejaba de actualizarse en silencio. Se saca la
+ * traducción y se manda `salary` tal cual, igual que `POST /vacancy`.
  */
 function editVacancyRequest(vacancyId: string, payload: VacancyUpdateInput): Promise<Vacancy> {
-  const { salary, ...rest } = payload;
-  return apiClient.put<Vacancy>(`/vacancy/${vacancyId}`, { ...rest, salaryRange: salary });
+  return apiClient.put<Vacancy>(`/vacancy/${vacancyId}`, payload);
 }
 
 export function useEditJob(vacancyId: string) {

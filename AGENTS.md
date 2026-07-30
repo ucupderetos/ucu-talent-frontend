@@ -836,13 +836,20 @@ Los dos correos automáticos del sistema, ambos desde Spring Boot:
 > El contacto empresa → alumno pasa a ocurrir **enteramente fuera del sistema**: la empresa
 > ve los datos del alumno en su perfil y le escribe por su cuenta. El frontend solo muestra
 > el email; no ofrece ninguna acción de contacto.
+>
+> ⚠️ **Ver A-23 (arriba, "Endpoints agregados"): el backend SÍ tiene el `MailTemplateController`
+> completo y funcionando**, lo que contradice el "se elimina del modelo" de este párrafo (basado
+> en el MER, no en el código del backend). Decisión del equipo 2026-07-30: mantener esta
+> sección como está (no implementar RF-PUE-05) hasta confirmar con backend si es código
+> legacy sin retirar o un cambio de rumbo real — no autoimplementarlo solo porque el
+> endpoint responde.
 
 ## Estructura de carpetas
 
 **No hay `src/`: la raíz del repo es el src.** El alias `@/*` apunta a la raíz (`./*`).
 
 ```
-proxy.ts                    # ⛔ TODAVÍA NO EXISTE. Guard optimista (era middleware.ts)
+proxy.ts                    # ✅ Existe. Guard optimista (era middleware.ts) — ver A-16
 .env.example                # Plantilla de variables — copiar a .env.local
 app/                        # Rutas (App Router) — casi sin lógica de negocio
 ├── (auth)/                 # ⚠️ layout.tsx: GuestOnly (si ya hay sesión, redirige)
@@ -1117,38 +1124,38 @@ los 3 grupos puedan trabajar en paralelo sin pisarse.
   `features/perfil/hooks/use-complete-profile.ts` reintenta solo el paso 3 desde
   `/completar-perfil`.
 
-**Todavía NO existe:**
+**⚠️ 2026-07-30: esta lista quedó desactualizada durante un tiempo** (escrita cuando
+todavía se maquetaba sobre fixtures) y llegó a decir cosas ya falsas — que `/feed`,
+`/postulaciones` y `/puestos/[id]/postulantes` eran placeholders, que `features/<x>/hooks/`
+estaban vacíos salvo 2-3 dominios, que `use-company-vacancies.ts` seguía sobre fixtures.
+Nada de eso es cierto hoy: los 5 dominios (`auth`, `perfil`, `puestos`, `postulaciones`,
+`moderacion`) tienen sus hooks reales contra `apiClient`, y las tres pantallas mencionadas
+existen y están conectadas. Se corrige acá para no volver a confiar en esa versión vieja.
 
-- **`proxy.ts`** — no hay ninguna primera línea de defensa. Va en rama `feature/`, no
-  `chore/`: es funcionalidad.
-- **`features/<x>/hooks/`** — vacíos salvo `auth`, `perfil` (`use-complete-profile.ts`) y
-  `puestos` (`use-company-vacancies.ts`, todavía sobre fixtures). Ya se pueden escribir
-  contra `ENDPOINTS.md`. `hooks/use-session.ts` (capa de sesión app-wide, en el bucket
-  `hooks/` de raíz — ver *Estructura de carpetas*) sirve de plantilla del patrón.
-- ✅ **`app/(empresa)/puestos/page.tsx`** — ya existe ("Mis ofertas"), construida por el
-  grupo de empresa. Ver `VacancyStatus` en *Roles y control de acceso*: el enum es
-  `PENDIENTE, PUBLICADO, FINALIZADO` (default `PUBLICADO`, A-14 ✅). **Ya NO colapsa
-  estados** — corrige una versión anterior de esta nota, escrita cuando `api-dev` todavía
-  exponía solo `PENDIENTE, FINALIZADO`: `vacancy-table.tsx` hoy pinta los tres estados
-  distintos vía `VacancyStatusBadge` + `VACANCY_STATUS_DESCRIPTION`, y la acción "Cerrar"
-  sale solo para `PUBLICADO`. ⚠️ Eso último es **correcto, no un gap** — corrige un aviso
-  de una revisión anterior de esta misma nota, que decía lo contrario apoyándose en el
-  `ENDPOINTS.md` del propio repo de backend (no en su código): `VacancyServiceImpl.
-  updateVacancyStatus` (fuente real del backend, verificado en `dev`) **prohíbe
-  explícitamente** que la empresa cierre desde `PENDIENTE` (`403 "El Puesto está en
-  revisión."`) — solo puede cerrar desde `PUBLICADO`. El código de `vacancy-table.tsx` ya
-  estaba bien; era la nota la que estaba mal. ✅ **"Cerrar" ya no es un stub** — conectado a
-  `PATCH /vacancy/status/{id}` vía `features/puestos/hooks/use-close-job.ts`, con diálogo de
-  confirmación (irreversible) en `vacancy-table.tsx` antes de disparar la mutación. Invalida
-  el detalle, "Mis ofertas" y el feed de alumno, para que la vacante finalizada desaparezca
-  del feed sin recargar la página.
-- Las `page.tsx` de `/feed`, `/postulaciones` y `/puestos/[id]/postulantes` siguen siendo
-  placeholders.
+**Ya NO falta (correcciones de esta pasada):**
+
+- ✅ **`proxy.ts`** — existe, en la raíz del repo. Guard optimista: si la ruta protegida no
+  tiene la cookie `access_token`, redirige a `/login` antes de renderizar. Nombre de la
+  cookie confirmado contra el código fuente del backend (`auth/AuthController.java`,
+  `auth/CookieBearerTokenResolver.java`) — resuelve **A-16**.
+- ✅ **`app/(empresa)/puestos/page.tsx`** ("Mis ofertas") pinta los tres estados de
+  `VacancyStatus` (`PENDIENTE, PUBLICADO, FINALIZADO`, default `PUBLICADO`, A-14) vía
+  `VacancyStatusBadge` + `VACANCY_STATUS_DESCRIPTION`, con "Cerrar" habilitado solo para
+  `PUBLICADO` (`VacancyServiceImpl.updateVacancyStatus` del backend prohíbe cerrar desde
+  `PENDIENTE` con `403`) y conectado de verdad a `PATCH /vacancy/status/{id}`
+  (`use-close-job.ts`), con diálogo de confirmación.
+- ✅ **`use-company-vacancies.ts`** migrado a `GET /vacancy/company/{companyId}/management`
+  (`VacancyManagementResponse` — verificado contra el código fuente del backend, no
+  documentado en ninguna versión de `ENDPOINTS.md`), reemplazando el `GET /vacancy` +
+  un `GET /vacancy-application` por vacante de antes. El endpoint ya resuelve
+  `companyName`/`areaName`/`applicationCount` y filtra `deleted = false`
+  (`VacancyRepository.findManagementByCompanyId`) del lado del servidor. El badge de
+  "postulantes nuevos" de `vacancy-table.tsx` pasó de "postulado en los últimos 7 días" a
+  "sin revisar" (`newApplicationsCount` = postulaciones en `PENDIENTE`, decisión del
+  equipo 2026-07-30) — campo renombrado a `CompanyVacancyRow.unreviewedApplicantsCount`.
 - ✅ **`/perfil` es una ruta COMPARTIDA entre alumno y empresa** (route group `(perfil)`,
-  guardado ALUMNO+EMPRESA): la `page.tsx` ramifica por rol y monta `CompanyProfileView`
-  (empresa, ya construida — `features/perfil/`) o `StudentProfileView` (alumno, todavía
-  placeholder). Reemplazó a `(alumno)/perfil` y `(empresa)/perfil-empresa`, que ya no
-  existen. Ver el porqué del group propio en *Estructura de carpetas*.
+  guardado ALUMNO+EMPRESA): la `page.tsx` ramifica por rol y monta `CompanyProfileView` o
+  `StudentProfileView` — las dos construidas, ninguna es placeholder hoy.
 
 ### El backend ya está levantado
 
@@ -1235,7 +1242,19 @@ los literales viejos (`student`/`company`/`admin`).
 | **A-10** | ✅ | Documento **único por el par `(documentType, documentNumber)`**. La **validez** del documento (dígito verificador, etc.) la valida el **backend**; el front solo valida superficie (cantidad y tipo de caracteres). **Implementado**: `lib/validators.ts` (`isValidDocumentNumber`) — cédula/DNI solo dígitos, exactamente 8; pasaporte alfanumérico 6–9, limpiando puntos/comas/guiones/espacios antes de medir. Lo consumen los dos formularios del paso 2 (`register-form.tsx`, `complete-profile-form.tsx`), que muestran el tipo como `Select` y bloquean el avance con mensaje inline. |
 | **A-12** | 🔄 | Gaps de autorización **corregidos en backend** — falta actualizar `api-dev`. Asumir ownership/roles aplicados. |
 | **A-14** | ✅ | `VacancyStatus = PENDIENTE, PUBLICADO, FINALIZADO`, default **`PUBLICADO`** (post-moderación). **Sin `RECHAZADO`.** Dos endpoints separados por actor: `PATCH /vacancy/status/{id}` (EMPRESA + dueña, cierre) y `PUT /vacancy/status/{id}` (ADMIN, `PUBLICADO ↔ PENDIENTE`). **El Admin NUNCA llega a `FINALIZADO`** — "dar de baja" para el Admin es `PUBLICADO → PENDIENTE`, corrigiendo lo que decía una versión anterior de esta fila. Ver *Roles y control de acceso*. |
-| **A-15** | ✅ | **`contractType` es un enum real**, no `string` libre — corrige lo que decía esta fila antes (que el contrato no lo confirmaba): `vacancy/ContractType.java` en el backend define `FULL_TIME, PART_TIME, FREELANCE, PASANTIA, CONTRATO_FIJO, CONTRATO_INDEFINIDO, SUPLENCIA, BECA`. Verificado contra el código fuente, no contra ningún `ENDPOINTS.md` (ninguna versión, ni la local ni la del backend, lo documentaba como enum). `types/index.ts` ya tiene `ContractType`, y el catálogo + diccionario de presentación vive en `lib/contract-types.ts` (`CONTRACT_TYPES`, `CONTRACT_TYPE_LABELS`, `CONTRACT_TYPE_OPTIONS`). El input de texto libre de "tipo de contrato" se reemplazó por un `Select` en los formularios que lo editan (`job-basic-info-form.tsx`, `edit-job-form.tsx`) y en el filtro del feed. ⚠️ **El campo de sueldo tiene un nombre DISTINTO según el endpoint** — no es indecisión de esta fila, es una inconsistencia real del backend entre sus dos DTOs, **verificada 2026-07-29 contra el código fuente** (`vacancy/dto/CreateVacancyRequest.java` y `UpdateVacancyRequest.java`, rama `dev`): `CreateVacancyRequest.salary` (`POST /vacancy`, **`@NotBlank`**) vs. `UpdateVacancyRequest.salaryRange` (`PUT /vacancy/{id}`). `VacancyInput`/`VacancyUpdateInput` (`features/puestos/types.ts`) exponen `salary` como el resto de la UI: el `POST` (`use-publish-job.ts`) lo manda **tal cual** (`salary`), y **solo** el `PUT` (`use-edit-job.ts`) lo renombra a `salaryRange` en el borde de red — la traducción es asimétrica, no un rename parejo. ⚠️ Mandar `salaryRange` en el `POST` (bug corregido en esta rama) hacía que el backend respondiera `400 "El salario es obligatorio"` — `salary` es `@NotBlank`, así que no llega `null` en silencio: rompe la creación entera. `salary` sigue siendo un único `string` en el wire — tanto "Publicar oferta" (`job-details-form.tsx`) como "Editar oferta" (`edit-job-form.tsx`) lo parten en 3 controles de UI (moneda UYU/USD + monto desde + monto hasta opcional), con las utilidades compartidas en `lib/salary.ts` (`formatSalary`/`parseSalary`/`SALARY_CURRENCIES`/`SALARY_MODES`/`SALARY_AMOUNT_PATTERN`), armando/parseando el string al enviar/precargar. La **creación es solo estructurada** (siempre monto numérico, sin texto libre): el modo "texto libre" de respaldo (vía `salaryMode`, para rescatar valores legados no numéricos como "A convenir") existe **solo en edición**, donde `parseSalary` lo activa si no puede rescatar un monto de un dato viejo — al crear no hay valor previo que preservar, así que ese modo no se ofrece. `location` sigue como campo requerido en `CreateVacancyRequest` — el contrato no confirma la nulabilidad condicional a `REMOTO` que se anticipaba acá; tratar como no resuelto. Sin orden por skills. Ver también el aviso de `publicationDate`/`closingDate` (obligatorias, no autogeneradas) en *Roles y control de acceso*. |
+| **A-15** | ✅ | **`contractType` es un enum real**, no `string` libre — corrige lo que decía esta fila antes (que el contrato no lo confirmaba): `vacancy/ContractType.java` en el backend define `FULL_TIME, PART_TIME, FREELANCE, PASANTIA, CONTRATO_FIJO, CONTRATO_INDEFINIDO, SUPLENCIA, BECA`. Verificado contra el código fuente, no contra ningún `ENDPOINTS.md` (ninguna versión, ni la local ni la del backend, lo documentaba como enum). `types/index.ts` ya tiene `ContractType`, y el catálogo + diccionario de presentación vive en `lib/contract-types.ts` (`CONTRACT_TYPES`, `CONTRACT_TYPE_LABELS`, `CONTRACT_TYPE_OPTIONS`). El input de texto libre de "tipo de contrato" se reemplazó por un `Select` en los formularios que lo editan (`job-basic-info-form.tsx`, `edit-job-form.tsx`) y en el filtro del feed. ⚠️ **Revertido 2026-07-30 — el campo de sueldo YA NO tiene un nombre distinto según el
+endpoint.** Una versión anterior de esta fila (verificada 2026-07-29 "a mano contra
+Swagger") decía que `UpdateVacancyRequest` usaba `salaryRange` en vez de `salary`, y
+`use-edit-job.ts` traducía `salary` → `salaryRange` en el borde de red por eso. Verificado
+de nuevo 2026-07-30 **directo contra el código fuente actual**
+(`vacancy/dto/UpdateVacancyRequest.java`, rama `dev`): el campo es `salary`, sin
+`salaryRange` en ningún lado del DTO — igual que `CreateVacancyRequest`. El backend debe
+haber corregido esa inconsistencia entre el 29 y el 30. Se sacó la traducción de
+`use-edit-job.ts`: ahora manda `salary` tal cual, igual que el `POST`. Con la traducción
+vieja, el `PUT /vacancy/{id}` mandaba un `salaryRange` que el DTO real ignora — el salario
+dejaba de actualizarse en silencio (bug real, corregido en esta pasada). Moraleja: cuando
+el código fuente contradice una verificación empírica anterior, gana el código fuente
+actual — el backend puede haber cambiado desde la última vez que se probó a mano. `salary` sigue siendo un único `string` en el wire — tanto "Publicar oferta" (`job-details-form.tsx`) como "Editar oferta" (`edit-job-form.tsx`) lo parten en 3 controles de UI (moneda UYU/USD + monto desde + monto hasta opcional), con las utilidades compartidas en `lib/salary.ts` (`formatSalary`/`parseSalary`/`SALARY_CURRENCIES`/`SALARY_MODES`/`SALARY_AMOUNT_PATTERN`), armando/parseando el string al enviar/precargar. La **creación es solo estructurada** (siempre monto numérico, sin texto libre): el modo "texto libre" de respaldo (vía `salaryMode`, para rescatar valores legados no numéricos como "A convenir") existe **solo en edición**, donde `parseSalary` lo activa si no puede rescatar un monto de un dato viejo — al crear no hay valor previo que preservar, así que ese modo no se ofrece. `location` sigue como campo requerido en `CreateVacancyRequest` — el contrato no confirma la nulabilidad condicional a `REMOTO` que se anticipaba acá; tratar como no resuelto. Sin orden por skills. Ver también el aviso de `publicationDate`/`closingDate` (obligatorias, no autogeneradas) en *Roles y control de acceso*. |
 | **A-17** | ✅ | **Reversión de una reversión — `accepted` (ex-`selected`) SÍ existe.** Una versión anterior de esta fila lo daba por eliminado porque ninguna versión de `ENDPOINTS.md` lo documentaba; verificado contra el código fuente del backend (no contra esa doc): `VacancyApplicationResponse.accepted` (boolean) es real, se marca vía `PATCH /vacancy-application/{id}/accept` (empresa dueña) y define el contenido del mail de cierre. `types/index.ts` (`VacancyApplication.accepted`) ya lo tiene. Sigue sin viajar en `VacancyApplicationStudentResponse` (`GET /vacancy-application/me`) — el alumno sigue sin verlo, la barra de progreso de "Mis postulaciones" sigue sin mostrarlo, y eso sigue siendo correcto. Ver *Postulaciones*. |
 | **A-18** | ✅ | `CompanyResponse` expone `status`, `reviewedAt`, `adminComment` (y `StudentProfileResponse` también, más `description` — ver *Roles y control de acceso*). El admin ve/filtra por estado. |
 | **A-19** | ✅ | Error `application/problem+json` con mapa por campo bajo la key **`errores`**: `{ detail, title, status, instance, errores: { campo: mensaje } }`. Mapear `errores` a `setError` de RHF y tipar así `ApiError`. Implementado en `lib/api-client.ts` (`errorMessage` lee `detail`, `ApiError.fieldErrors` expone `errores`). `ApiError.fieldErrors` ya se mapea a `setError` en "Editar oferta" (`EditVacancyView`/`EditJobForm`) y en la creación (`app/(empresa)/crear-oferta/revision/page.tsx`). `salary` es el único campo sin mapeo 1 a 1 en "Editar oferta" (está partido en moneda/mínimo/máximo o texto libre, ver A-15): cae en un error general al pie del form (`errors.root`) en vez de adivinar qué control corregir. |
@@ -1243,13 +1262,16 @@ los literales viejos (`student`/`company`/`admin`).
 | **A-07** | ✅ | **Resuelto: SÍ, el backend lo exige.** Corrige lo que decía esta fila antes ("el backend no lo valida, decisión de front"). `VacancyApplicationServiceImpl.create` devuelve `409` ("El alumno debe tener al menos un registro de educacion para postularse") si `EducationService.getByStudentProfileId` viene vacío. El front no lo pre-valida — se apoya en que `use-vacancy.ts` ahora muestra el `detail` real del backend en vez de un mensaje genérico (ver *Postulaciones*). |
 | **A-13** | ✅ | **CORS.** Confirmado OK para `http://localhost:3000` desde el principio. `https://dev.ucutalent.tech` (el frontend deployado) estuvo unas horas fuera de la whitelist el 2026-07-28 (`403 Invalid CORS request` hasta en `GET` simples) — infra lo arregló ese mismo día, reconfirmado con `curl` ~20:26 ART: preflight da `200` + `Allow-Origin` correcto, y `GET /area` pasa el CORS y llega a auth. Lo que queda de esta fila **no es CORS**: confirmar los atributos del `Set-Cookie` (`SameSite=None; Secure`) con un login real — no probado todavía. |
 | **A-21** | 🔄 | **Observado 2026-07-29, sin coordinar con backend todavía**: la respuesta real de `GET /vacancy` trae `publicationDate`/`closingDate`/`createdAt`/`deletedAt`/`deleted`/`reviewedBy`, y no trae `finalizedAt` (ver `docs/ENDPOINTS.md`, sección 5). `publicationDate`/`closingDate` ya son campos **requeridos** en `Vacancy` (`types/index.ts`) — se sacaron `publishedAt`/`finalizedAt`, y todos los consumidores (feed, moderación, "Mis ofertas") leen `publicationDate`/`closingDate` directo, sin fallback. |
+| **A-16** | ✅ | **Nombre de la cookie de sesión: `access_token`.** Verificado 2026-07-30 directo contra el código fuente del backend (`auth/AuthController.java`, `auth/CookieBearerTokenResolver.java`, rama `dev`) — no hizo falta el login real desde `https://dev.ucutalent.tech` que estaba pendiente. También confirma de nuevo los atributos: `httpOnly`, `secure`, `sameSite=None`, `path=/`. `proxy.ts` ya la usa. |
+| **A-22** | 🔄 | **`GET /vacancy/company/{companyId}/management`** (`VacancyManagementResponse`: `vacancy` + `companyName` + `areaName` + `applicationCount` + `newApplicationsCount`) — endpoint agregado real, no documentado en ninguna versión de `ENDPOINTS.md` (verificado 2026-07-30 contra `vacancy/VacancyController.java`/`VacancyServiceImpl.java`/`VacancyRepository.java` del backend). Ya filtra `deleted = false` del lado del servidor. `use-company-vacancies.ts` migró a este endpoint, eliminando el N+1 anterior (`GET /vacancy` + un `GET /vacancy-application` por vacante). `newApplicationsCount` cuenta postulaciones en `PENDIENTE` ("sin revisar"), no "postulado en los últimos 7 días" — el badge de `vacancy-table.tsx` se actualizó a ese criterio. |
+| **A-23** | 🔄 | **El backend SÍ tiene `MailTemplateController`/`Service`/`Repository` completos y funcionando** (`GET`/`PUT /mail-template`, verificado 2026-07-30 contra el código fuente) — contradice la sección *Mails* de este archivo, que da a `MailTemplate` por eliminada porque el MER (fuente #2) no la tiene. Decisión del equipo 2026-07-30: **mantener la ABM fuera de alcance** (no implementar RF-PUE-05) hasta confirmar si es código legacy que el backend no terminó de retirar, o un cambio de rumbo real. No tratar como pedido de producto sin volver a confirmarlo. |
+| **A-24** | 🔄 | **El backend SÍ tiene subida de foto de perfil** (`PATCH`/`DELETE`/`GET /user/profile/image`, multipart) **y de CV** (`PATCH`/`DELETE`/`GET /student-profile/cv`, solo PDF, con URL firmada para que la empresa lo vea) — verificado 2026-07-30 contra el código fuente (`UserController.java`, `StudentProfileController.java`). Resuelve el mecanismo de A-11 (era multipart, no URL prefirmada). Decisión del equipo 2026-07-30: implementarlo como tarea aparte, no en esta pasada. |
 
 ### 🔴 Todavía abierto
 
 | # | Qué falta |
 |---|---|
-| **A-11** | **Subida de archivos** — **queda confirmar** el mecanismo (multipart vs. URL prefirmada) y los límites. Sin endpoint todavía. |
-| **A-16** | **Nombre de la cookie de sesión** — se confirma leyendo el `Set-Cookie` de un login (necesario para `proxy.ts`). Requiere el login real desde `https://dev.ucutalent.tech` que quedó pendiente en A-13. |
+| **A-11** | **Subida de archivos** — mecanismo confirmado (ver A-24: multipart, dos endpoints reales), pero **sin implementar en el front todavía** — es una feature nueva, no una reconexión, y quedó para otra tarea. |
 | **A-20** | **Semilla de `Area`/`Degree` en `api-dev`** — se confirma con `GET /area`/`GET /degree` logueado. |
 
 No quedan ítems en "🟡 Definiciones de UI (sin bloqueo de backend)" — los dos que había (A-06, A-07)

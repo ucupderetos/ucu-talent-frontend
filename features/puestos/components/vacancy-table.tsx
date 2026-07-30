@@ -91,9 +91,9 @@ export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
               </TableCell>
               <TableCell>
                 <span className="font-medium">{vacancy.applicantsCount}</span>
-                {vacancy.newApplicantsThisWeek > 0 && (
+                {vacancy.unreviewedApplicantsCount > 0 && (
                   <p className="text-xs text-success">
-                    +{vacancy.newApplicantsThisWeek} esta semana
+                    +{vacancy.unreviewedApplicantsCount} sin revisar
                   </p>
                 )}
               </TableCell>
