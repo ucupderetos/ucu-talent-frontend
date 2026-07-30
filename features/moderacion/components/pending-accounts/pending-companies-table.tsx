@@ -14,33 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ReviewActions } from "@/features/moderacion/components/pending-accounts/review-actions";
+import { avatarColorFor, companyInitials } from "@/features/moderacion/avatar-utils";
 import type { PendingCompanyRow } from "@/features/moderacion/types";
-
-// colores semanticos (tokens --chart-* de globals.css), no la paleta cruda.
-// el color sale de un hash del id, asi no cambia segun la pagina en la que caiga.
-const COLOR_CLASSES = [
-  "bg-chart-1/15 text-chart-1",
-  "bg-chart-2/15 text-chart-2",
-  "bg-chart-3/15 text-chart-3",
-  "bg-chart-4/15 text-chart-4",
-  "bg-chart-5/15 text-chart-5",
-];
-
-function colorFor(id: string): string {
-  let hash = 0;
-  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % COLOR_CLASSES.length;
-  return COLOR_CLASSES[hash];
-}
-
-function companyInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter((word) => /^[A-ZÁÉÍÓÚ]/.test(word))
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase();
-}
 
 function formatDate(iso: string): string {
   return iso ? new Date(iso).toLocaleDateString("es-UY") : "—";
@@ -68,7 +43,7 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
                   className="group flex items-center gap-3 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <span
-                    className={`flex size-9 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${colorFor(company.companyId)}`}
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${avatarColorFor(company.companyId)}`}
                   >
                     {companyInitials(company.name)}
                   </span>

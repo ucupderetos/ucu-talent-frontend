@@ -29,43 +29,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApplicationStatusBadge } from "@/features/moderacion/components/applications/application-status-badge";
+import { avatarColorFor, companyInitials, personInitials } from "@/features/moderacion/avatar-utils";
 import type { AdminApplicationRow } from "@/features/moderacion/types";
-
-// Colores semánticos (tokens `--chart-*` de globals.css), no la paleta cruda
-// de Tailwind. El color de cada avatar/logo sale de un hash del id — es
-// estable sin importar en qué página caiga la fila (no rota por índice).
-const COLOR_CLASSES = [
-  "bg-chart-1/15 text-chart-1",
-  "bg-chart-2/15 text-chart-2",
-  "bg-chart-3/15 text-chart-3",
-  "bg-chart-4/15 text-chart-4",
-  "bg-chart-5/15 text-chart-5",
-];
-
-function colorFor(id: string): string {
-  let hash = 0;
-  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % COLOR_CLASSES.length;
-  return COLOR_CLASSES[hash];
-}
-
-/** `?? ""` porque con datos reales un nombre o apellido puede venir vacío, y
- *  `name[0]` sería `undefined` — el avatar diría "undefinedU". */
-function initials(name: string, surname: string): string {
-  return `${name[0] ?? ""}${surname[0] ?? ""}`.toUpperCase();
-}
-
-/** Fallback a la primera letra: una razón social sin ninguna palabra en
- *  mayúscula ("datalab") dejaría el cuadrito de color vacío. */
-function companyInitials(name: string): string {
-  const fromCapitals = name
-    .split(" ")
-    .filter((word) => /^[A-ZÁÉÍÓÚ]/.test(word))
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("");
-
-  return (fromCapitals || name.trim()[0] || "").toUpperCase();
-}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-UY");
@@ -95,8 +60,8 @@ export function ApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
                   className="group flex items-center gap-3 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <Avatar>
-                    <AvatarFallback className={colorFor(row.studentProfileId)}>
-                      {initials(row.studentName, row.studentSurname)}
+                    <AvatarFallback className={avatarColorFor(row.studentProfileId)}>
+                      {personInitials(row.studentName, row.studentSurname)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -127,7 +92,7 @@ export function ApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
                     className="group flex items-center gap-2 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
                     <span
-                      className={`flex size-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${colorFor(row.companyId)}`}
+                      className={`flex size-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${avatarColorFor(row.companyId)}`}
                     >
                       {companyInitials(row.companyName)}
                     </span>

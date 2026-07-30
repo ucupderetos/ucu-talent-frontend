@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { avatarColorFor, personInitials } from "@/features/moderacion/avatar-utils";
 import type { PendingStudentRow } from "@/features/moderacion/types";
 import type { DocumentType } from "@/types";
 
@@ -23,24 +24,6 @@ const DOCUMENT_TYPE_LABEL: Record<DocumentType, string> = {
   DNI: "DNI",
   PASAPORTE: "Pasaporte",
 };
-
-const COLOR_CLASSES = [
-  "bg-chart-1/15 text-chart-1",
-  "bg-chart-2/15 text-chart-2",
-  "bg-chart-3/15 text-chart-3",
-  "bg-chart-4/15 text-chart-4",
-  "bg-chart-5/15 text-chart-5",
-];
-
-function colorFor(id: string): string {
-  let hash = 0;
-  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % COLOR_CLASSES.length;
-  return COLOR_CLASSES[hash];
-}
-
-function initials(name: string, surname: string): string {
-  return `${name[0]}${surname[0]}`.toUpperCase();
-}
 
 function formatDate(iso: string): string {
   return iso ? new Date(iso).toLocaleDateString("es-UY") : "—";
@@ -68,8 +51,8 @@ export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
                   className="group flex items-center gap-3 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <Avatar>
-                    <AvatarFallback className={colorFor(student.studentProfileId)}>
-                      {initials(student.name, student.surname)}
+                    <AvatarFallback className={avatarColorFor(student.studentProfileId)}>
+                      {personInitials(student.name, student.surname)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
