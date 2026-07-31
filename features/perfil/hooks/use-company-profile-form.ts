@@ -17,6 +17,7 @@ import type { Department } from "@/types";
 import { COMPANY_DESCRIPTION_MAX } from "@/features/perfil/types";
 import { useCompanyProfile } from "@/features/perfil/hooks/use-company-profile";
 import { DEPARTMENTS } from "@/lib/departments";
+import { isExternalUrl } from "@/lib/urls";
 
 const companyProfileSchema = z.object({
   legalName: z.string().trim().min(1, "Ingresá la razón social."),
@@ -31,7 +32,15 @@ const companyProfileSchema = z.object({
     .trim()
     .min(1, "Ingresá el sitio web.")
     .pipe(z.url("Ingresá una URL válida.")),
-  linkedinUrl: z.string().trim(),
+  // Vacío sigue siendo válido (a diferencia de `webUrl`, este campo no es
+  // obligatorio), pero si hay algo tiene que ser una URL: el perfil lo muestra
+  // como link clickeable y lo ven los alumnos.
+  linkedinUrl: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || isExternalUrl(value), {
+      message: "Ingresá una URL válida.",
+    }),
   location: z.enum(DEPARTMENTS as [Department, ...Department[]], "Seleccioná un departamento."),
 });
 
