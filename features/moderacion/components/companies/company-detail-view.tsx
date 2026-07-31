@@ -20,7 +20,7 @@ import {
 
 import { EmptyState } from "@/components/layout/empty-state";
 import { usePageBreadcrumb } from "@/components/layout/breadcrumb-context";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,6 +36,8 @@ import {
   parseMontevideoDateTime,
 } from "@/features/moderacion/date-utils";
 import { useAdminCompanyDetail } from "@/features/moderacion/hooks/use-admin-companies";
+import { useSignedProfileImageUrl } from "@/hooks/use-profile-image";
+import type { AdminCompanyDetail } from "@/features/moderacion/types";
 import type { AccountStatus } from "@/types";
 
 const COMPANIES_ROUTE = "/moderacion/empresas";
@@ -117,11 +119,7 @@ export function CompanyDetailView({ companyId }: { companyId: string }) {
       <Card>
         <CardContent className="flex flex-col gap-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-            <Avatar className="size-20 sm:size-24">
-              <AvatarFallback className="bg-primary/10 text-xl font-semibold text-primary sm:text-2xl">
-                {company.initials}
-              </AvatarFallback>
-            </Avatar>
+            <CompanyDetailAvatar company={company} />
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2.5">
@@ -209,6 +207,27 @@ export function CompanyDetailView({ companyId }: { companyId: string }) {
         </Card>
       </div>
     </div>
+  );
+}
+
+// Componente aparte y no un `useSignedProfileImageUrl` dentro de
+// `CompanyDetailView`: ahí el hook quedaría después de los early returns de
+// carga/error.
+//
+// Acá sí sería válido `useProfileImage(company.id)` — es una sola empresa, no
+// una lista — pero igual sobra: `fetchAdminCompanyDetail` ya pide
+// `GET /user/{companyId}` para el email, así que la key viene en el detalle y
+// solo falta el canje. La foto de una empresa es la de su `User` (A-24).
+function CompanyDetailAvatar({ company }: { company: AdminCompanyDetail }) {
+  const { imageUrl } = useSignedProfileImageUrl(company.profileImage);
+
+  return (
+    <Avatar className="size-20 sm:size-24">
+      {imageUrl && <AvatarImage src={imageUrl} alt="" />}
+      <AvatarFallback className="bg-primary/10 text-xl font-semibold text-primary sm:text-2xl">
+        {company.initials}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 

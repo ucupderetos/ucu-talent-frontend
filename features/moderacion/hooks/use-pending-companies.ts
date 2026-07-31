@@ -80,6 +80,10 @@ function toRow(user: User, company: Company | undefined): PendingCompanyRow {
     hasProfile: company !== undefined,
     email: user.email,
     registeredAt: user.registeredAt,
+    // Sale del User (Company no tiene campo de imagen) y por eso está
+    // disponible incluso cuando la empresa nunca completó el paso 2 del
+    // registro: la foto no depende de `hasProfile`.
+    profileImage: user.profileImage ?? null,
   };
 }
 

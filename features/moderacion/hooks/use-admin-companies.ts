@@ -153,6 +153,10 @@ function toAdminCompanyDetail({
     // respuesta, por lo que no depende de que el join de email haya salido.
     status: company.status,
     initials: initialsOf(company.name),
+    // La key de storage viaja en la fila para que la tabla NO tenga que pedir
+    // `GET /user/{id}` por empresa solo para conseguirla: el `User` ya se leyó
+    // acá (es de donde salen email y fecha). Ver el aviso en `AdminCompanyRow`.
+    profileImage: user?.profileImage ?? null,
     description: company.description,
     webUrl: company.webUrl,
     linkedinUrl: company.linkedinUrl,

@@ -135,6 +135,10 @@ export interface PendingCompanyRow
   email: string;
   registeredAt: string; // ISO 8601
   hasProfile: boolean;
+  /** Key de storage de la foto — mismo criterio que `StudentRow.profileImage`,
+   *  ver el aviso ahí. `CompanyResponse` no tiene ningún campo de imagen: la
+   *  foto de una empresa es la de su `User` (A-24), que este hook ya trae. */
+  profileImage: string | null;
 }
 
 export interface PendingCompaniesFilters {
@@ -418,6 +422,18 @@ export interface AdminCompanyRow {
   registeredAt: string | null;
   status: AccountStatus;
   initials: string;
+  /**
+   * Key de storage de la foto, NO una URL — se canjea con
+   * `useSignedProfileImageUrl`. `null` si nunca subió una (o si no se resolvió
+   * el `User` de la misma PK).
+   *
+   * ⚠️ Sale del `User`, no de `Company`: `CompanyResponse` no tiene ningún campo
+   * de imagen (A-24, `docs/agents/open-questions.md`). Va en la fila a propósito
+   * porque el hook ya lee ese `User` para el email — si la tabla usara
+   * `useProfileImage(id)`, cada fila dispararía un `GET /user/{id}` extra solo
+   * para releer este mismo campo, que es justo el N+1 que A-24 evita.
+   */
+  profileImage: string | null;
 }
 
 /**
