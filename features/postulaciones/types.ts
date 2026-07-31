@@ -10,8 +10,56 @@ import type {
   Vacancy,
   VacancyApplication,
   VacancyApplicationStatus,
+  VacancyStatus,
   WorkExperience,
 } from "@/types";
+
+// ---------------------------------------------------------------------------
+// `GET /vacancy-application/me/detailed` — 🔒 rol ALUMNO.
+//
+// Es el listado propio del alumno ("Mis postulaciones"), NO un endpoint de
+// empresa: una empresa que lo llame recibe 403. Verificado contra el contrato
+// del backend, ver A-26 en docs/agents/open-questions.md.
+//
+// El equivalente para el ADMIN es `GET /vacancy-application/detailed` (A-30),
+// que tiene otro shape y sí trae `studentProfileId`/`accepted` — vive en
+// `features/moderacion/types.ts` porque lo consume esa pantalla.
+// ---------------------------------------------------------------------------
+
+/**
+ * Wire: resumen anidado `application` de `GET /vacancy-application/me/detailed`.
+ * Ya trae `vacancyName`/`companyId`/`companyName`/`vacancyStatus` resueltos —
+ * a diferencia de `VacancyApplicationResponse` (plano, sección 6 de
+ * `docs/ENDPOINTS.md`).
+ *
+ * ⚠️ **No trae `studentProfileId` ni `accepted`**, y es a propósito: el alumno
+ * ya sabe que las postulaciones son suyas, y no puede ver si quedó seleccionado
+ * (ver el aviso en `VacancyApplication`, `types/index.ts`). Quien necesite
+ * cualquiera de los dos campos tiene que ir por el endpoint del admin (A-30),
+ * no por este.
+ */
+interface VacancyApplicationSummary {
+  vacancyApplicationId: string;
+  vacancyId: string;
+  vacancyName: string;
+  companyId: string;
+  companyName: string;
+  appliedAt: string;
+  status: VacancyApplicationStatus;
+  vacancyStatus: VacancyStatus;
+}
+
+/**
+ * Wire: item de `GET /vacancy-application/me/detailed`. Trae la `Vacancy`
+ * completa (se reusa el tipo core, sin duplicar sus campos) más
+ * `companyName`/`areaName` ya resueltos.
+ */
+export interface VacancyApplicationDetailedResponse {
+  application: VacancyApplicationSummary;
+  vacancy: Vacancy;
+  companyName: string;
+  areaName: string;
+}
 
 /**
  * Detalle del postulante: la empresa ve el CV completo del candidato.

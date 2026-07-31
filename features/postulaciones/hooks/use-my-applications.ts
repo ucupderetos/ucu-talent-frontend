@@ -19,32 +19,13 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import type { MyApplicationRow } from "@/features/postulaciones/types";
-import type { Area, Vacancy, VacancyApplication, VacancyApplicationStatus, VacancyStatus } from "@/types";
-
-/** Wire: `application` dentro de `GET /vacancy-application/me/detailed`.
- *  A diferencia de `VacancyApplicationStudentResponse` (`GET
- *  /vacancy-application/me`), este viene con `vacancyName`/`companyId`/
- *  `companyName`/`vacancyStatus` ya resueltos — no trae `studentProfileId`
- *  ni `accepted` (mismos motivos que antes: el alumno no ve `accepted`). */
-interface MyApplicationDetailItemResponse {
-  vacancyApplicationId: string;
-  vacancyId: string;
-  vacancyName: string;
-  companyId: string;
-  companyName: string;
-  appliedAt: string;
-  status: VacancyApplicationStatus;
-  vacancyStatus: VacancyStatus;
-}
-
-/** Wire: item de `GET /vacancy-application/me/detailed`. */
-interface MyApplicationDetailResponse {
-  application: MyApplicationDetailItemResponse;
-  vacancy: Vacancy;
-  companyName: string;
-  areaName: string;
-}
+// Los tipos del wire viven en `types.ts` del dominio, no acá: son la forma de
+// un endpoint, no un detalle de este hook.
+import type {
+  MyApplicationRow,
+  VacancyApplicationDetailedResponse,
+} from "@/features/postulaciones/types";
+import type { Area, VacancyApplication } from "@/types";
 
 /**
  * @public para invalidación puntual futura (`docs/agents/data-fetching.md`). Misma queryKey que
@@ -65,7 +46,7 @@ export function useMyApplications(studentProfileId: string | undefined) {
 }
 
 async function fetchMyApplications(studentProfileId: string): Promise<MyApplicationRow[]> {
-  const items = await apiClient.get<MyApplicationDetailResponse[]>(
+  const items = await apiClient.get<VacancyApplicationDetailedResponse[]>(
     "/vacancy-application/me/detailed",
   );
 
@@ -74,7 +55,10 @@ async function fetchMyApplications(studentProfileId: string): Promise<MyApplicat
   return sortByRecent(rows);
 }
 
-function toRow(item: MyApplicationDetailResponse, studentProfileId: string): MyApplicationRow {
+function toRow(
+  item: VacancyApplicationDetailedResponse,
+  studentProfileId: string,
+): MyApplicationRow {
   const application: VacancyApplication = {
     vacancyApplicationId: item.application.vacancyApplicationId,
     vacancyId: item.application.vacancyId,

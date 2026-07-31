@@ -2,33 +2,23 @@
 
 // tabla de "Postulaciones" (vista admin).
 //
-// GET /vacancy-application no tiene un "traeme todas" sin filtro, asi que
-// pedimos una vez por cada status del enum y mergeamos. la respuesta viene
-// pelada (sin nombre de alumno, oferta ni empresa), asi que cruzamos con
-// student-profile, user (para el email), vacancy y company — todo fetch-all,
-// mismo criterio que usamos en el resto de moderacion.
+// `GET /vacancy-application/detailed` (ADMIN) devuelve el listado global YA
+// resuelto (`AdminApplicationDetailedResponse`, ver `features/moderacion/types.ts`):
+// una sola request, sin el fetch-all × 4 (student-profile/user/vacancy/company)
+// + un GET por status del enum que hacía la versión anterior de este hook.
 
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
-import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type {
+  AdminApplicationDetailedResponse,
   AdminApplicationFilters,
   AdminApplicationOrder,
   AdminApplicationRow,
 } from "@/features/moderacion/types";
-import type {
-  Company,
-  Paginated,
-  StudentProfile,
-  User,
-  Vacancy,
-  VacancyApplication,
-  VacancyApplicationStatus,
-} from "@/types";
+import type { Company, Paginated, Vacancy } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
-const ALL_STATUSES: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADO"];
 
 /** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function applicationsQueryKey(filters: AdminApplicationFilters) {
@@ -49,30 +39,12 @@ async function fetchApplications(
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
-  const [applicationsByStatus, profiles, users, vacancies, companies] = await Promise.all([
-    Promise.all(
-      ALL_STATUSES.map((status) =>
-        apiClient.get<VacancyApplication[]>("/vacancy-application", {
-          params: { status },
-          signal,
-        }),
-      ),
-    ),
-    apiClient.get<StudentProfile[]>("/student-profile", { signal }),
-    fetchAllUsers({ role: "ALUMNO" }, signal),
-    apiClient.get<Vacancy[]>("/vacancy", { signal }),
-    apiClient.get<Company[]>("/company", { signal }),
-  ]);
+  const detailed = await apiClient.get<AdminApplicationDetailedResponse[]>(
+    "/vacancy-application/detailed",
+    { signal },
+  );
 
-  const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
-  const usersById = new Map(users.map((u) => [u.userId, u]));
-  const vacanciesById = new Map(vacancies.map((v) => [v.vacancyId, v]));
-  const companiesById = new Map(companies.map((c) => [c.companyId, c]));
-
-  const rows = applicationsByStatus
-    .flat()
-    .map((application) => toRow(application, profilesById, usersById, vacanciesById, companiesById))
-    .filter((row): row is AdminApplicationRow => row !== null);
+  const rows = detailed.map(toRow);
   const filtered = filterRows(rows, filters);
   const sorted = sortRows(filtered, filters.order);
 
@@ -82,30 +54,15 @@ async function fetchApplications(
   return { items, total: sorted.length, page, perPage };
 }
 
-/** null si falta el perfil o la oferta — no deberia pasar con la pk
- *  compartida, pero asi no rompemos la tabla entera por un dato huerfano. */
-function toRow(
-  application: VacancyApplication,
-  profilesById: Map<string, StudentProfile>,
-  usersById: Map<string, User>,
-  vacanciesById: Map<string, Vacancy>,
-  companiesById: Map<string, Company>,
-): AdminApplicationRow | null {
-  const profile = profilesById.get(application.studentProfileId);
-  const vacancy = vacanciesById.get(application.vacancyId);
-  if (!profile || !vacancy) return null;
-
-  const user = usersById.get(application.studentProfileId);
-  const company = companiesById.get(vacancy.companyId);
-
+function toRow(item: AdminApplicationDetailedResponse): AdminApplicationRow {
   return {
-    ...application,
-    studentName: profile.name,
-    studentSurname: profile.surname,
-    studentEmail: user?.email ?? "—",
-    vacancyName: vacancy.name,
-    companyId: company?.companyId ?? null,
-    companyName: company?.name ?? "—",
+    ...item.application,
+    studentName: item.studentName,
+    studentSurname: item.studentSurname,
+    studentEmail: item.studentEmail,
+    vacancyName: item.vacancyName,
+    companyId: item.companyId,
+    companyName: item.companyName,
   };
 }
 
