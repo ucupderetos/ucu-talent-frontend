@@ -211,7 +211,8 @@ export function StudentModerationActions({
               </DialogHeader>
 
               {config.requiresReason && (
-                <Field>
+                // min-w-0 — mismo motivo que en `company-moderation-actions.tsx`.
+                <Field className="min-w-0">
                   <FieldLabel htmlFor={`student-admin-comment-${userId}-${action}`}>
                     Motivo
                   </FieldLabel>

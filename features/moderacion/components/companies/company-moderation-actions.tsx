@@ -215,7 +215,11 @@ export function CompanyModerationActions({
               </DialogHeader>
 
               {config.requiresReason && (
-                <Field>
+                // min-w-0: este Field es grid item directo del DialogContent, y
+                // sin eso el min-content del Textarea (`field-sizing-content`)
+                // con un motivo largo sin espacios estira el diálogo. Mismo
+                // arreglo que en los modales de perfil.
+                <Field className="min-w-0">
                   <FieldLabel htmlFor={`company-admin-comment-${company.id}-${action}`}>
                     Motivo
                   </FieldLabel>
