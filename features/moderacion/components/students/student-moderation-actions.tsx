@@ -11,7 +11,6 @@ import {
   BanIcon,
   CheckIcon,
   CircleXIcon,
-  MoreVerticalIcon,
   UserRoundIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -28,12 +27,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useReviewAccount } from "@/features/moderacion/hooks/use-review-account";
@@ -113,15 +110,19 @@ interface StudentModerationActionsProps {
   userId: string;
   status: AccountStatus;
   displayName: string;
-  /** Menú compacto para tablas; botones visibles para la pantalla de detalle. */
-  presentation?: "buttons" | "menu";
+  /** El icono "Ver perfil" navega al detalle: solo tiene sentido desde una
+   *  tabla. En la propia pantalla de detalle apuntaría a sí misma. */
+  includeDetailLink?: boolean;
 }
 
+// Una sola presentación en todos lados: iconos con tooltip, igual que en
+// `company-moderation-actions.tsx`. Ver el comentario de allá sobre por qué se
+// eliminó el prop `presentation`.
 export function StudentModerationActions({
   userId,
   status,
   displayName,
-  presentation = "buttons",
+  includeDetailLink = false,
 }: StudentModerationActionsProps) {
   const [action, setAction] = useState<StudentModerationAction | null>(null);
   const [reason, setReason] = useState("");
@@ -163,38 +164,18 @@ export function StudentModerationActions({
     );
   }
 
-  if (presentation === "buttons" && availableActions.length === 0) return null;
+  // Sin acciones disponibles y sin link al detalle no queda nada que renderizar.
+  if (!includeDetailLink && availableActions.length === 0) return null;
 
   return (
     <>
-      {presentation === "menu" ? (
-        <ActionsMenu
-          userId={userId}
-          displayName={displayName}
-          actions={availableActions}
-          onSelect={openAction}
-        />
-      ) : (
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
-          {availableActions.map((availableAction) => {
-            const item = ACTION_CONFIG[availableAction];
-            const Icon = item.icon;
-
-            return (
-              <Button
-                key={availableAction}
-                variant={item.variant}
-                className="w-full sm:w-auto"
-                type="button"
-                onClick={() => openAction(availableAction)}
-              >
-                <Icon data-icon="inline-start" />
-                {item.triggerLabel}
-              </Button>
-            );
-          })}
-        </div>
-      )}
+      <StudentActionsButtons
+        userId={userId}
+        displayName={displayName}
+        actions={availableActions}
+        onSelect={openAction}
+        includeDetailLink={includeDetailLink}
+      />
 
       <Dialog open={action !== null} onOpenChange={(open) => !open && close()}>
         <DialogContent className="sm:max-w-md">
@@ -211,7 +192,8 @@ export function StudentModerationActions({
               </DialogHeader>
 
               {config.requiresReason && (
-                <Field>
+                // min-w-0 — mismo motivo que en `company-moderation-actions.tsx`.
+                <Field className="min-w-0">
                   <FieldLabel htmlFor={`student-admin-comment-${userId}-${action}`}>
                     Motivo
                   </FieldLabel>
@@ -252,54 +234,59 @@ export function StudentModerationActions({
   );
 }
 
-function ActionsMenu({
+function StudentActionsButtons({
   userId,
   displayName,
   actions,
   onSelect,
+  includeDetailLink,
 }: {
   userId: string;
   displayName: string;
   actions: StudentModerationAction[];
   onSelect: (action: StudentModerationAction) => void;
+  includeDetailLink: boolean;
 }) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Abrir acciones de ${displayName}`}
-        >
-          <MoreVerticalIcon />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuItem asChild>
-          <Link href={`/moderacion/estudiantes/${userId}`}>
-            <UserRoundIcon />
-            Ver perfil
-          </Link>
-        </DropdownMenuItem>
+    <div className="flex items-center gap-1">
+      {includeDetailLink && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href={`/moderacion/estudiantes/${userId}`}
+                aria-label={`Ver perfil de ${displayName}`}
+              >
+                <UserRoundIcon className="size-4" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Ver perfil</TooltipContent>
+        </Tooltip>
+      )}
 
-        {actions.length > 0 && <DropdownMenuSeparator />}
+      {actions.map((action) => {
+        const item = ACTION_CONFIG[action];
+        const Icon = item.icon;
+        const isDestructive = item.variant === "destructive";
 
-        {actions.map((action) => {
-          const item = ACTION_CONFIG[action];
-          const Icon = item.icon;
-
-          return (
-            <DropdownMenuItem
-              key={action}
-              variant={item.variant === "destructive" ? "destructive" : undefined}
-              onSelect={() => onSelect(action)}
-            >
-              <Icon />
-              {item.triggerLabel}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        return (
+          <Tooltip key={action}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={isDestructive ? "text-destructive hover:text-destructive" : undefined}
+                aria-label={`${item.triggerLabel} ${displayName}`}
+                onClick={() => onSelect(action)}
+              >
+                <Icon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{item.triggerLabel}</TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
   );
 }

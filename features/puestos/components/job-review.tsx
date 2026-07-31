@@ -17,22 +17,12 @@ import { Separator } from "@/components/ui/separator";
 
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { formatDate } from "@/lib/dates";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
 import { MODALITY_LABELS } from "@/lib/modality";
 import { formatSalary, type SalaryCurrency } from "@/lib/salary";
 
 import { useCurrentCompany } from "@/hooks/use-current-company";
-
-function formatDate(iso: string): string {
-  // `input type="date"` da `YYYY-MM-DD` — `new Date("YYYY-MM-DD")` lo
-  // interpreta en UTC medianoche, que puede caer un día antes en UTC-3.
-  const [year, month, day] = iso.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString("es-UY", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
 
 export function JobReview() {
   const { company } = useCurrentCompany();

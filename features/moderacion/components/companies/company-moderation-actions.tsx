@@ -13,7 +13,6 @@ import {
   Building2Icon,
   CheckIcon,
   CircleXIcon,
-  MoreVerticalIcon,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,12 +28,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useReviewAccount } from "@/features/moderacion/hooks/use-review-account";
@@ -115,13 +112,18 @@ const AVAILABLE_ACTIONS: Record<AccountStatus, CompanyModerationAction[]> = {
 
 type CompanyModerationSubject = Pick<AdminCompanyDetail, "id" | "name" | "status">;
 
+// Una sola presentación en todos lados: iconos con tooltip, tanto en las tablas
+// como en la pantalla de detalle. Antes había un prop `presentation` para elegir
+// entre iconos y botones con texto; se eliminó porque dejaba las tres pantallas
+// de detalle del admin (empresa, alumno, oferta) con tratamientos distintos.
 export function CompanyModerationActions({
   company,
-  presentation = "buttons",
+  includeDetailLink = false,
 }: {
   company: CompanyModerationSubject;
-  /** Menú compacto para tablas; botones visibles para la pantalla de detalle. */
-  presentation?: "buttons" | "menu";
+  /** El icono "Ver empresa" navega al detalle: solo tiene sentido desde una
+   *  tabla. En la propia pantalla de detalle apuntaría a sí misma. */
+  includeDetailLink?: boolean;
 }) {
   const [action, setAction] = useState<CompanyModerationAction | null>(null);
   const [reason, setReason] = useState("");
@@ -168,37 +170,17 @@ export function CompanyModerationActions({
     );
   }
 
-  if (presentation === "buttons" && availableActions.length === 0) return null;
+  // Sin acciones disponibles y sin link al detalle no queda nada que renderizar.
+  if (!includeDetailLink && availableActions.length === 0) return null;
 
   return (
     <>
-      {presentation === "menu" ? (
-        <CompanyActionsMenu
-          company={company}
-          actions={availableActions}
-          onSelect={openAction}
-        />
-      ) : (
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end">
-          {availableActions.map((availableAction) => {
-            const item = ACTION_CONFIG[availableAction];
-            const Icon = item.icon;
-
-            return (
-              <Button
-                key={availableAction}
-                variant={item.variant}
-                className="w-full sm:w-auto"
-                type="button"
-                onClick={() => openAction(availableAction)}
-              >
-                <Icon data-icon="inline-start" />
-                {item.triggerLabel}
-              </Button>
-            );
-          })}
-        </div>
-      )}
+      <CompanyActionsButtons
+        company={company}
+        actions={availableActions}
+        onSelect={openAction}
+        includeDetailLink={includeDetailLink}
+      />
 
       <Dialog open={action !== null} onOpenChange={(open) => !open && close()}>
         <DialogContent className="sm:max-w-md">
@@ -215,7 +197,11 @@ export function CompanyModerationActions({
               </DialogHeader>
 
               {config.requiresReason && (
-                <Field>
+                // min-w-0: este Field es grid item directo del DialogContent, y
+                // sin eso el min-content del Textarea (`field-sizing-content`)
+                // con un motivo largo sin espacios estira el diálogo. Mismo
+                // arreglo que en los modales de perfil.
+                <Field className="min-w-0">
                   <FieldLabel htmlFor={`company-admin-comment-${company.id}-${action}`}>
                     Motivo
                   </FieldLabel>
@@ -256,52 +242,57 @@ export function CompanyModerationActions({
   );
 }
 
-function CompanyActionsMenu({
+function CompanyActionsButtons({
   company,
   actions,
   onSelect,
+  includeDetailLink,
 }: {
   company: CompanyModerationSubject;
   actions: CompanyModerationAction[];
   onSelect: (action: CompanyModerationAction) => void;
+  includeDetailLink: boolean;
 }) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Abrir acciones de ${company.name}`}
-        >
-          <MoreVerticalIcon />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuItem asChild>
-          <Link href={`/moderacion/empresas/${company.id}`}>
-            <Building2Icon />
-            Ver empresa
-          </Link>
-        </DropdownMenuItem>
+    <div className="flex items-center gap-1">
+      {includeDetailLink && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href={`/moderacion/empresas/${company.id}`}
+                aria-label={`Ver empresa ${company.name}`}
+              >
+                <Building2Icon className="size-4" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Ver empresa</TooltipContent>
+        </Tooltip>
+      )}
 
-        {actions.length > 0 && <DropdownMenuSeparator />}
+      {actions.map((action) => {
+        const item = ACTION_CONFIG[action];
+        const Icon = item.icon;
+        const isDestructive = item.variant === "destructive";
 
-        {actions.map((action) => {
-          const item = ACTION_CONFIG[action];
-          const Icon = item.icon;
-
-          return (
-            <DropdownMenuItem
-              key={action}
-              variant={item.variant === "destructive" ? "destructive" : undefined}
-              onSelect={() => onSelect(action)}
-            >
-              <Icon />
-              {item.triggerLabel}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        return (
+          <Tooltip key={action}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={isDestructive ? "text-destructive hover:text-destructive" : undefined}
+                aria-label={`${item.triggerLabel} ${company.name}`}
+                onClick={() => onSelect(action)}
+              >
+                <Icon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{item.triggerLabel}</TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
   );
 }

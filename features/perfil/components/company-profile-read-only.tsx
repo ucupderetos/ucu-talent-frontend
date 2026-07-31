@@ -11,27 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ReadOnlyField } from "@/features/perfil/components/read-only-field";
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
-
-function ReadOnlyField({
-  label,
-  value,
-  placeholder = "Sin completar",
-}: {
-  label: string;
-  value: string | undefined;
-  placeholder?: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <p className="text-sm font-medium">{label}</p>
-      <p className={value ? "text-sm" : "text-sm text-muted-foreground italic"}>
-        {value || placeholder}
-      </p>
-    </div>
-  );
-}
 
 export function CompanyProfileReadOnly({
   form,
@@ -70,7 +52,7 @@ export function CompanyProfileReadOnly({
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           <ReadOnlyField label="Razón social" value={legalName} />
-          <ReadOnlyField label="Sitio web" value={webUrl} />
+          <ReadOnlyField label="Sitio web" value={webUrl} isLink />
         </div>
 
         <ReadOnlyField label="Descripción" value={description} />
@@ -83,7 +65,7 @@ export function CompanyProfileReadOnly({
           />
         </div>
 
-        <ReadOnlyField label="LinkedIn" value={linkedinUrl} />
+        <ReadOnlyField label="LinkedIn" value={linkedinUrl} isLink />
       </CardContent>
     </Card>
   );

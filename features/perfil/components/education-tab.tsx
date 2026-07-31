@@ -321,7 +321,12 @@ function EducationDialog({
   return (
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
+        {/* min-w-0 — mismo motivo que en `work-experience-tab.tsx`: este form es
+            el grid item del DialogContent y sin esto el min-content del Textarea
+            (`field-sizing-content`) con una cadena larga sin espacios lo estira y
+            el campo se sale del modal hacia la derecha. */}
         <form
+          className="min-w-0"
           onSubmit={form.handleSubmit(async (values) => {
             form.clearErrors("root");
             try {

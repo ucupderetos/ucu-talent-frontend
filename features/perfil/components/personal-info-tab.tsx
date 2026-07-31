@@ -33,14 +33,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ReadOnlyField } from "@/features/perfil/components/read-only-field";
 import { useUpdateStudentProfile } from "@/features/perfil/hooks/use-update-student-profile";
 import { PROFILE_ITEM_DESCRIPTION_MAX } from "@/features/perfil/types";
 import type { StudentProfileDraft } from "@/features/perfil/types";
+import { isExternalUrl } from "@/lib/urls";
 import type { StudentProfile } from "@/types";
 
 const personalInfoSchema = z.object({
   phoneNumber: z.string().trim(),
-  linkedinUrl: z.string().trim(),
+  // Vacío sigue siendo válido (el campo no es obligatorio en el form), pero si
+  // hay algo tiene que ser una URL: la vista de solo lectura lo renderiza como
+  // link clickeable, así que un `mi-perfil` suelto terminaría en un
+  // `https://mi-perfil` que no resuelve.
+  linkedinUrl: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || isExternalUrl(value), {
+      message: "Ingresá una URL válida.",
+    }),
   description: z
     .string()
     .trim()
@@ -130,7 +141,7 @@ export function PersonalInfoTab({
             <ReadOnlyField label="Nombres" value={profile.name} />
             <ReadOnlyField label="Apellidos" value={profile.surname} />
             <ReadOnlyField label="Teléfono" value={draft.phoneNumber} />
-            <ReadOnlyField label="LinkedIn" value={draft.linkedinUrl} />
+            <ReadOnlyField label="LinkedIn" value={draft.linkedinUrl} isLink />
           </div>
 
           <div className="space-y-1">
@@ -176,15 +187,17 @@ export function PersonalInfoTab({
                 />
               </Field>
 
-              <Field>
+              <Field data-invalid={Boolean(form.formState.errors.linkedinUrl)}>
                 <FieldLabel htmlFor="linkedinUrl">LinkedIn</FieldLabel>
                 <Input
                   id="linkedinUrl"
                   placeholder="https://linkedin.com/in/tu-usuario"
+                  aria-invalid={Boolean(form.formState.errors.linkedinUrl)}
                   {...form.register("linkedinUrl", {
                     onChange: (e) => onDraftChange({ linkedinUrl: e.target.value }),
                   })}
                 />
+                <FieldError errors={[form.formState.errors.linkedinUrl]} />
               </Field>
             </div>
 
@@ -222,13 +235,3 @@ export function PersonalInfoTab({
   );
 }
 
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-1">
-      <p className="text-sm font-medium">{label}</p>
-      <p className={value ? "text-sm" : "text-sm italic text-muted-foreground"}>
-        {value || "Sin completar"}
-      </p>
-    </div>
-  );
-}

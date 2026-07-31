@@ -15,6 +15,7 @@ import { useForm, type UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 import { CONTRACT_TYPES } from "@/lib/contract-types";
+import { plusOneYearIso, todayIso } from "@/lib/dates";
 import { DEPARTMENTS } from "@/lib/departments";
 import { SALARY_AMOUNT_PATTERN, SALARY_CURRENCIES } from "@/lib/salary";
 import type { Modality, Department } from "@/types";
@@ -31,11 +32,16 @@ const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readon
 //
 // `publicationDate`/`closingDate`: el backend las exige como input, no las
 // autogenera (`CreateVacancyRequest`, verificado contra el código fuente —
-// ninguna versión de docs/ENDPOINTS.md las documentaba). El back valida
-// además que `publicationDate` no sea anterior a hoy, que `closingDate` no
-// sea anterior a `publicationDate`, y que no pase más de un año entre las
-// dos — se replica la parte relevante acá para no depender solo del 400 del
-// backend.
+// ninguna versión de docs/ENDPOINTS.md las documentaba).
+//
+// Las tres reglas de `VacancyServiceImpl.dateValidation` se replican acá para
+// no depender solo del 400 del backend (mensajes propios, y el error queda
+// pegado al input en vez de llegar como toast genérico):
+//   1. `inicio.isAfter(fin)`                 → el `.refine()` de abajo
+//   2. `inicio.isBefore(today)`              → `superRefine`, con `todayIso()`
+//   3. `fin.isAfter(inicio.plusYears(1))`    → `superRefine`, con `plusOneYearIso()`
+// La zona de "hoy" la fija `lib/dates.ts` a America/Montevideo, igual que el
+// backend, para que front y back nunca discrepen sobre qué día es hoy.
 //
 // El salario se carga estructurado: moneda + monto desde + monto hasta
 // (opcional), ver `lib/salary.ts`. A diferencia de `edit-job-form.tsx`, que
@@ -71,6 +77,28 @@ const jobFormSchema = z
     { message: "La fecha de cierre no puede ser anterior a la de publicación.", path: ["closingDate"] },
   )
   .superRefine((data, ctx) => {
+    // `todayIso()` se evalúa acá dentro (no a nivel de módulo) a propósito: si
+    // se calculara al importar, una pestaña abierta cruzando la medianoche
+    // validaría contra el día de ayer. Las fechas son `YYYY-MM-DD`, así que
+    // comparar los strings alcanza — no hace falta pasar por `Date`.
+    if (data.publicationDate && data.publicationDate < todayIso()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["publicationDate"],
+        message: "La fecha de publicación no puede ser anterior a hoy.",
+      });
+    }
+    if (
+      data.publicationDate &&
+      data.closingDate &&
+      data.closingDate > plusOneYearIso(data.publicationDate)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["closingDate"],
+        message: "La fecha de cierre no puede superar un año desde la de publicación.",
+      });
+    }
     if (!data.salaryCurrency) {
       ctx.addIssue({ code: "custom", path: ["salaryCurrency"], message: "Seleccioná una moneda." });
     }

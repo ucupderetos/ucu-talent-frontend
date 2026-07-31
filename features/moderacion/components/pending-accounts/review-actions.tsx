@@ -1,8 +1,8 @@
 "use client";
 
-// Adapta las acciones de una cuenta pendiente a los menús compartidos por los
-// listados generales. Así, todas las columnas "Acciones" usan el mismo menú
-// compacto y las mismas confirmaciones para aprobar o rechazar.
+// Adapta las acciones de una cuenta pendiente a los componentes compartidos por
+// los listados generales. Así, todas las columnas "Acciones" usan los mismos
+// iconos con tooltip y las mismas confirmaciones para aprobar o rechazar.
 
 import { CompanyModerationActions } from "@/features/moderacion/components/companies/company-moderation-actions";
 import { StudentModerationActions } from "@/features/moderacion/components/students/student-moderation-actions";
@@ -19,7 +19,7 @@ export function ReviewActions({ userId, displayName, accountType }: ReviewAction
     return (
       <CompanyModerationActions
         company={{ id: userId, name: displayName, status: "PENDIENTE" }}
-        presentation="menu"
+        includeDetailLink
       />
     );
   }
@@ -29,7 +29,7 @@ export function ReviewActions({ userId, displayName, accountType }: ReviewAction
       userId={userId}
       status="PENDIENTE"
       displayName={displayName}
-      presentation="menu"
+      includeDetailLink
     />
   );
 }

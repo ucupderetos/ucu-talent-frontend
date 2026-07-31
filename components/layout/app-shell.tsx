@@ -30,17 +30,29 @@ export function AppShell({
 
   return (
     // Fila principal, no columna: el Sidebar es una columna propia que va de
-    // punta a punta del viewport (h-dvh), así queda a la izquierda del navbar
-    // en vez de debajo — el navbar ya no lo "tapa" por arriba. La columna de
-    // la derecha (navbar + main) es la que scrollea; `main` con overflow-y-auto.
+    // punta a punta del viewport, así queda a la izquierda del navbar en vez
+    // de debajo — el navbar ya no lo "tapa" por arriba. La columna de la
+    // derecha (navbar + main) es la que scrollea; `main` con overflow-y-auto.
     <BreadcrumbProvider>
-      {/* overflow-hidden: sin esto, cualquier desborde de 1px (redondeo del
-          navegador, scrollbar, etc.) hace que el `body` mismo se vuelva
-          scrolleable — al scrollear con el mouse sobre el sidebar/navbar (que
-          no tienen su propio overflow) el navegador mueve el documento
-          entero y se ve una franja blanca del fondo debajo de este shell,
-          que es exactamente `h-dvh` (un viewport, ni un pixel más). */}
-      <div className="flex h-dvh overflow-hidden">
+      {/* `fixed` + `h-dvh`, las dos cosas — cada una resuelve un problema
+          distinto y ninguna sola alcanza:
+
+          - `fixed` (con `inset-x-0 top-0`): saca el shell del flujo. Con el
+            shell en flujo, cualquier desborde de 1px (redondeo de `100dvh` en
+            Chrome, scrollbar) vuelve scrolleable al propio `body`, y al
+            scrollear sobre el sidebar/navbar (que no tienen overflow propio)
+            el navegador mueve el documento entero y aparece una franja blanca
+            del fondo debajo del shell. Un elemento fixed no cuenta para el
+            overflow scrolleable del documento, así que eso no puede pasar.
+          - `h-dvh`: define el alto explícitamente. Si dejáramos `inset-0`, el
+            alto lo daría el bloque contenedor inicial, que los navegadores
+            móviles dimensionan distinto según la barra de URL y NO se achica
+            con el teclado virtual — un input al final de un form largo puede
+            quedar tapado sin forma de scrollear. `100dvh` sí acompaña.
+
+          overflow-hidden adentro sigue evitando que el contenido de
+          sidebar/navbar desborde este contenedor. */}
+      <div className="fixed inset-x-0 top-0 flex h-dvh overflow-hidden">
         <Sidebar role={user.role} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <Navbar user={user} />
