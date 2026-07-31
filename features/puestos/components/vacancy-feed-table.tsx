@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
-import { formatDate } from "@/lib/format-date";
+import { formatDate } from "@/lib/dates";
 import { MODALITY_LABELS } from "@/lib/modality";
 import type { FeedVacancyRow } from "@/features/puestos/types";
 

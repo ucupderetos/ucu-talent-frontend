@@ -32,16 +32,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiError } from "@/lib/api-client";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
-import { formatDate as formatIsoDate } from "@/lib/format-date";
+import { formatDate } from "@/lib/dates";
 import { MODALITY_LABELS } from "@/lib/modality";
 import { useSession } from "@/hooks/use-session";
 import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
 import type { AccountStatus } from "@/types";
-
-function formatDate(iso: string | null): string {
-  return iso ? formatIsoDate(iso) : "Sin fecha de publicación";
-}
 
 function companyInitials(name: string): string {
   return (
@@ -118,7 +114,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: VacancyDetail }) {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarIcon className="size-4" />
-                {formatDate(vacancy.publicationDate)}
+                {formatDate(vacancy.publicationDate, "Sin fecha de publicación")}
               </span>
             </div>
 

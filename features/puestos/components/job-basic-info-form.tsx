@@ -16,21 +16,16 @@ import { ModalitySelector } from "@/features/puestos/components/modality-selecto
 
 import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 import { CONTRACT_TYPE_OPTIONS } from "@/lib/contract-types";
+// `min`/`max` de los inputs de fecha: son solo pistas para el date picker del
+// navegador (RHF maneja el submit, así que la constraint validation nativa
+// nunca corre). El guard real de las mismas reglas está en el schema Zod de
+// `use-create-job-form.tsx`.
+import { plusOneYearIso, todayIso } from "@/lib/dates";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { useAreas } from "@/features/puestos/hooks/use-areas";
 import type { ContractType } from "@/types";
 
 const TITLE_MAX = 100;
-
-/** `YYYY-MM-DD` de hoy, en horario local (evita el corrimiento de día de
- *  `toISOString()` en UTC-3 — mismo criterio que `edit-job-form.tsx`). */
-function todayIso(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 export function JobBasicInfoForm() {
   const { form } = useCreateJobForm();
@@ -185,6 +180,7 @@ export function JobBasicInfoForm() {
                 type="date"
                 className="h-11"
                 min={publicationDate || todayIso()}
+                max={plusOneYearIso(publicationDate || todayIso())}
                 aria-invalid={Boolean(errors.closingDate)}
                 {...register("closingDate")}
               />

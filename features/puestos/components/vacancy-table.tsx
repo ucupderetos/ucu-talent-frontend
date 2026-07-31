@@ -37,9 +37,9 @@ import {
   VacancyStatusBadge,
 } from "@/components/vacancies/vacancy-status-badge";
 import { ApiError } from "@/lib/api-client";
-import { useCloseJob } from "@/features/puestos/hooks/use-close-job";
-import { formatDate } from "@/lib/format-date";
+import { formatDate } from "@/lib/dates";
 import { MODALITY_LABELS } from "@/lib/modality";
+import { useCloseJob } from "@/features/puestos/hooks/use-close-job";
 import type { CompanyVacancyRow } from "@/features/puestos/types";
 
 export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {

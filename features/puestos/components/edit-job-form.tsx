@@ -42,6 +42,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ModalitySelector } from "@/features/puestos/components/modality-selector";
 import { CONTRACT_TYPES, CONTRACT_TYPE_OPTIONS } from "@/lib/contract-types";
+import { formatDate, todayIso } from "@/lib/dates";
 import { DEPARTMENTS, DEPARTMENT_LABELS } from "@/lib/departments";
 import { applyFieldErrors } from "@/lib/form-errors";
 import {
@@ -59,13 +60,6 @@ import type { ContractType, Department, Modality } from "@/types";
 const TITLE_MAX = 100;
 const DESCRIPTION_MAX = 2000;
 
-/** `YYYY-MM-DD` → `dd/mm/yyyy` sin pasar por `new Date()` (evita el corrimiento
- *  de día por UTC en UTC-3). Solo para el display read-only de la publicación. */
-function formatDate(iso: string): string {
-  const [year, month, day] = iso.slice(0, 10).split("-");
-  return `${day}/${month}/${year}`;
-}
-
 /**
  * Fecha de publicación a MANDAR en el update.
  *
@@ -82,16 +76,6 @@ function formatDate(iso: string): string {
  */
 function publicationDateToSend(storedPublicationDate: string): string {
   return storedPublicationDate < todayIso() ? todayIso() : storedPublicationDate;
-}
-
-/** `YYYY-MM-DD` de hoy, en horario local (mismo criterio que `formatDate`:
- *  evita el corrimiento de día de `toISOString()` en UTC-3). */
-function todayIso(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 // satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto

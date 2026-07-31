@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
-import { formatDate } from "@/lib/format-date";
+import { formatDate } from "@/lib/dates";
 import type { FeedVacancyRow } from "@/features/puestos/types";
 
 export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
