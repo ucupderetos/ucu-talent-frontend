@@ -169,13 +169,21 @@ export interface PendingStudentsFilters {
 // ---------------------------------------------------------------------------
 
 /**
- * Wire: `GET /vacancy-application/detailed` (ADMIN) — listado global de
+ * Wire: `GET /vacancy-application/detailed` — 🔒 rol ADMIN. Listado GLOBAL de
  * postulaciones YA resuelto: la respuesta trae `application` (mismo shape que
  * `VacancyApplication`, con `studentProfileId`/`accepted`) más
  * `studentName`/`studentSurname`/`studentEmail`/`vacancyId`/`vacancyName`/
  * `companyId`/`companyName` — sin necesidad de cruzar por separado
  * `StudentProfile`/`User`/`Vacancy`/`Company` como hacía la versión anterior
  * de `use-applications.ts` (fetch-all × 4 + un GET por status del enum).
+ *
+ * El nombre real del DTO en el backend es `ApplicationListItemResponse`; acá se
+ * usa uno más explícito porque `moderacion` ya tiene varios `*Response`. Ver
+ * A-30 en `docs/agents/open-questions.md`.
+ *
+ * ⚠️ No confundir con `VacancyApplicationDetailedResponse`
+ * (`features/postulaciones/types.ts`): ese es el `/me/detailed` del ALUMNO, con
+ * otro shape y sin `studentProfileId`/`accepted`.
  */
 export interface AdminApplicationDetailedResponse {
   application: VacancyApplication;

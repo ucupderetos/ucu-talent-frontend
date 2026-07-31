@@ -345,8 +345,6 @@ del backend (`vacancyapplication/VacancyApplicationController.java`,
 | PATCH | `/vacancy-application/{id}/accept` | Empresa dueña | - | `VacancyApplicationResponse` |
 | DELETE | `/vacancy-application/{id}` | Alumno postulante (dueño) | - | 204 |
 | GET | `/vacancy-application/status-summary` | ADMIN | - | `VacancyApplicationStatusSummaryResponse` |
-| GET | `/vacancy-application/me/detailed` | Empresa dueña o ADMIN | - | `VacancyApplicationDetailedResponse[]` |
-| GET | `/vacancy-application/detailed` | ADMIN | - | `AdminApplicationDetailedResponse[]` |
 
 ```
 CreateVacancyApplicationRequest
@@ -388,44 +386,6 @@ alumno ya resuelto. El controller real (`getByVacancyId`) devuelve
 `List<VacancyApplicationResponse>` — el mismo shape de siempre, sin
 `studentName`. Para armar la tabla de "Postulantes" con nombre hace falta
 resolver `StudentProfile` por `studentProfileId` aparte.
-
-Agregados 2026-07-30 — DTOs "detailed", pensados para no tener que cruzar a
-mano `Vacancy`/`Company`/`Area`/`StudentProfile`/`User` como hacían
-`use-company-applicants.ts` y `use-applications.ts`:
-
-```
-VacancyApplicationDetailedResponse   // item de GET /vacancy-application/me/detailed
-                                      // (empresa dueña o ADMIN)
-{
-  application: {
-    vacancyApplicationId, vacancyId, vacancyName, companyId, companyName,
-    appliedAt, status, vacancyStatus
-  },
-  vacancy: VacancyResponse,          // la Vacancy completa, sin recortar
-  companyName: string,
-  areaName: string
-}
-// ⚠️ El `application` anidado SIGUE sin `studentProfileId`: no identifica al
-// alumno postulante. Sirve para resolver vacante/empresa/área de una sola
-// consulta, pero no reemplaza el fetch a StudentProfile para el nombre — ver
-// el aviso en `features/postulaciones/types.ts` (`VacancyApplicationSummary`).
-// Por eso `use-company-applicants.ts` todavía no lo adopta: adoptarlo hoy no
-// ahorra el 1+N contra `StudentProfile`, que es el costo real de esa pantalla.
-
-AdminApplicationDetailedResponse     // item de GET /vacancy-application/detailed
-                                      // (ADMIN)
-{
-  application: VacancyApplicationResponse,   // shape de siempre, con studentProfileId/accepted
-  studentName, studentSurname, studentEmail,
-  vacancyId, vacancyName,
-  companyId, companyName
-}
-// Este SÍ trae todo lo que necesita la tabla de "Postulaciones" del admin en
-// una sola request — reemplaza el fetch-all × 4 (student-profile/user/vacancy/
-// company) + un GET por status del enum que hacía la versión anterior de
-// `use-applications.ts`. Ver `AdminApplicationDetailedResponse` en
-// `features/moderacion/types.ts`.
-```
 
 ### Flujo de estado
 

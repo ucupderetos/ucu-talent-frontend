@@ -15,7 +15,15 @@ import type {
 } from "@/types";
 
 // ---------------------------------------------------------------------------
-// `GET /vacancy-application/me/detailed` (empresa dueña o ADMIN).
+// `GET /vacancy-application/me/detailed` — 🔒 rol ALUMNO.
+//
+// Es el listado propio del alumno ("Mis postulaciones"), NO un endpoint de
+// empresa: una empresa que lo llame recibe 403. Verificado contra el contrato
+// del backend, ver A-26 en docs/agents/open-questions.md.
+//
+// El equivalente para el ADMIN es `GET /vacancy-application/detailed` (A-30),
+// que tiene otro shape y sí trae `studentProfileId`/`accepted` — vive en
+// `features/moderacion/types.ts` porque lo consume esa pantalla.
 // ---------------------------------------------------------------------------
 
 /**
@@ -24,13 +32,13 @@ import type {
  * a diferencia de `VacancyApplicationResponse` (plano, sección 6 de
  * `docs/ENDPOINTS.md`).
  *
- * ⚠️ **Sigue SIN `studentProfileId`.** No identifica al alumno postulante, así
- * que NO reemplaza el fetch a `GET /student-profile/{id}` que hace
- * `use-company-applicants.ts` para el nombre de la fila — solo evita el 1+N
- * contra `GET /vacancy` (colección completa, filtrada por `companyId` en el
- * cliente) + un `GET /vacancy-application?vacancyId=` por cada vacante propia.
+ * ⚠️ **No trae `studentProfileId` ni `accepted`**, y es a propósito: el alumno
+ * ya sabe que las postulaciones son suyas, y no puede ver si quedó seleccionado
+ * (ver el aviso en `VacancyApplication`, `types/index.ts`). Quien necesite
+ * cualquiera de los dos campos tiene que ir por el endpoint del admin (A-30),
+ * no por este.
  */
-export interface VacancyApplicationSummary {
+interface VacancyApplicationSummary {
   vacancyApplicationId: string;
   vacancyId: string;
   vacancyName: string;
