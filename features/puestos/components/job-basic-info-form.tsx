@@ -22,6 +22,15 @@ import type { ContractType } from "@/types";
 
 const TITLE_MAX = 100;
 
+/** `YYYY-MM-DD` de hoy, en horario local (evita el corrimiento de día de
+ *  `toISOString()` en UTC-3 — mismo criterio que `edit-job-form.tsx`). */
+function todayIso(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export function JobBasicInfoForm() {
   const { form } = useCreateJobForm();
@@ -162,6 +171,7 @@ export function JobBasicInfoForm() {
                 id="publicationDate"
                 type="date"
                 className="h-11"
+                min={todayIso()}
                 aria-invalid={Boolean(errors.publicationDate)}
                 {...register("publicationDate")}
               />
@@ -174,7 +184,7 @@ export function JobBasicInfoForm() {
                 id="closingDate"
                 type="date"
                 className="h-11"
-                min={publicationDate || undefined}
+                min={publicationDate || todayIso()}
                 aria-invalid={Boolean(errors.closingDate)}
                 {...register("closingDate")}
               />

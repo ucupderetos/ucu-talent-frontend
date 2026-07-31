@@ -10,13 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
+import { formatDate } from "@/lib/format-date";
 import type { FeedVacancyRow } from "@/features/puestos/types";
-
-export const dateFormatter = new Intl.DateTimeFormat("es-UY", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
 
 export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
   return (
@@ -58,7 +53,7 @@ export function VacancyFeedCard({ vacancy }: { vacancy: FeedVacancyRow }) {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Publicado el {dateFormatter.format(new Date(vacancy.publicationDate))}
+            Publicado el {formatDate(vacancy.publicationDate)}
           </p>
         </CardContent>
       </Card>

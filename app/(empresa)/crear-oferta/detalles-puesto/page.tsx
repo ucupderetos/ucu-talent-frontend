@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { ArrowRightIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,17 @@ import { useCreateJobForm } from "@/features/puestos/hooks/use-create-job-form";
 
 export default function DetallesDelPuestoPage() {
   const router = useRouter();
-  const { form, markStepReached } = useCreateJobForm();
+  const { form, furthestStep, markStepReached } = useCreateJobForm();
+
+  // Red de contención para URL directa: si todavía no se completó (ni
+  // validó) el paso 1, `router.push` no alcanza a este punto vía la UI
+  // normal, así que solo puede pasar tipeando la URL — se manda de vuelta
+  // al paso 1 en vez de mostrar este paso con datos vacíos.
+  useEffect(() => {
+    if (furthestStep < 2) router.replace("/crear-oferta/informacion-basica");
+  }, [furthestStep, router]);
+
+  if (furthestStep < 2) return null;
 
   async function handleNext() {
     const isStepValid = await form.trigger([

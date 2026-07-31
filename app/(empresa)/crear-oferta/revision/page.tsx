@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,20 @@ const STEP_2_FIELDS = new Set(["description", "requirements", "salary"]);
 
 export default function RevisionPage() {
   const router = useRouter();
-  const { form } = useCreateJobForm();
+  const { form, furthestStep } = useCreateJobForm();
   const { publish, isLoading } = usePublishJob();
+
+  // Red de contención para URL directa (ver mismo guard en detalles-puesto):
+  // sin haber pasado por los pasos 1 y 2 no hay datos que revisar.
+  useEffect(() => {
+    if (furthestStep < 3) {
+      router.replace(
+        furthestStep < 2 ? "/crear-oferta/informacion-basica" : "/crear-oferta/detalles-puesto",
+      );
+    }
+  }, [furthestStep, router]);
+
+  if (furthestStep < 3) return null;
 
   async function handlePublish() {
     const isValid = await form.trigger();

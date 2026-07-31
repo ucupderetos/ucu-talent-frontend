@@ -32,20 +32,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiError } from "@/lib/api-client";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
+import { formatDate as formatIsoDate } from "@/lib/format-date";
 import { MODALITY_LABELS } from "@/lib/modality";
 import { useSession } from "@/hooks/use-session";
 import { useApplyToVacancy, useHasApplied, useVacancy } from "@/features/puestos/hooks/use-vacancy";
 import type { VacancyDetail } from "@/features/puestos/types";
 import type { AccountStatus } from "@/types";
 
-const dateFormatter = new Intl.DateTimeFormat("es-UY", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
 function formatDate(iso: string | null): string {
-  return iso ? dateFormatter.format(new Date(iso)) : "Sin fecha de publicación";
+  return iso ? formatIsoDate(iso) : "Sin fecha de publicación";
 }
 
 function companyInitials(name: string): string {

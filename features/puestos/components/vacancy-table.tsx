@@ -38,18 +38,9 @@ import {
 } from "@/components/vacancies/vacancy-status-badge";
 import { ApiError } from "@/lib/api-client";
 import { useCloseJob } from "@/features/puestos/hooks/use-close-job";
+import { formatDate } from "@/lib/format-date";
 import { MODALITY_LABELS } from "@/lib/modality";
 import type { CompanyVacancyRow } from "@/features/puestos/types";
-
-const dateFormatter = new Intl.DateTimeFormat("es-UY", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
-function formatDate(iso: string | null): string {
-  return iso ? dateFormatter.format(new Date(iso)) : "—";
-}
 
 export function VacancyTable({ rows }: { rows: CompanyVacancyRow[] }) {
   return (

@@ -34,13 +34,17 @@ export function AppShell({
     // en vez de debajo — el navbar ya no lo "tapa" por arriba. La columna de
     // la derecha (navbar + main) es la que scrollea; `main` con overflow-y-auto.
     <BreadcrumbProvider>
-      {/* overflow-hidden: sin esto, cualquier desborde de 1px (redondeo del
-          navegador, scrollbar, etc.) hace que el `body` mismo se vuelva
-          scrolleable — al scrollear con el mouse sobre el sidebar/navbar (que
-          no tienen su propio overflow) el navegador mueve el documento
-          entero y se ve una franja blanca del fondo debajo de este shell,
-          que es exactamente `h-dvh` (un viewport, ni un pixel más). */}
-      <div className="flex h-dvh overflow-hidden">
+      {/* fixed inset-0 (no `h-dvh` en flujo normal): `100dvh` puede redondear
+          medio pixel distinto al alto real del viewport (pasa en Chrome), y
+          ese desborde de 1px hace que el propio `body` se vuelva scrolleable
+          — al scrollear (mouse, trackpad) el navegador mueve el documento
+          entero y se ve una franja blanca del fondo debajo de este shell. Con
+          `fixed inset-0` el shell queda fuera del flujo del documento: por
+          definición ocupa el viewport exacto y no puede desbordar el `body`,
+          sin importar el redondeo. overflow-hidden adentro sigue evitando que
+          el contenido de sidebar/navbar (sin scroll propio) desborde este
+          contenedor. */}
+      <div className="fixed inset-0 flex overflow-hidden">
         <Sidebar role={user.role} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <Navbar user={user} />
