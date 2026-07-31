@@ -130,7 +130,7 @@ export function PersonalInfoTab({
             <ReadOnlyField label="Nombres" value={profile.name} />
             <ReadOnlyField label="Apellidos" value={profile.surname} />
             <ReadOnlyField label="Teléfono" value={draft.phoneNumber} />
-            <ReadOnlyField label="LinkedIn" value={draft.linkedinUrl} />
+            <ReadOnlyField label="LinkedIn" value={draft.linkedinUrl} isLink />
           </div>
 
           <div className="space-y-1">
@@ -222,13 +222,38 @@ export function PersonalInfoTab({
   );
 }
 
-function ReadOnlyField({ label, value }: { label: string; value: string }) {
+function toHref(url: string) {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+function ReadOnlyField({
+  label,
+  value,
+  isLink = false,
+}: {
+  label: string;
+  value: string;
+  isLink?: boolean;
+}) {
   return (
     <div className="space-y-1">
       <p className="text-sm font-medium">{label}</p>
-      <p className={value ? "text-sm" : "text-sm italic text-muted-foreground"}>
-        {value || "Sin completar"}
-      </p>
+      {value ? (
+        isLink ? (
+          <a
+            href={toHref(value)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline underline-offset-2 hover:opacity-80"
+          >
+            {value}
+          </a>
+        ) : (
+          <p className="text-sm">{value}</p>
+        )
+      ) : (
+        <p className="text-sm italic text-muted-foreground">Sin completar</p>
+      )}
     </div>
   );
 }
