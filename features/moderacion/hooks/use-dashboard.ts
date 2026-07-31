@@ -4,6 +4,10 @@
 // inicial en una sola request. Reemplaza al enfoque anterior (traer los
 // listados administrativos completos y calcular las métricas acá) — ver el
 // aviso en `features/moderacion/types.ts`.
+//
+// ⚠️ El feed de actividad reciente NO sale de acá: el endpoint no lo devuelve
+// y hay que derivarlo de los listados crudos, así que vive en su propia query
+// (`use-recent-activity.ts`) para no encarecer este payload. Ver A-31.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -13,7 +17,6 @@ import type {
   DashboardStat,
   DashboardStatId,
   PendingCompanyValidation,
-  RecentActivityItem,
   RecentVacancy,
 } from "@/features/moderacion/types";
 import { apiClient } from "@/lib/api-client";
@@ -23,7 +26,6 @@ interface AdminDashboardData {
   stats: DashboardStat[];
   recentVacancies: RecentVacancy[];
   pendingValidations: PendingCompanyValidation[];
-  recentActivity: RecentActivityItem[];
   applicationsByStatus: ApplicationStatusSummary[];
 }
 
@@ -61,9 +63,6 @@ async function fetchDashboard(signal: AbortSignal): Promise<AdminDashboardData> 
     stats: buildStats(response),
     recentVacancies: response.recentVacancies,
     pendingValidations: response.pendingCompanies,
-    // No existe un endpoint de actividad general. /audit es de auditoría
-    // interna y no representa altas/postulaciones de todos los dominios.
-    recentActivity: [],
     applicationsByStatus: buildApplicationsByStatus(response.applicationStatusSummary),
   };
 }
