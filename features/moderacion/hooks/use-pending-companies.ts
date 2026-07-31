@@ -10,6 +10,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type { PendingCompaniesFilters, PendingCompanyRow } from "@/features/moderacion/types";
 import type { Company, Paginated, User } from "@/types";
 
@@ -23,7 +24,7 @@ export function pendingCompaniesQueryKey(filters: PendingCompaniesFilters) {
 export function usePendingCompanies(filters: PendingCompaniesFilters) {
   return useQuery({
     queryKey: pendingCompaniesQueryKey(filters),
-    queryFn: () => fetchPendingCompanies(filters),
+    queryFn: ({ signal }) => fetchPendingCompanies(filters, signal),
   });
 }
 
@@ -44,13 +45,14 @@ export function usePendingCompanyIndustries() {
 
 async function fetchPendingCompanies(
   filters: PendingCompaniesFilters,
+  signal: AbortSignal,
 ): Promise<Paginated<PendingCompanyRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   const [pendingUsers, companies] = await Promise.all([
-    apiClient.get<User[]>("/user", { params: { status: "PENDIENTE", role: "EMPRESA" } }),
-    apiClient.get<Company[]>("/company"),
+    fetchAllUsers({ status: "PENDIENTE", role: "EMPRESA" }, signal),
+    apiClient.get<Company[]>("/company", { signal }),
   ]);
 
   const companiesById = new Map(companies.map((c) => [c.companyId, c]));

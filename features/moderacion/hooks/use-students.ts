@@ -18,6 +18,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { ApiError, apiClient } from "@/lib/api-client";
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type { StudentFilters, StudentRow } from "@/features/moderacion/types";
 import type { Area, Degree, Education, Paginated, StudentProfile, User } from "@/types";
 
@@ -31,20 +32,23 @@ export function studentsQueryKey(filters: StudentFilters) {
 export function useStudents(filters: StudentFilters) {
   return useQuery({
     queryKey: studentsQueryKey(filters),
-    queryFn: () => fetchStudents(filters),
+    queryFn: ({ signal }) => fetchStudents(filters, signal),
   });
 }
 
-async function fetchStudents(filters: StudentFilters): Promise<Paginated<StudentRow>> {
+async function fetchStudents(
+  filters: StudentFilters,
+  signal: AbortSignal,
+): Promise<Paginated<StudentRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   const [users, profiles, degrees, areas, educations] = await Promise.all([
-    apiClient.get<User[]>("/user", { params: { role: "ALUMNO" } }),
-    apiClient.get<StudentProfile[]>("/student-profile"),
-    apiClient.get<Degree[]>("/degree"),
-    apiClient.get<Area[]>("/area"),
-    fetchEducations(),
+    fetchAllUsers({ role: "ALUMNO" }, signal),
+    apiClient.get<StudentProfile[]>("/student-profile", { signal }),
+    apiClient.get<Degree[]>("/degree", { signal }),
+    apiClient.get<Area[]>("/area", { signal }),
+    fetchEducations(signal),
   ]);
 
   const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
@@ -116,6 +120,10 @@ function toRow(
     email: user.email,
     status: user.status,
     registeredAt: user.registeredAt,
+    // La key de storage ya viene en el `User` que este hook trae: la fila la
+    // arrastra para que la tabla NO tenga que pedir `GET /user/{id}` por alumno
+    // solo para conseguirla. Ver el aviso en `StudentRow`.
+    profileImage: user.profileImage ?? null,
     degreeId: degree?.degreeId ?? null,
     degreeName: degree?.name ?? "—",
     areaId: area?.areaId ?? null,
@@ -128,9 +136,9 @@ function toRow(
  *  la tabla entera. Solo se propagan errores que NO son de la API (bugs
  *  reales). A diferencia del detalle (`use-admin-student-detail.ts`), que si
  *  surface el error porque es de un solo alumno. */
-async function fetchEducations(): Promise<Education[]> {
+async function fetchEducations(signal: AbortSignal): Promise<Education[]> {
   try {
-    return await apiClient.get<Education[]>("/education");
+    return await apiClient.get<Education[]>("/education", { signal });
   } catch (error) {
     if (error instanceof ApiError) return [];
     throw error;

@@ -11,6 +11,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type {
   AdminApplicationFilters,
   AdminApplicationOrder,
@@ -37,12 +38,13 @@ export function applicationsQueryKey(filters: AdminApplicationFilters) {
 export function useApplications(filters: AdminApplicationFilters) {
   return useQuery({
     queryKey: applicationsQueryKey(filters),
-    queryFn: () => fetchApplications(filters),
+    queryFn: ({ signal }) => fetchApplications(filters, signal),
   });
 }
 
 async function fetchApplications(
   filters: AdminApplicationFilters,
+  signal: AbortSignal,
 ): Promise<Paginated<AdminApplicationRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
@@ -50,13 +52,16 @@ async function fetchApplications(
   const [applicationsByStatus, profiles, users, vacancies, companies] = await Promise.all([
     Promise.all(
       ALL_STATUSES.map((status) =>
-        apiClient.get<VacancyApplication[]>("/vacancy-application", { params: { status } }),
+        apiClient.get<VacancyApplication[]>("/vacancy-application", {
+          params: { status },
+          signal,
+        }),
       ),
     ),
-    apiClient.get<StudentProfile[]>("/student-profile"),
-    apiClient.get<User[]>("/user", { params: { role: "ALUMNO" } }),
-    apiClient.get<Vacancy[]>("/vacancy"),
-    apiClient.get<Company[]>("/company"),
+    apiClient.get<StudentProfile[]>("/student-profile", { signal }),
+    fetchAllUsers({ role: "ALUMNO" }, signal),
+    apiClient.get<Vacancy[]>("/vacancy", { signal }),
+    apiClient.get<Company[]>("/company", { signal }),
   ]);
 
   const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));

@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReviewActions } from "@/features/moderacion/components/pending-accounts/review-actions";
 import {
   Table,
@@ -15,12 +15,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSignedProfileImageUrl } from "@/hooks/use-profile-image";
 import { avatarColorFor, initialsFrom } from "@/lib/avatar";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/document-types";
 import type { PendingStudentRow } from "@/features/moderacion/types";
 
 function formatDate(iso: string): string {
   return iso ? new Date(iso).toLocaleDateString("es-UY") : "—";
+}
+
+// La key de storage ya viene en la fila (`PendingStudentRow.profileImage`), así que
+// solo falta canjearla por la URL firmada. Con `useProfileImage(id)` cada fila
+// dispararía además un `GET /user/{id}` para releer esa misma key — el N+1 que
+// A-24 (`docs/agents/open-questions.md`) decidió no pagar en pantallas de lista.
+function PendingStudentAvatar({ student }: { student: PendingStudentRow }) {
+  const { imageUrl } = useSignedProfileImageUrl(student.profileImage);
+
+  return (
+    <Avatar>
+      {imageUrl && <AvatarImage src={imageUrl} alt="" />}
+      <AvatarFallback className={avatarColorFor(student.studentProfileId)}>
+        {student.hasProfile ? initialsFrom(student.name, student.surname) : "?"}
+      </AvatarFallback>
+    </Avatar>
+  );
 }
 
 export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
@@ -44,11 +62,7 @@ export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
                   aria-label={`Ver información de ${student.name} ${student.surname}`}
                   className="group flex items-center gap-3 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
-                  <Avatar>
-                    <AvatarFallback className={avatarColorFor(student.studentProfileId)}>
-                      {student.hasProfile ? initialsFrom(student.name, student.surname) : "?"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <PendingStudentAvatar student={student} />
                   <div>
                     <p className="font-medium group-hover:underline group-focus-visible:underline">
                       {student.hasProfile ? `${student.name} ${student.surname}` : student.email}

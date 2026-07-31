@@ -73,6 +73,16 @@ export interface StudentRow
   documentType: DocumentType | null;
   documentNumber: string;
   hasProfile: boolean;
+  /**
+   * Key de storage de la foto (`User.profileImage`), NO una URL — se canjea con
+   * `useSignedProfileImageUrl`. `null` si nunca subió una.
+   *
+   * ⚠️ Va en la fila a propósito: el hook ya trae el `User` completo, así que la
+   * key sale gratis. Si la tabla usara `useProfileImage(id)` en su lugar, cada
+   * fila dispararía un `GET /user/{id}` extra solo para volver a leer este mismo
+   * campo — el N+1 que A-24 (`docs/agents/open-questions.md`) decidió evitar.
+   */
+  profileImage: string | null;
 }
 
 /** Una formación del alumno con sus catálogos ya resueltos para el detalle.
@@ -143,6 +153,9 @@ export interface PendingStudentRow
   email: string;
   registeredAt: string; // ISO 8601
   hasProfile: boolean;
+  /** Key de storage de la foto — mismo criterio que `StudentRow.profileImage`,
+   *  ver el aviso ahí. */
+  profileImage: string | null;
 }
 
 export interface PendingStudentsFilters {

@@ -10,6 +10,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type { PendingStudentRow, PendingStudentsFilters } from "@/features/moderacion/types";
 import type { Paginated, StudentProfile, User } from "@/types";
 
@@ -23,19 +24,20 @@ export function pendingStudentsQueryKey(filters: PendingStudentsFilters) {
 export function usePendingStudents(filters: PendingStudentsFilters) {
   return useQuery({
     queryKey: pendingStudentsQueryKey(filters),
-    queryFn: () => fetchPendingStudents(filters),
+    queryFn: ({ signal }) => fetchPendingStudents(filters, signal),
   });
 }
 
 async function fetchPendingStudents(
   filters: PendingStudentsFilters,
+  signal: AbortSignal,
 ): Promise<Paginated<PendingStudentRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   const [pendingUsers, profiles] = await Promise.all([
-    apiClient.get<User[]>("/user", { params: { status: "PENDIENTE", role: "ALUMNO" } }),
-    apiClient.get<StudentProfile[]>("/student-profile"),
+    fetchAllUsers({ status: "PENDIENTE", role: "ALUMNO" }, signal),
+    apiClient.get<StudentProfile[]>("/student-profile", { signal }),
   ]);
 
   const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
@@ -66,6 +68,9 @@ function toRow(user: User, profile: StudentProfile | undefined): PendingStudentR
     hasProfile: profile !== undefined,
     email: user.email,
     registeredAt: user.registeredAt,
+    // Ver el aviso en `StudentRow.profileImage`: la key ya viene en el `User`,
+    // no hace falta un `GET /user/{id}` por fila para conseguirla.
+    profileImage: user.profileImage ?? null,
   };
 }
 
