@@ -18,11 +18,11 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { ApiError, apiClient } from "@/lib/api-client";
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type { StudentFilters, StudentRow } from "@/features/moderacion/types";
 import type { Area, Degree, Education, Paginated, StudentProfile, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
-const USER_PAGE_SIZE = 100;
 
 /** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function studentsQueryKey(filters: StudentFilters) {
@@ -32,20 +32,23 @@ export function studentsQueryKey(filters: StudentFilters) {
 export function useStudents(filters: StudentFilters) {
   return useQuery({
     queryKey: studentsQueryKey(filters),
-    queryFn: () => fetchStudents(filters),
+    queryFn: ({ signal }) => fetchStudents(filters, signal),
   });
 }
 
-async function fetchStudents(filters: StudentFilters): Promise<Paginated<StudentRow>> {
+async function fetchStudents(
+  filters: StudentFilters,
+  signal: AbortSignal,
+): Promise<Paginated<StudentRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   const [users, profiles, degrees, areas, educations] = await Promise.all([
-    fetchAllStudentUsers(),
-    apiClient.get<StudentProfile[]>("/student-profile"),
-    apiClient.get<Degree[]>("/degree"),
-    apiClient.get<Area[]>("/area"),
-    fetchEducations(),
+    fetchAllUsers({ role: "ALUMNO" }, signal),
+    apiClient.get<StudentProfile[]>("/student-profile", { signal }),
+    apiClient.get<Degree[]>("/degree", { signal }),
+    apiClient.get<Area[]>("/area", { signal }),
+    fetchEducations(signal),
   ]);
 
   const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
@@ -72,22 +75,6 @@ async function fetchStudents(filters: StudentFilters): Promise<Paginated<Student
   const items = filtered.slice(start, start + perPage);
 
   return { items, total: filtered.length, page, perPage };
-}
-
-/** GET /user pagina del lado del servidor (no documentado en ninguna version
- *  de ENDPOINTS.md) — sin page/size solo trae la primera pagina, y esta
- *  pantalla mostraba menos alumnos que el dashboard (que si pagina, ver
- *  use-dashboard.ts) por esto mismo. */
-async function fetchAllStudentUsers(): Promise<User[]> {
-  const users: User[] = [];
-
-  for (let page = 0; ; page += 1) {
-    const batch = await apiClient.get<User[]>("/user", {
-      params: { role: "ALUMNO", page, size: USER_PAGE_SIZE },
-    });
-    users.push(...batch);
-    if (batch.length < USER_PAGE_SIZE) return users;
-  }
 }
 
 /** un alumno puede tener varias educaciones cargadas, para esta tabla nos
@@ -133,6 +120,10 @@ function toRow(
     email: user.email,
     status: user.status,
     registeredAt: user.registeredAt,
+    // La key de storage ya viene en el `User` que este hook trae: la fila la
+    // arrastra para que la tabla NO tenga que pedir `GET /user/{id}` por alumno
+    // solo para conseguirla. Ver el aviso en `StudentRow`.
+    profileImage: user.profileImage ?? null,
     degreeId: degree?.degreeId ?? null,
     degreeName: degree?.name ?? "—",
     areaId: area?.areaId ?? null,
@@ -145,9 +136,9 @@ function toRow(
  *  la tabla entera. Solo se propagan errores que NO son de la API (bugs
  *  reales). A diferencia del detalle (`use-admin-student-detail.ts`), que si
  *  surface el error porque es de un solo alumno. */
-async function fetchEducations(): Promise<Education[]> {
+async function fetchEducations(signal: AbortSignal): Promise<Education[]> {
   try {
-    return await apiClient.get<Education[]>("/education");
+    return await apiClient.get<Education[]>("/education", { signal });
   } catch (error) {
     if (error instanceof ApiError) return [];
     throw error;

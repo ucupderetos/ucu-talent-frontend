@@ -5,6 +5,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type {
   AdminCompanyDetail,
   AdminCompanyFilters,
@@ -15,7 +16,6 @@ import { formatDepartment } from "@/lib/departments";
 import type { Company, Paginated, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
-const USER_PAGE_SIZE = 100;
 
 interface AdminCompanyDirectoryEntry {
   company: Company;
@@ -76,7 +76,7 @@ async function fetchAdminCompanyDirectory(
 ): Promise<AdminCompanyDirectoryEntry[]> {
   const [companies, users] = await Promise.all([
     apiClient.get<Company[]>("/company", { signal }),
-    fetchAllCompanyUsers(signal),
+    fetchAllUsers({ role: "EMPRESA" }, signal),
   ]);
   const usersById = new Map(users.map((user) => [user.userId, user]));
 
@@ -84,22 +84,6 @@ async function fetchAdminCompanyDirectory(
     company,
     user: usersById.get(company.companyId) ?? null,
   }));
-}
-
-async function fetchAllCompanyUsers(signal: AbortSignal): Promise<User[]> {
-  const users: User[] = [];
-
-  // GET /user pagina internamente pero devuelve solo el array, sin metadata.
-  // Se agotan páginas hasta recibir una de menos elementos que el page size.
-  for (let page = 0; ; page += 1) {
-    const batch = await apiClient.get<User[]>("/user", {
-      params: { role: "EMPRESA", page, size: USER_PAGE_SIZE },
-      signal,
-    });
-
-    users.push(...batch);
-    if (batch.length < USER_PAGE_SIZE) return users;
-  }
 }
 
 async function fetchAdminCompanyDetail(

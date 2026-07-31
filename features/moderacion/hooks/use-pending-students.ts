@@ -10,11 +10,11 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type { PendingStudentRow, PendingStudentsFilters } from "@/features/moderacion/types";
 import type { Paginated, StudentProfile, User } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
-const USER_PAGE_SIZE = 100;
 
 /** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
 export function pendingStudentsQueryKey(filters: PendingStudentsFilters) {
@@ -24,19 +24,20 @@ export function pendingStudentsQueryKey(filters: PendingStudentsFilters) {
 export function usePendingStudents(filters: PendingStudentsFilters) {
   return useQuery({
     queryKey: pendingStudentsQueryKey(filters),
-    queryFn: () => fetchPendingStudents(filters),
+    queryFn: ({ signal }) => fetchPendingStudents(filters, signal),
   });
 }
 
 async function fetchPendingStudents(
   filters: PendingStudentsFilters,
+  signal: AbortSignal,
 ): Promise<Paginated<PendingStudentRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
 
   const [pendingUsers, profiles] = await Promise.all([
-    fetchAllPendingStudentUsers(),
-    apiClient.get<StudentProfile[]>("/student-profile"),
+    fetchAllUsers({ status: "PENDIENTE", role: "ALUMNO" }, signal),
+    apiClient.get<StudentProfile[]>("/student-profile", { signal }),
   ]);
 
   const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
@@ -47,21 +48,6 @@ async function fetchPendingStudents(
   const items = filtered.slice(start, start + perPage);
 
   return { items, total: filtered.length, page, perPage };
-}
-
-/** GET /user pagina del lado del servidor (no documentado en ninguna version
- *  de ENDPOINTS.md) — sin page/size solo trae la primera pagina. Mismo caso
- *  que use-students.ts. */
-async function fetchAllPendingStudentUsers(): Promise<User[]> {
-  const users: User[] = [];
-
-  for (let page = 0; ; page += 1) {
-    const batch = await apiClient.get<User[]>("/user", {
-      params: { status: "PENDIENTE", role: "ALUMNO", page, size: USER_PAGE_SIZE },
-    });
-    users.push(...batch);
-    if (batch.length < USER_PAGE_SIZE) return users;
-  }
 }
 
 function toRow(user: User, profile: StudentProfile | undefined): PendingStudentRow {
@@ -82,6 +68,9 @@ function toRow(user: User, profile: StudentProfile | undefined): PendingStudentR
     hasProfile: profile !== undefined,
     email: user.email,
     registeredAt: user.registeredAt,
+    // Ver el aviso en `StudentRow.profileImage`: la key ya viene en el `User`,
+    // no hace falta un `GET /user/{id}` por fila para conseguirla.
+    profileImage: user.profileImage ?? null,
   };
 }
 

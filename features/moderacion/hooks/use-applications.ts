@@ -11,6 +11,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
+import { fetchAllUsers } from "@/features/moderacion/fetch-all-users";
 import type {
   AdminApplicationFilters,
   AdminApplicationOrder,
@@ -27,7 +28,6 @@ import type {
 } from "@/types";
 
 const DEFAULT_PER_PAGE = 10;
-const USER_PAGE_SIZE = 100;
 const ALL_STATUSES: VacancyApplicationStatus[] = ["PENDIENTE", "VISTO", "FINALIZADO"];
 
 /** @public para invalidación puntual futura (`docs/agents/data-fetching.md`). */
@@ -38,12 +38,13 @@ export function applicationsQueryKey(filters: AdminApplicationFilters) {
 export function useApplications(filters: AdminApplicationFilters) {
   return useQuery({
     queryKey: applicationsQueryKey(filters),
-    queryFn: () => fetchApplications(filters),
+    queryFn: ({ signal }) => fetchApplications(filters, signal),
   });
 }
 
 async function fetchApplications(
   filters: AdminApplicationFilters,
+  signal: AbortSignal,
 ): Promise<Paginated<AdminApplicationRow>> {
   const page = filters.page ?? 1;
   const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
@@ -51,13 +52,16 @@ async function fetchApplications(
   const [applicationsByStatus, profiles, users, vacancies, companies] = await Promise.all([
     Promise.all(
       ALL_STATUSES.map((status) =>
-        apiClient.get<VacancyApplication[]>("/vacancy-application", { params: { status } }),
+        apiClient.get<VacancyApplication[]>("/vacancy-application", {
+          params: { status },
+          signal,
+        }),
       ),
     ),
-    apiClient.get<StudentProfile[]>("/student-profile"),
-    fetchAllStudentUsers(),
-    apiClient.get<Vacancy[]>("/vacancy"),
-    apiClient.get<Company[]>("/company"),
+    apiClient.get<StudentProfile[]>("/student-profile", { signal }),
+    fetchAllUsers({ role: "ALUMNO" }, signal),
+    apiClient.get<Vacancy[]>("/vacancy", { signal }),
+    apiClient.get<Company[]>("/company", { signal }),
   ]);
 
   const profilesById = new Map(profiles.map((p) => [p.studentProfileId, p]));
@@ -80,21 +84,6 @@ async function fetchApplications(
 
 /** null si falta el perfil o la oferta — no deberia pasar con la pk
  *  compartida, pero asi no rompemos la tabla entera por un dato huerfano. */
-/** GET /user pagina del lado del servidor (no documentado en ninguna version
- *  de ENDPOINTS.md) — sin page/size solo trae la primera pagina. Mismo caso
- *  que use-students.ts. */
-async function fetchAllStudentUsers(): Promise<User[]> {
-  const users: User[] = [];
-
-  for (let page = 0; ; page += 1) {
-    const batch = await apiClient.get<User[]>("/user", {
-      params: { role: "ALUMNO", page, size: USER_PAGE_SIZE },
-    });
-    users.push(...batch);
-    if (batch.length < USER_PAGE_SIZE) return users;
-  }
-}
-
 function toRow(
   application: VacancyApplication,
   profilesById: Map<string, StudentProfile>,

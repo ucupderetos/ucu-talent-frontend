@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useProfileImage } from "@/hooks/use-profile-image";
+import { useSignedProfileImageUrl } from "@/hooks/use-profile-image";
 import { avatarColorFor, initialsFrom } from "@/lib/avatar";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/document-types";
 import type { PendingStudentRow } from "@/features/moderacion/types";
@@ -24,8 +24,12 @@ function formatDate(iso: string): string {
   return iso ? new Date(iso).toLocaleDateString("es-UY") : "—";
 }
 
+// La key de storage ya viene en la fila (`PendingStudentRow.profileImage`), así que
+// solo falta canjearla por la URL firmada. Con `useProfileImage(id)` cada fila
+// dispararía además un `GET /user/{id}` para releer esa misma key — el N+1 que
+// A-24 (`docs/agents/open-questions.md`) decidió no pagar en pantallas de lista.
 function PendingStudentAvatar({ student }: { student: PendingStudentRow }) {
-  const { imageUrl } = useProfileImage(student.studentProfileId);
+  const { imageUrl } = useSignedProfileImageUrl(student.profileImage);
 
   return (
     <Avatar>
