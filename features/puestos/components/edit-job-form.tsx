@@ -23,7 +23,14 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -59,6 +66,34 @@ function formatDate(iso: string): string {
   return `${day}/${month}/${year}`;
 }
 
+/**
+ * Fecha de publicación a MANDAR en el update.
+ *
+ * ⚠️ No siempre es la guardada. `VacancyServiceImpl.updateVacancy` corre
+ * `dateValidation` SIEMPRE, sobre la entidad ya mergeada, y ahí hay un
+ * `if (inicio.isBefore(today)) throw` — o sea que una vacante publicada en el
+ * pasado no se puede editar en absoluto mientras conserve esa fecha, y omitir
+ * el campo tampoco ayuda (la entidad se queda con el valor viejo y explota
+ * igual). Mandar hoy es la única salida desde el front.
+ *
+ * **Efecto colateral asumido**: al guardar, la vacante queda republicada con
+ * fecha de hoy y pierde la original. El formulario lo avisa antes de guardar;
+ * ver A-32 en `docs/agents/open-questions.md`.
+ */
+function publicationDateToSend(storedPublicationDate: string): string {
+  return storedPublicationDate < todayIso() ? todayIso() : storedPublicationDate;
+}
+
+/** `YYYY-MM-DD` de hoy, en horario local (mismo criterio que `formatDate`:
+ *  evita el corrimiento de día de `toISOString()` en UTC-3). */
+function todayIso(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 // satisfies (no `as`): si Modality gana/pierde un valor en @/types, esto
 // rompe la build en vez de quedar desincronizado en silencio (mismo criterio
 // que use-create-job-form.tsx).
@@ -77,16 +112,16 @@ const MODALITIES = ["PRESENCIAL", "HIBRIDO", "REMOTO"] as const satisfies readon
 
 // Mismas reglas que `jobFormSchema` (use-create-job-form.tsx), sin `areaId`
 // (`UpdateVacancyRequest` no lo incluye — el área queda fija desde la creación)
-// y sin `publicationDate` editable (es read-only en edición, se reenvía la de la
-// vacante). Es una factory porque el refine de `closingDate` compara contra esa
-// `publicationDate` fija, que no vive en el form.
+// y sin `publicationDate` editable (es read-only en edición). Es una factory
+// porque el refine de `closingDate` compara contra un piso fijo que no vive en
+// el form — ver `closingDateFloor`, que NO siempre es la fecha de publicación.
 //
 // Los 4 campos de salario (`salaryCurrency`/`salaryMin`/`salaryMax`/
 // `salaryText`) son todos opcionales a nivel de tipo: cuáles son realmente
 // obligatorios depende de `salaryMode`, así que esa parte de la validación
 // vive en el `superRefine` de abajo (mismo patrón que `register-form.tsx`
 // para campos condicionales por un discriminante).
-function makeEditJobSchema(publicationDate: string) {
+function makeEditJobSchema(closingDateFloor: string, floorIsToday: boolean) {
   return z
     .object({
       name: z
@@ -108,8 +143,15 @@ function makeEditJobSchema(publicationDate: string) {
       salaryText: z.string().trim().optional(),
       closingDate: z.string().min(1, "Ingresá la fecha de cierre."),
     })
-    .refine((data) => !data.closingDate || data.closingDate >= publicationDate, {
-      message: "La fecha de cierre no puede ser anterior a la de publicación.",
+    // El piso NO siempre es la fecha de publicación: en vacantes publicadas en
+    // el pasado el submit manda hoy (ver `publicationDateToSend`), y el backend
+    // rechaza un cierre anterior a esa fecha. El mensaje sigue al piso real —
+    // decir "anterior a la de publicación" cuando en pantalla se ve una fecha
+    // de publicación MÁS VIEJA que el cierre rechazado no se entiende.
+    .refine((data) => !data.closingDate || data.closingDate >= closingDateFloor, {
+      message: floorIsToday
+        ? "La fecha de cierre no puede ser anterior a hoy."
+        : "La fecha de cierre no puede ser anterior a la de publicación.",
       path: ["closingDate"],
     })
     .superRefine((data, ctx) => {
@@ -194,10 +236,20 @@ export function EditJobForm({
    */
   apiFieldErrors?: Record<string, string> | null;
 }) {
-  // `publicationDate` es read-only: se fija a la de la vacante y alimenta tanto
-  // el refine de `closingDate` como el `min` del input y el display.
-  const publicationDate = vacancy.publicationDate.slice(0, 10);
-  const schema = useMemo(() => makeEditJobSchema(publicationDate), [publicationDate]);
+  // `publicationDate` es read-only: no se mueve la fecha de publicación de algo
+  // ya publicado. Pero el backend NO deja reenviarla si ya pasó, así que en ese
+  // caso el submit manda hoy — ver A-32 y el aviso que se muestra en el campo.
+  const storedPublicationDate = vacancy.publicationDate.slice(0, 10);
+  const republishesOnSave = storedPublicationDate < todayIso();
+
+  // Piso de `closingDate`: la fecha que realmente se va a mandar, no la
+  // guardada. Si mandamos hoy, el backend exige que el cierre no sea anterior
+  // a hoy (`inicio.isAfter(fin)` en `dateValidation`).
+  const closingDateFloor = republishesOnSave ? todayIso() : storedPublicationDate;
+  const schema = useMemo(
+    () => makeEditJobSchema(closingDateFloor, republishesOnSave),
+    [closingDateFloor, republishesOnSave],
+  );
 
   const parsedSalary = parseSalary(vacancy.salary);
   const initialSalaryMode: SalaryMode = parsedSalary.min ? "structured" : "free";
@@ -266,9 +318,11 @@ export function EditJobForm({
       description: values.description,
       requirements: values.requirements,
       salary,
-      // `publicationDate` no se edita: se reenvía la de la vacante (el contrato
-      // la exige @NotNull en `UpdateVacancyRequest`). `closingDate` sí es editable.
-      publicationDate,
+      // `publicationDate` la exige @NotNull `UpdateVacancyRequest`, así que se
+      // reenvía siempre. Se recalcula ACÁ y no en render: con el formulario
+      // abierto cruzando la medianoche, un `todayIso()` de ayer haría fallar el
+      // guardado con el mismo 403 que este fix viene a evitar.
+      publicationDate: publicationDateToSend(storedPublicationDate),
       closingDate: values.closingDate,
     });
   }
@@ -495,11 +549,19 @@ export function EditJobForm({
             <div className="grid gap-6 sm:grid-cols-2">
               <Field>
                 <FieldLabel>Fecha de publicación</FieldLabel>
-                {/* Read-only: no se mueve la fecha de publicación de algo ya
-                    publicado. Se reenvía tal cual en el submit. */}
+                {/* Read-only: se muestra SIEMPRE la fecha guardada, que es la
+                    real hasta que se guarde. Si ya pasó, el submit manda hoy
+                    (no hay alternativa, ver `publicationDateToSend`), así que
+                    se avisa acá abajo en vez de cambiarla en silencio. */}
                 <div className="flex h-11 items-center rounded-lg border border-input bg-muted px-4 text-sm text-muted-foreground">
-                  {formatDate(publicationDate)}
+                  {formatDate(storedPublicationDate)}
                 </div>
+                {republishesOnSave && (
+                  <FieldDescription>
+                    Al guardar, esta fecha pasa a ser hoy ({formatDate(todayIso())}): no se
+                    puede conservar una fecha de publicación anterior.
+                  </FieldDescription>
+                )}
               </Field>
 
               <Field data-invalid={Boolean(errors.closingDate)}>
@@ -508,7 +570,7 @@ export function EditJobForm({
                   id="closingDate"
                   type="date"
                   className="h-11"
-                  min={publicationDate}
+                  min={closingDateFloor}
                   aria-invalid={Boolean(errors.closingDate)}
                   disabled={isLocked}
                   {...register("closingDate")}
