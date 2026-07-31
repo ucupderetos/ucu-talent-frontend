@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -21,6 +21,7 @@ import {
 import { CompanyStatusBadge } from "@/features/moderacion/components/companies/company-status-badge";
 import { CompanyModerationActions } from "@/features/moderacion/components/companies/company-moderation-actions";
 import { parseCalendarDate } from "@/features/moderacion/date-utils";
+import { useSignedProfileImageUrl } from "@/hooks/use-profile-image";
 import type { AdminCompanyRow } from "@/features/moderacion/types";
 
 function formatDate(iso: string | null): string {
@@ -28,6 +29,27 @@ function formatDate(iso: string | null): string {
 
   const date = parseCalendarDate(iso);
   return date ? date.toLocaleDateString("es-UY") : "—";
+}
+
+// La key de storage ya viene en la fila (`AdminCompanyRow.profileImage`), así
+// que solo falta canjearla por la URL firmada. Mismo criterio que
+// `StudentAvatar` en `students-table.tsx`: con `useProfileImage(id)` cada fila
+// dispararía además un `GET /user/{id}` para releer esa misma key — el N+1 que
+// A-24 (`docs/agents/open-questions.md`) decidió no pagar en pantallas de lista.
+//
+// El `rounded-lg` va explícito en la imagen: `AvatarImage` trae `rounded-full`
+// propio, y el avatar de empresa es cuadrado (es un logo, no una cara).
+function CompanyAvatar({ company }: { company: AdminCompanyRow }) {
+  const { imageUrl } = useSignedProfileImageUrl(company.profileImage);
+
+  return (
+    <Avatar className="size-10 rounded-lg after:rounded-lg">
+      {imageUrl && <AvatarImage className="rounded-lg" src={imageUrl} alt="" />}
+      <AvatarFallback className="rounded-lg bg-chart-1/15 text-chart-1">
+        {company.initials}
+      </AvatarFallback>
+    </Avatar>
+  );
 }
 
 export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) {
@@ -54,11 +76,7 @@ export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) 
                   aria-label={`Ver información de ${company.name}`}
                   className="flex items-center gap-3 px-5 py-4 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50"
                 >
-                  <Avatar className="size-10 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-chart-1/15 text-chart-1">
-                      {company.initials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <CompanyAvatar company={company} />
 
                   <div className="min-w-0">
                     <p className="truncate font-medium">{company.name}</p>
