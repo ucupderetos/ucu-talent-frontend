@@ -381,8 +381,9 @@ export interface RecentActivityItem {
   id: string;
   title: string;
   description: string;
-  /** Texto relativo ya resuelto ("Hace 2 horas"). */
-  time: string;
+  /** ISO 8601 (datetime); la vista resuelve cómo presentarlo. */
+  occurredAt: string;
+  href: string;
   type: ActivityType;
 }
 
