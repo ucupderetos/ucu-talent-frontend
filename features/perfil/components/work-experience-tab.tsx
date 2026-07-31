@@ -285,7 +285,18 @@ function WorkExperienceDialog({
   return (
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
+        {/* min-w-0: este form es el grid item del DialogContent, y su
+            `min-width: auto` le impide achicarse por debajo del min-content de
+            su contenido. El Textarea de "Descripción" usa `field-sizing-content`
+            (default de components/ui/textarea), así que con una cadena larga sin
+            espacios ese min-content se dispara y el textarea se estira a ~2900px,
+            saliéndose del modal hacia la derecha. Con `min-w-0` el item sí se
+            achica y el textarea vuelve a respetar su `w-full`, conservando el
+            auto-crecimiento vertical hasta su `max-h-40`.
+            ⚠️ Va acá y no en el div de adentro: ese div es hijo de un bloque, no
+            item de flex/grid, así que `min-width: auto` ni le aplica. */}
         <form
+          className="min-w-0"
           onSubmit={form.handleSubmit(async (values) => {
             form.clearErrors("root");
             try {
