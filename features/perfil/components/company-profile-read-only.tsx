@@ -11,46 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ReadOnlyField } from "@/features/perfil/components/read-only-field";
 import type { CompanyProfileFormValues } from "@/features/perfil/hooks/use-company-profile-form";
 import { DEPARTMENT_LABELS } from "@/lib/departments";
-
-function toHref(url: string) {
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-}
-
-function ReadOnlyField({
-  label,
-  value,
-  placeholder = "Sin completar",
-  isLink = false,
-}: {
-  label: string;
-  value: string | undefined;
-  placeholder?: string;
-  isLink?: boolean;
-}) {
-  return (
-    <div className="space-y-1">
-      <p className="text-sm font-medium">{label}</p>
-      {value ? (
-        isLink ? (
-          <a
-            href={toHref(value)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary underline underline-offset-2 hover:opacity-80"
-          >
-            {value}
-          </a>
-        ) : (
-          <p className="text-sm">{value}</p>
-        )
-      ) : (
-        <p className="text-sm text-muted-foreground italic">{placeholder}</p>
-      )}
-    </div>
-  );
-}
 
 export function CompanyProfileReadOnly({
   form,
