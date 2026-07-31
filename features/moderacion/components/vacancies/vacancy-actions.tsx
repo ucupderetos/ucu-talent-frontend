@@ -15,7 +15,6 @@ import {
   BriefcaseBusinessIcon,
   EyeIcon,
   EyeOffIcon,
-  MoreVerticalIcon,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,11 +31,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useReviewVacancy } from "@/features/moderacion/hooks/use-review-vacancy";
 import { ApiError } from "@/lib/api-client";
 import type { AdminVacancyRow } from "@/features/moderacion/types";
@@ -47,7 +45,7 @@ import type { VacancyStatus } from "@/types";
 type AdminVacancyTarget = Extract<VacancyStatus, "PUBLICADO" | "PENDIENTE">;
 
 interface TransitionConfig {
-  menuLabel: string;
+  label: string;
   icon: LucideIcon;
   destructive: boolean;
   title: string;
@@ -59,7 +57,7 @@ interface TransitionConfig {
 
 const TRANSITION: Record<AdminVacancyTarget, TransitionConfig> = {
   PUBLICADO: {
-    menuLabel: "Publicar",
+    label: "Publicar",
     icon: EyeIcon,
     destructive: false,
     title: "¿Publicar esta oferta?",
@@ -69,7 +67,7 @@ const TRANSITION: Record<AdminVacancyTarget, TransitionConfig> = {
     successMessage: "Oferta publicada.",
   },
   PENDIENTE: {
-    menuLabel: "Dar de baja",
+    label: "Dar de baja",
     icon: EyeOffIcon,
     destructive: true,
     title: "¿Dar de baja esta oferta?",
@@ -89,7 +87,17 @@ const AVAILABLE_TRANSITIONS: Record<VacancyStatus, AdminVacancyTarget[]> = {
   FINALIZADO: [],
 };
 
-export function VacancyActionsMenu({ vacancy }: { vacancy: AdminVacancyRow }) {
+// Una sola presentación en todos lados: iconos con tooltip, igual que en
+// `company-moderation-actions.tsx` y `student-moderation-actions.tsx`.
+export function VacancyActions({
+  vacancy,
+  includeDetailLink = false,
+}: {
+  vacancy: AdminVacancyRow;
+  /** El icono "Ver oferta" navega al detalle: solo tiene sentido desde una
+   *  tabla. En la propia pantalla de detalle apuntaría a sí misma. */
+  includeDetailLink?: boolean;
+}) {
   const [target, setTarget] = useState<AdminVacancyTarget | null>(null);
   const review = useReviewVacancy();
 
@@ -124,42 +132,45 @@ export function VacancyActionsMenu({ vacancy }: { vacancy: AdminVacancyRow }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Abrir acciones de ${vacancy.name}`}
-          >
-            <MoreVerticalIcon />
-          </Button>
-        </DropdownMenuTrigger>
+      <div className="flex items-center gap-1">
+        {includeDetailLink && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" asChild>
+                <Link
+                  href={`/moderacion/ofertas/${vacancy.vacancyId}`}
+                  aria-label={`Ver oferta ${vacancy.name}`}
+                >
+                  <BriefcaseBusinessIcon className="size-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Ver oferta</TooltipContent>
+          </Tooltip>
+        )}
 
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem asChild>
-            <Link href={`/moderacion/ofertas/${vacancy.vacancyId}`}>
-              <BriefcaseBusinessIcon />
-              Ver oferta
-            </Link>
-          </DropdownMenuItem>
+        {transitions.map((status) => {
+          const item = TRANSITION[status];
+          const Icon = item.icon;
 
-          {transitions.map((status) => {
-            const item = TRANSITION[status];
-            const Icon = item.icon;
-
-            return (
-              <DropdownMenuItem
-                key={status}
-                variant={item.destructive ? "destructive" : undefined}
-                onSelect={() => setTarget(status)}
-              >
-                <Icon />
-                {item.menuLabel}
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          return (
+            <Tooltip key={status}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={item.destructive ? "text-destructive hover:text-destructive" : undefined}
+                  aria-label={`${item.label} ${vacancy.name}`}
+                  onClick={() => setTarget(status)}
+                >
+                  <Icon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{item.label}</TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
 
       <Dialog open={target !== null} onOpenChange={(open) => !open && setTarget(null)}>
         <DialogContent className="sm:max-w-md">

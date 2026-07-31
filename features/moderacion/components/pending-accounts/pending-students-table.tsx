@@ -50,7 +50,7 @@ export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
             <TableHead>Alumno</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Fecha de solicitud</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="pl-4">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,7 +77,7 @@ export function PendingStudentsTable({ rows }: { rows: PendingStudentRow[] }) {
               </TableCell>
               <TableCell className="text-muted-foreground">{student.email}</TableCell>
               <TableCell>{formatDate(student.registeredAt)}</TableCell>
-              <TableCell className="text-right">
+              <TableCell>
                 <ReviewActions
                   userId={student.studentProfileId}
                   displayName={

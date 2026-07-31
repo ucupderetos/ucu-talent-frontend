@@ -63,7 +63,7 @@ export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) 
             <TableHead>Ubicación</TableHead>
             <TableHead>Fecha de registro</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead className="pr-5 text-right">Acciones</TableHead>
+            <TableHead className="pl-4 pr-5">Acciones</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -92,8 +92,8 @@ export function CompaniesTable({ companies }: { companies: AdminCompanyRow[] }) 
               <TableCell>
                 <CompanyStatusBadge status={company.status} />
               </TableCell>
-              <TableCell className="pr-5 text-right">
-                <CompanyModerationActions company={company} presentation="menu" />
+              <TableCell className="pr-5">
+                <CompanyModerationActions company={company} includeDetailLink />
               </TableCell>
             </TableRow>
           ))}

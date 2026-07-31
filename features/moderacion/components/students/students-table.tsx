@@ -54,7 +54,7 @@ export function StudentsTable({ rows }: { rows: StudentRow[] }) {
             <TableHead>Email</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Fecha de registro</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="pl-4">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -85,12 +85,12 @@ export function StudentsTable({ rows }: { rows: StudentRow[] }) {
                 <AccountStatusBadge status={student.status} />
               </TableCell>
               <TableCell>{formatDate(student.registeredAt)}</TableCell>
-              <TableCell className="text-right">
+              <TableCell>
                 <StudentModerationActions
                   userId={student.studentProfileId}
                   status={student.status}
                   displayName={`${student.name} ${student.surname}`}
-                  presentation="menu"
+                  includeDetailLink
                 />
               </TableCell>
             </TableRow>

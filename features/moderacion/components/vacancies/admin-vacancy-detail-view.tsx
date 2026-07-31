@@ -40,7 +40,7 @@ import {
   parseMontevideoDateTime,
 } from "@/features/moderacion/date-utils";
 import { MODALITY_LABELS } from "@/lib/modality";
-import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
+import { VacancyActions } from "@/features/moderacion/components/vacancies/vacancy-actions";
 import { useAdminVacancyDetail } from "@/features/moderacion/hooks/use-admin-vacancies";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { formatDepartment } from "@/lib/departments";
@@ -157,7 +157,7 @@ function VacancyDetailContent({ vacancy }: { vacancy: AdminVacancyDetail }) {
 
             <div className="flex shrink-0 items-center gap-2">
               <VacancyStatusBadge status={vacancy.status} />
-              <VacancyActionsMenu vacancy={vacancy} />
+              <VacancyActions vacancy={vacancy} />
             </div>
           </div>
 

@@ -64,7 +64,7 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
             <TableHead>Empresa</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Fecha de solicitud</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="pl-4">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -89,7 +89,7 @@ export function PendingCompaniesTable({ rows }: { rows: PendingCompanyRow[] }) {
               </TableCell>
               <TableCell className="text-muted-foreground">{company.email}</TableCell>
               <TableCell>{formatDate(company.registeredAt)}</TableCell>
-              <TableCell className="text-right">
+              <TableCell>
                 <ReviewActions
                   userId={company.companyId}
                   displayName={company.hasProfile ? company.name : company.email}

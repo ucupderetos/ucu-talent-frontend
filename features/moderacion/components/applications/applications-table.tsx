@@ -8,18 +8,16 @@ import Link from "next/link";
 import {
   BriefcaseBusinessIcon,
   Building2Icon,
-  MoreVerticalIcon,
   UserRoundIcon,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -60,7 +58,7 @@ export function ApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
             <TableHead>Empresa</TableHead>
             <TableHead>Fecha de postulación</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="pl-4">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -123,8 +121,8 @@ export function ApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
               <TableCell>
                 <ApplicationStatusBadge status={row.status} />
               </TableCell>
-              <TableCell className="text-right">
-                <ApplicationActionsMenu application={row} />
+              <TableCell>
+                <ApplicationActionsButtons application={row} />
               </TableCell>
             </TableRow>
           ))}
@@ -134,42 +132,54 @@ export function ApplicationsTable({ rows }: { rows: AdminApplicationRow[] }) {
   );
 }
 
-function ApplicationActionsMenu({ application }: { application: AdminApplicationRow }) {
+function ApplicationActionsButtons({ application }: { application: AdminApplicationRow }) {
   const studentName = `${application.studentName} ${application.studentSurname}`;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Abrir acciones de la postulación de ${studentName}`}
-        >
-          <MoreVerticalIcon />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem asChild>
-          <Link href={`/moderacion/estudiantes/${application.studentProfileId}`}>
-            <UserRoundIcon />
-            Ver perfil
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href={`/moderacion/ofertas/${application.vacancyId}`}>
-            <BriefcaseBusinessIcon />
-            Ver oferta
-          </Link>
-        </DropdownMenuItem>
-        {application.companyId && (
-          <DropdownMenuItem asChild>
-            <Link href={`/moderacion/empresas/${application.companyId}`}>
-              <Building2Icon />
-              Ver empresa
+    <div className="flex items-center gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" asChild>
+            <Link
+              href={`/moderacion/estudiantes/${application.studentProfileId}`}
+              aria-label={`Ver perfil de ${studentName}`}
+            >
+              <UserRoundIcon className="size-4" />
             </Link>
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ver perfil</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" asChild>
+            <Link
+              href={`/moderacion/ofertas/${application.vacancyId}`}
+              aria-label={`Ver oferta ${application.vacancyName}`}
+            >
+              <BriefcaseBusinessIcon className="size-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ver oferta</TooltipContent>
+      </Tooltip>
+
+      {application.companyId && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" asChild>
+              <Link
+                href={`/moderacion/empresas/${application.companyId}`}
+                aria-label={`Ver empresa ${application.companyName}`}
+              >
+                <Building2Icon className="size-4" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Ver empresa</TooltipContent>
+        </Tooltip>
+      )}
+    </div>
   );
 }

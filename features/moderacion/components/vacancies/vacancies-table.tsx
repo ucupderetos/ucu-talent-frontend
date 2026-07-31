@@ -17,7 +17,7 @@ import {
   parseCalendarDate,
   parseMontevideoDateTime,
 } from "@/features/moderacion/date-utils";
-import { VacancyActionsMenu } from "@/features/moderacion/components/vacancies/vacancy-actions-menu";
+import { VacancyActions } from "@/features/moderacion/components/vacancies/vacancy-actions";
 import { VacancyStatusBadge } from "@/components/vacancies/vacancy-status-badge";
 import { CONTRACT_TYPE_LABELS } from "@/lib/contract-types";
 import { formatDepartment } from "@/lib/departments";
@@ -35,7 +35,7 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
             <TableHead>Publicación</TableHead>
             <TableHead>Postulaciones</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead className="pr-5 text-right">Acciones</TableHead>
+            <TableHead className="pl-4 pr-5">Acciones</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -92,8 +92,8 @@ export function VacanciesTable({ vacancies }: { vacancies: AdminVacancyRow[] }) 
                 <TableCell>
                   <VacancyStatusBadge status={vacancy.status} />
                 </TableCell>
-                <TableCell className="pr-5 text-right">
-                  <VacancyActionsMenu vacancy={vacancy} />
+                <TableCell className="pr-5">
+                  <VacancyActions vacancy={vacancy} includeDetailLink />
                 </TableCell>
               </TableRow>
             );
