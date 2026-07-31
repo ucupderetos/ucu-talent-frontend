@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # URL base de la API de Spring Boot; se resuelve en build time
+        # porque queda inlineada en el bundle del cliente (prefijo NEXT_PUBLIC_).
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+    image: ucu-talent-frontend:local
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

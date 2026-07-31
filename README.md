@@ -1,36 +1,178 @@
 # ucu-talent-frontend
 
-## Getting Started
+Frontend web del proyecto **Talent** (Reto Julio 2026 - UCU).
 
-First, run the development server:
+Portal laboral tipo LinkedIn para la Universidad Católica del Uruguay. El frontend consume una API REST separada y no expone backend propio ni accede directamente a la base de datos.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Qué resuelve
+
+La aplicación permite autenticarse, completar el perfil, explorar vacantes, postularse, gestionar vacantes desde la cuenta de empresa y moderar cuentas y publicaciones desde administración.
+
+## Stack
+
+- **Next.js 16** (App Router)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS v4**
+- **shadcn/ui** sobre **Radix UI**
+- **TanStack Query v5** para fetching y cache de datos
+- **React Hook Form + Zod v4** para formularios
+- **sonner** para notificaciones
+- **next/font** con **Inter** y **Geist Mono**
+- **Docker** y **Docker Compose** para ejecución contenedorizada
+
+## Arquitectura del proyecto
+
+El proyecto se organiza por **rutas** y por **dominio**. `app/` se encarga de composición y navegación; `features/` concentra la lógica de negocio; `components/` contiene piezas compartidas; `lib/` agrupa infraestructura transversal; y `types/` reúne las entidades core compartidas por toda la app.
+
+### Capas principales
+
+#### `app/`
+Contiene el routing del App Router y los layouts por segmento. Acá viven las rutas, los layouts raíz y de grupo, y las páginas delgadas que solo componen componentes de `features/`.
+
+Dentro de `app/` hay principalmente:
+
+- `layout.tsx`: layout raíz, fuentes, `Providers` y `Toaster`.
+- `globals.css`: tokens globales, tipografía y estilos base.
+- `(auth)/`: login y registro.
+- `(alumno)/`: feed y postulaciones.
+- `(empresa)/`: puestos, postulantes y creación de oferta.
+- `(perfil)/`: perfil compartido entre alumno y empresa.
+- `(admin)/`: moderación.
+- `completar-perfil/`: flujo de continuación del alta cuando falta completar el perfil.
+
+Las páginas dentro de esas carpetas son delgadas: componen componentes de `features/` y no concentran lógica de dominio.
+
+#### `features/`
+Agrupa la funcionalidad por dominio de negocio (`auth`, `perfil`, `puestos`, `postulaciones`, `moderacion`). Cada dominio puede tener componentes, hooks, tipos y datos propios.
+
+#### `components/layout/`
+Incluye el shell compartido de la app: navbar, sidebar, page header, empty states y navegación. Son componentes de interfaz reutilizables entre roles.
+
+#### `components/ui/`
+Son los primitivos visuales de la interfaz. Se apoyan en shadcn/ui y Radix, y se reutilizan en toda la aplicación.
+
+#### `lib/`
+Contiene código transversal sin UI: cliente HTTP, helpers de autenticación, validadores y utilidades.
+
+#### `types/`
+Define las entidades globales del modelo de datos compartidas entre dominios.
+
+### Flujo de datos
+
+El flujo habitual es: la vista llama a un hook de dominio, el hook usa `lib/api-client.ts`, la API responde, y el hook normaliza el resultado para la interfaz.
+
+```mermaid
+flowchart LR
+	U[Usuario] --> V[Vista / page.tsx]
+	V --> H[Hook de dominio]
+	H --> C[lib/api-client.ts]
+	C --> A[API Spring Boot]
+	A --> C
+	C --> H
+	H --> V
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rutas principales
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/` redirige según la sesión del usuario.
+- `/login` y `/registro` cubren autenticación y alta.
+- `/completar-perfil` reanuda el alta cuando falta el perfil.
+- `/feed` y `/postulaciones` son las pantallas del alumno.
+- `/puestos`, `/puestos/[id]` y `/postulantes` cubren el flujo de empresa.
+- `/perfil` es una vista compartida entre alumno y empresa.
+- `/moderacion/*` agrupa las pantallas de administración.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Requisitos previos
 
-## Learn More
+- **Node.js 20.9.0 o superior**
+- **npm**
+- Una API de backend disponible y compatible con el contrato esperado por el frontend
+- **Docker** si se quiere ejecutar la aplicación en contenedores
 
-To learn more about Next.js, take a look at the following resources:
+## Configuración
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Copiá la plantilla de variables de entorno y completá los valores locales:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cp .env.example .env.local
+```
 
-## Deploy on Vercel
+Variables relevantes:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `NEXT_PUBLIC_API_BASE_URL`: URL base pública de la API de Spring Boot (la usa `lib/api-client.ts`, y es el mismo build arg que inyectan `Dockerfile`/`docker-compose.yml` en build time).
+## Cómo ejecutar
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install
+npm run dev
+```
+
+La app queda disponible en [http://localhost:3000](http://localhost:3000).
+
+### Scripts disponibles
+
+```bash
+npm run dev     # Desarrollo
+npm run build   # Build de producción
+npm run start   # Ejecutar el build de producción
+npm run lint    # Lint del proyecto
+```
+
+## Docker
+
+Requiere Docker instalado localmente. Si se usa Docker, la URL base de la API debe estar disponible en build time porque el frontend la inyecta en el bundle del navegador.
+
+### Build y ejecución manual
+
+```bash
+docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.ejemplo.com -t ucu-talent-frontend .
+docker run -p 3000:3000 ucu-talent-frontend
+```
+
+### Con Docker Compose
+
+```bash
+docker compose up --build
+```
+
+En ambos casos, la app queda disponible en [http://localhost:3000](http://localhost:3000).
+
+## Estructura del proyecto
+
+```text
+ucu-talent-frontend/
+├── app/                      # Rutas, layouts y páginas del App Router
+│   ├── layout.tsx            # Layout raíz
+│   ├── globals.css            # Estilos y tokens globales
+│   ├── (auth)/               # Login y registro
+│   ├── (alumno)/             # Feed y postulaciones
+│   ├── (empresa)/            # Puestos, postulantes y creación de oferta
+│   ├── (perfil)/             # Perfil compartido
+│   ├── (admin)/              # Moderación
+│   └── completar-perfil/     # Continuación del alta
+├── components/               # UI compartida y layout global
+├── features/                 # Lógica de negocio por dominio
+├── lib/                      # Cliente HTTP, auth, validadores y utilidades
+├── public/                   # Archivos estáticos
+├── types/                    # Entidades core compartidas
+├── Dockerfile
+├── docker-compose.yml
+├── package.json
+└── README.md
+```
+
+## Convenciones generales
+
+- El frontend trabaja con **fetching centralizado**: las requests pasan por `lib/api-client.ts`.
+- La sesión se resuelve mediante **cookie httpOnly** y `GET /me`; el cliente no lee tokens directamente.
+- Los formularios se construyen con **React Hook Form + Zod**.
+- La lógica de dominio vive en `features/`, no en `app/`.
+- Los componentes compartidos viven en `components/`, y los primitivos visuales en `components/ui/`.
+
+## Documentación adicional
+
+- `AGENTS.md`: índice de las reglas de arquitectura y convenciones del equipo — el
+  contenido vive en `docs/agents/*.md`, enlazado desde ahí.
+- `CLAUDE.md`: referencia al mismo documento de reglas.
+- `docs/ENDPOINTS.md`: contrato de API vigente contra el backend.

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Exports tageados @public quedan afuera del reporte de "unused exports":
+  // son la key de un hook de datos, exportada a propósito por convención de
+  // docs/agents/data-fetching.md ("Exportar la key desde el hook para poder
+  // invalidarla desde otro lado") aunque hoy ninguna mutación la consuma
+  // todavía.
+  "tags": ["-public"]
+}

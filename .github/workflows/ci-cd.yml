@@ -1,0 +1,81 @@
+name: CI/CD Frontend Next.js
+on:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+env:
+  PROJECT_ID: reto-universitario-2026
+  REGION: us-central1
+  SERVICE: web-dev
+  IMAGE: us-central1-docker.pkg.dev/reto-universitario-2026/ucutalent/frontend
+jobs:
+  unit-test-frontend:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      # - run: npm test (Tira error ya que no hay tests definidos)
+  docker-build-check-frontend:
+    name: Check dockerfile builds
+    needs: unit-test-frontend
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=${{ vars.API_BASE_URL }} \
+            -t temp-image:ci-check .
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'temp-image:ci-check'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+
+  build-and-deploy:
+    name: Build, push y deploy a Cloud Run
+    needs: [unit-test-frontend, docker-build-check-frontend]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: development
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Autenticar contra Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configurar Docker para Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+      - name: Definir tag corto
+        run: echo "SHORT_SHA=sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+      - name: Build de la imagen
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=${{ vars.API_BASE_URL }} \
+            -t ${{ env.IMAGE }}:${{ env.SHORT_SHA }} .
+          docker tag ${{ env.IMAGE }}:${{ env.SHORT_SHA }} ${{ env.IMAGE }}:dev-latest
+      - name: Push a Artifact Registry
+        run: |
+          docker push ${{ env.IMAGE }}:${{ env.SHORT_SHA }}
+          docker push ${{ env.IMAGE }}:dev-latest
+      - name: Deploy a Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE }}
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE }}:${{ env.SHORT_SHA }}
+          flags: '--port=3000 --min-instances=0 --max-instances=2 --cpu=1 --memory=512Mi --allow-unauthenticated'
